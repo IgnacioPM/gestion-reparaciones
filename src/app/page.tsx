@@ -1,13 +1,14 @@
 import Navbar from "@/components/ui/Navbar"
+import ServiciosTable from "@/components/servicios/ServiciosTable"
 
 export default function HomePage() {
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors">
             <Navbar />
-            <main className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white transition-colors">
-                    Bienvenido a la App
-                </h1>
+            <main className="container mx-auto px-4 py-8">
+                <div className="max-w-7xl mx-auto">
+                    <ServiciosTable />
+                </div>
             </main>
         </div>
     )

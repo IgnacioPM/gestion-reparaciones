@@ -38,14 +38,14 @@ export default function Navbar() {
             {/* Logo + App Name */}
             <div className="flex items-center gap-2">
                 <Image
-                    src="/icons/logo.webp"
+                    src="/icons/logo-CR.svg"
                     alt="Logo Reparaciones"
-                    width={28}
-                    height={28}
+                    width={44}
+                    height={44}
                     className="object-contain"
                 />
                 <h1 className="text-base sm:text-xl font-semibold text-gray-800 dark:text-white transition-colors">
-                    Nombre app
+                    Control de reparaciones
                 </h1>
             </div>
 
