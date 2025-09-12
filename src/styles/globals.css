@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --primary: 222.2 47.4% 11.2%;
+    --primary-foreground: 210 40% 98%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+  }
+}
+
+@layer components {
+  .theme-toggle-switch {
+    @apply relative inline-flex h-9 w-[72px] items-center rounded-full transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-gray-800;
+  }
+
+  .theme-toggle-switch[data-state='dark'] {
+    @apply bg-blue-500;
+  }
+
+  .theme-toggle-switch[data-state='light'] {
+    @apply bg-gray-200;
+  }
+
+  .theme-toggle-thumb {
+    @apply pointer-events-none absolute left-[2px] inline-flex h-7 w-7 transform items-center justify-center rounded-full bg-white shadow-lg ring-0 transition-all duration-300;
+  }
+
+  .theme-toggle-thumb[data-state='dark'] {
+    @apply translate-x-[38px];
+  }
+
+  .theme-toggle-thumb[data-state='light'] {
+    @apply translate-x-0;
+  }
+}
