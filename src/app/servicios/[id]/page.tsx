@@ -14,9 +14,11 @@ import React, { useState } from "react"
 function getBadgeColor(estado: string | null) {
     switch (estado) {
         case "Recibido": return "bg-yellow-100 text-yellow-800"
+        case "En revisión": return "bg-orange-100 text-orange-800"
         case "En reparacion": return "bg-blue-100 text-blue-800"
         case "Listo": return "bg-green-100 text-green-800"
         case "Entregado": return "bg-gray-100 text-gray-800"
+        case "Anulado": return "bg-red-100 text-red-800"
         default: return "bg-gray-100 text-gray-800"
     }
 }
@@ -110,20 +112,24 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
             <main className="container mx-auto px-4 py-8">
                 {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-                    <Link
-                        href="/"
-                        className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
-                    >
-                        <ArrowLeft className="h-5 w-5 mr-2" />
-                        <span>Ir al inicio</span>
-                    </Link>
-                    <button
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors"
-                        onClick={() => setIsModalOpen(true)}
-                    >
-                        <Edit className="h-5 w-5" />
-                        <span>Editar</span>
-                    </button>
+                    <div className="flex w-full">
+                        <Link
+                            href="/"
+                            className="flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+                        >
+                            <ArrowLeft className="h-5 w-5 mr-2" />
+                            <span>Ir al inicio</span>
+                        </Link>
+                        {servicio.estado !== "Entregado" && (
+                            <button
+                                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors ml-auto"
+                                onClick={() => setIsModalOpen(true)}
+                            >
+                                <Edit className="h-5 w-5" />
+                                <span>Editar</span>
+                            </button>
+                        )}
+                    </div>
                 </div>
 
                 {/* Detalles */}
@@ -135,7 +141,8 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                             </h1>
                         </div>
                         <span
-                            className={`px-3 py-1 rounded-full text-sm font-semibold ${getBadgeColor(servicio.estado)}`}
+                            className={`px-3 py-1 rounded text-sm font-medium border ${getBadgeColor(servicio.estado)} border-opacity-40 shadow-sm select-none`}
+                            style={{ letterSpacing: "0.04em" }}
                         >
                             {servicio.estado ?? "Recibido"}
                         </span>

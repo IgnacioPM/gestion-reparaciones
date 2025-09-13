@@ -13,6 +13,7 @@ if (!(dayjs)._hasTimezonePlugin) {
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { supabase } from "@/lib/supabaseClient"
+import { ArrowLeft, Edit } from "lucide-react"
 import Input from "@/components/ui/Input"
 import Button from "@/components/ui/Button"
 import FormError from "@/components/ui/FormError"
@@ -111,7 +112,7 @@ export default function NuevoServicioPage() {
                     equipo_id: nuevoEquipo.id_equipo,
                     fecha_ingreso: fechaIngresoCR,
                     descripcion_falla: data.problema,
-                    estado: "Recibido",
+                    estado: "Recibido", // Si quieres permitir crear como 'Anulado', aquí puedes cambiarlo
                     nota_trabajo: data.observaciones || null,
                     costo_estimado: data.costo_estimado || null,
                     fecha_entrega: fechaEntrega
@@ -154,6 +155,7 @@ export default function NuevoServicioPage() {
                         onClick={() => router.push('/')}
                         className="mt-4 sm:mt-0 flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
+                        <ArrowLeft className="h-5 w-5 mr-2" />
                         <span>Volver al inicio</span>
                     </button>
                 </div>

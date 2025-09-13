@@ -20,11 +20,18 @@ interface ServicioEditModalProps {
     onSave: (data: Partial<any>) => void;
 }
 
-const estados = ["Recibido", "En reparacion", "Listo", "Entregado"];
+const estados = ["Recibido", "En revisión", "En reparacion", "Listo", "Entregado", "Anulado"];
 
 export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: ServicioEditModalProps) {
     const [estado, setEstado] = useState(servicio.estado || "Recibido");
-    const [costoFinal, setCostoFinal] = useState(servicio.costo_final ?? "");
+    const [costoEstimado, setCostoEstimado] = useState(servicio.costo_estimado ?? "");
+    const [costoFinal, setCostoFinal] = useState(
+        servicio.costo_final !== undefined && servicio.costo_final !== null && servicio.costo_final !== ""
+            ? servicio.costo_final
+            : (servicio.costo_estimado !== undefined && servicio.costo_estimado !== null && servicio.costo_estimado !== ""
+                ? servicio.costo_estimado
+                : "")
+    );
     const [notaTrabajo, setNotaTrabajo] = useState(servicio.nota_trabajo ?? "");
 
     // Inicializar plugins solo una vez
@@ -46,6 +53,8 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
             // Guardar la fecha en zona horaria America/Costa_Rica, en formato ISO completo (con zona horaria)
             const crDate = dayjs().tz("America/Costa_Rica");
             data.fecha_entrega = crDate.toISOString();
+        } else if (estado === "En revisión") {
+            data.costo_estimado = costoEstimado === "" ? null : Number(costoEstimado);
         }
         onSave(data);
     };
@@ -79,6 +88,30 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                             </Select>
                         }
                     />
+                    {estado === "En revisión" && (
+                        <InfoRow
+                            label="Costo estimado"
+                            value={
+                                <>
+                                    <Input
+                                        label=""
+                                        type="number"
+                                        value={costoEstimado}
+                                        onChange={e => setCostoEstimado(e.target.value)}
+                                        min={0}
+                                        step={0.01}
+                                        placeholder="Ingrese el costo estimado"
+                                        className="w-full"
+                                    />
+                                    {costoEstimado !== "" && (
+                                        <div className="mt-1 text-sm text-gray-500">
+                                            <FormattedAmount amount={Number(costoEstimado)} />
+                                        </div>
+                                    )}
+                                </>
+                            }
+                        />
+                    )}
                     <InfoRow
                         label="Costo final"
                         value={

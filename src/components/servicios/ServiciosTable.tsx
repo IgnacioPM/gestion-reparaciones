@@ -10,7 +10,7 @@ interface Servicio {
     equipo_id: string
     fecha_ingreso: string
     descripcion_falla: string | null
-    estado: "Recibido" | "En reparacion" | "Listo" | "Entregado" | null
+    estado: "Recibido" | "En revisión" | "En reparacion" | "Listo" | "Entregado" | "Anulado" | null
     costo_estimado: number | null
     nota_trabajo: string | null
     fecha_entrega: string | null
@@ -41,18 +41,22 @@ export default function ServiciosTable() {
     const estados = [
         { value: "todos", label: "Todos" },
         { value: "Recibido", label: "Recibido" },
+        { value: "En revisión", label: "En revisión" },
         { value: "En reparacion", label: "En reparación" },
         { value: "Listo", label: "Listo" },
-        { value: "Entregado", label: "Entregado" }
+        { value: "Entregado", label: "Entregado" },
+        { value: "Anulado", label: "Anulado" },
     ]
 
     // Color de badge según estado
     const getBadgeColor = (estado: string) => {
         switch (estado) {
             case "Recibido": return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300"
+            case "En revisión": return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300"
             case "En reparacion": return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
             case "Listo": return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300"
             case "Entregado": return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
+            case "Anulado": return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300"
             default: return "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300"
         }
     }
@@ -209,11 +213,11 @@ export default function ServiciosTable() {
     return (
         <div className="w-full">
             {/* Header con título y botón de nuevo servicio */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+            <div className="flex flex-col sm:flex-row justify-end sm:justify-between items-start sm:items-center mb-6 gap-4">
                 <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Servicios</h1>
                 <button
                     onClick={handleNewServicio}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition"
+                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors ml-auto"
                 >
                     <Plus className="w-5 h-5" />
                     <span>Nuevo Servicio</span>
