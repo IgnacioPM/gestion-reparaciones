@@ -151,7 +151,12 @@ export default function NuevoServicioPage() {
                 errorMessage = error.message
             } else if (typeof error === 'object' && error !== null) {
                 // Para errores de Supabase
-                errorMessage = (error as any).message || (error as any).details || errorMessage
+                if (typeof error === "object" && error !== null) {
+                    const errObj = error as { message?: string; details?: string };
+                    errorMessage = errObj.message || errObj.details || errorMessage;
+                } else {
+                    errorMessage = String(error) || errorMessage;
+                }
             }
             setError("root", {
                 message: errorMessage

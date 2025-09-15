@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Servicio } from "@/types/servicio";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
@@ -16,35 +17,35 @@ import Textarea from "@/components/ui/Textarea";
 interface ServicioEditModalProps {
     isOpen: boolean;
     onClose: () => void;
-    servicio: any;
-    onSave: (data: Partial<any>) => void;
+    servicio: Servicio;
+    onSave: (data: Partial<Servicio>) => void;
 }
 
 const estados = ["Recibido", "En revisión", "En reparacion", "Listo", "Entregado", "Anulado"];
 
 export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: ServicioEditModalProps) {
-    const [estado, setEstado] = useState(servicio.estado || "Recibido");
-    const [costoEstimado, setCostoEstimado] = useState(servicio.costo_estimado ?? "");
+    const [estado, setEstado] = useState<Servicio["estado"]>(servicio.estado || "Recibido");
+    const [costoEstimado, setCostoEstimado] = useState(servicio.costo_estimado !== undefined && servicio.costo_estimado !== null ? String(servicio.costo_estimado) : "");
     const [costoFinal, setCostoFinal] = useState(
-        servicio.costo_final !== undefined && servicio.costo_final !== null && servicio.costo_final !== ""
-            ? servicio.costo_final
-            : (servicio.costo_estimado !== undefined && servicio.costo_estimado !== null && servicio.costo_estimado !== ""
-                ? servicio.costo_estimado
+        servicio.costo_final !== undefined && servicio.costo_final !== null
+            ? String(servicio.costo_final)
+            : (servicio.costo_estimado !== undefined && servicio.costo_estimado !== null
+                ? String(servicio.costo_estimado)
                 : "")
     );
     const [notaTrabajo, setNotaTrabajo] = useState(servicio.nota_trabajo ?? "");
 
     // Inicializar plugins solo una vez
     // Extender dayjs con los plugins solo una vez
-    if (!(dayjs as any)._hasTimezonePlugin) {
+    if (!(dayjs as unknown as { _hasTimezonePlugin?: boolean })._hasTimezonePlugin) {
         dayjs.extend(utc);
         dayjs.extend(timezone);
-        (dayjs as any)._hasTimezonePlugin = true;
+        (dayjs as unknown as { _hasTimezonePlugin?: boolean })._hasTimezonePlugin = true;
     }
 
     // Si el estado cambia a "Entregado", la fecha_entrega se actualizará al guardar
     const handleSave = () => {
-        const data: any = {
+        const data: Partial<Servicio> = {
             estado,
             costo_final: costoFinal === "" ? null : Number(costoFinal),
             nota_trabajo: notaTrabajo,
@@ -77,8 +78,8 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                         label="Estado"
                         value={
                             <Select
-                                value={estado}
-                                onChange={e => setEstado(e.target.value)}
+                                value={estado ?? ""}
+                                onChange={e => setEstado(e.target.value as Servicio["estado"])}
                                 title="Seleccionar estado"
                                 className="w-full"
                             >
@@ -145,31 +146,17 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                     />
                 </InfoBlock>
                 <div className="flex flex-col gap-2 mt-6">
-                    {(estado === "En revisión" && servicio.equipo?.cliente?.telefono) && (
+                    {estado === "En revisión" && servicio.equipo?.cliente?.telefono && (
                         <Button
                             type="button"
-                            color="success"
+                            color="primary"
                             className="mb-2"
                             onClick={() => {
-                                const telefono = servicio.equipo.cliente.telefono.replace(/\D/g, "");
-                                const clienteNombre = servicio.equipo.cliente.nombre || "Estimado cliente";
-                                const equipoInfo = `${servicio.equipo.tipo || ""} ${servicio.equipo.marca || ""} ${servicio.equipo.modelo || ""}`.trim();
+                                const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, "") || "";
+                                const clienteNombre = servicio.equipo?.cliente?.nombre || "Estimado cliente";
+                                const equipoInfo = `${servicio.equipo?.tipo || ""} ${servicio.equipo?.marca || ""} ${servicio.equipo?.modelo || ""}`.trim();
                                 const notas = notaTrabajo?.trim() || "No se registraron observaciones adicionales.";
-
-                                let mensaje = `
-Hola ${clienteNombre},
-
-Hemos revisado su equipo *${equipoInfo || "dispositivo"}*.
-
-📋 Estado: En revisión  
-📝 Notas de diagnóstico: ${notas}  
-💵 Costo estimado: ₡${costoEstimado || servicio.costo_estimado || "-"}
-
-Nos confirma si desea que procedamos con la reparación.
-
-Muchas gracias por confiar en nuestro servicio.
-            `.trim();
-
+                                const mensaje = `Hola ${clienteNombre},\n\nHemos revisado su equipo *${equipoInfo || "dispositivo"}*.\n\n📋 Estado: En revisión\n📝 Notas de diagnóstico: ${notas}\n💵 Costo estimado: ₡${costoEstimado || servicio.costo_estimado || "-"}\n\nNos confirma si desea que procedamos con la reparación.\n\nMuchas gracias por confiar en nuestro servicio.`;
                                 const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
                                 window.open(link, "_blank");
                             }}
@@ -178,62 +165,36 @@ Muchas gracias por confiar en nuestro servicio.
                         </Button>
                     )}
 
-                    {(estado === "Listo" && servicio.equipo?.cliente?.telefono) && (
+                    {estado === "Listo" && servicio.equipo?.cliente?.telefono && (
                         <Button
                             type="button"
-                            color="success"
+                            color="primary"
                             className="mb-2"
                             onClick={() => {
-                                const telefono = servicio.equipo.cliente.telefono.replace(/\D/g, "");
-                                const clienteNombre = servicio.equipo.cliente.nombre || "Estimado cliente";
-                                const equipoInfo = `${servicio.equipo.tipo || ""} ${servicio.equipo.marca || ""} ${servicio.equipo.modelo || ""}`.trim();
-
-                                let mensaje = `
-Hola ${clienteNombre},
-
-Su equipo *${equipoInfo || "dispositivo"}* ya está listo para ser retirado.
-
-📋 Estado: Listo para entrega  
-💵 Costo final: ₡${costoFinal || servicio.costo_final || "-"}
-
-Le agradecemos mucho por confiar en nuestro servicio y quedamos atentos a cualquier consulta adicional.
-
-            `.trim();
-
+                                const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, "") || "";
+                                const clienteNombre = servicio.equipo?.cliente?.nombre || "Estimado cliente";
+                                const equipoInfo = `${servicio.equipo?.tipo || ""} ${servicio.equipo?.marca || ""} ${servicio.equipo?.modelo || ""}`.trim();
+                                const mensaje = `Hola ${clienteNombre},\n\nSu equipo *${equipoInfo || "dispositivo"}* ya está listo para ser retirado.\n\n📋 Estado: Listo para entrega\n💵 Costo final: ₡${costoFinal || servicio.costo_final || "-"}\n\nLe agradecemos mucho por confiar en nuestro servicio y quedamos atentos a cualquier consulta adicional.`;
                                 const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
                                 window.open(link, "_blank");
                             }}
                         >
-                            Notificar equipo listo
+                            Notificar equipo listo por WhatsApp
                         </Button>
                     )}
-                    {(estado === "Entregado" && servicio.equipo?.cliente?.telefono) && (
+
+                    {estado === "Entregado" && servicio.equipo?.cliente?.telefono && (
                         <Button
                             type="button"
-                            color="success"
+                            color="primary"
                             className="mb-2"
                             onClick={() => {
-                                const telefono = servicio.equipo.cliente.telefono.replace(/\D/g, "");
-                                const clienteNombre = servicio.equipo.cliente.nombre || "Estimado cliente";
-                                const equipoInfo = `${servicio.equipo.tipo || ""} ${servicio.equipo.marca || ""} ${servicio.equipo.modelo || ""}`.trim();
+                                const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, "") || "";
+                                const clienteNombre = servicio.equipo?.cliente?.nombre || "Estimado cliente";
+                                const equipoInfo = `${servicio.equipo?.tipo || ""} ${servicio.equipo?.marca || ""} ${servicio.equipo?.modelo || ""}`.trim();
                                 const notas = notaTrabajo?.trim() || "No se registraron observaciones adicionales.";
                                 const costo = costoFinal || servicio.costo_final || "-";
-
-                                let mensaje = `
-Hola ${clienteNombre},
-
-Le confirmamos que su equipo *${equipoInfo || "dispositivo"}* ha sido entregado exitosamente.
-
-📋 Estado final: Entregado  
-📝 Trabajo realizado: ${notas}  
-💵 Costo total cancelado: ₡${costo}
-
-✅ Muchas gracias por confiar en nuestro servicio.  
-🤝 Su satisfacción es muy importante para nosotros.  
-
-📲 Recuerde que puede contactarnos nuevamente para futuras reparaciones o mantenimientos. ¡Con gusto le atenderemos!
-            `.trim();
-
+                                const mensaje = `Hola ${clienteNombre},\n\nLe confirmamos que su equipo *${equipoInfo || "dispositivo"}* ha sido entregado exitosamente.\n\n📋 Estado final: Entregado\n📝 Trabajo realizado: ${notas}\n💵 Costo total cancelado: ₡${costo}\n\n✅ Muchas gracias por confiar en nuestro servicio.\n🤝 Su satisfacción es muy importante para nosotros.\n\n📲 Recuerde que puede contactarnos nuevamente para futuras reparaciones o mantenimientos. ¡Con gusto le atenderemos!`;
                                 const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
                                 window.open(link, "_blank");
                             }}
