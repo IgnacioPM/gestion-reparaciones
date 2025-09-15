@@ -51,9 +51,100 @@ export default function NuevoServicioPage() {
         }
         setIsSubmitting(true);
         try {
-            // ...existing logic...
+            let clienteId = cliente.id_cliente;
+            // Si es un cliente nuevo, verificamos si ya existe
+            if (clienteId === "nuevo") {
+                const { data: clienteExistente } = await supabase
+                    .from("clientes")
+                    .select("id_cliente")
+                    .or(`telefono.eq.${cliente.telefono},correo.eq.${cliente.correo}`)
+                    .maybeSingle();
+                if (clienteExistente) {
+                    clienteId = clienteExistente.id_cliente;
+                } else {
+                    const { data: nuevoCliente, error: errorCliente } = await supabase
+                        .from("clientes")
+                        .insert({
+                            nombre: cliente.nombre,
+                            telefono: cliente.telefono,
+                            correo: cliente.correo
+                        })
+                        .select('id_cliente')
+                        .single();
+                    if (errorCliente) {
+                        throw errorCliente;
+                    }
+                    clienteId = nuevoCliente.id_cliente;
+                }
+            }
+
+            // Crear el equipo
+            const { data: nuevoEquipo, error: errorEquipo } = await supabase
+                .from("equipos")
+                .insert({
+                    cliente_id: clienteId,
+                    tipo: data.tipo_dispositivo,
+                    marca: data.marca,
+                    modelo: data.modelo,
+                    serie: data.numero_serie || null
+                })
+                .select('id_equipo')
+                .single();
+            if (errorEquipo) {
+                throw errorEquipo;
+            }
+
+            // Crear el servicio
+            const fechaIngresoCR = dayjs().tz("America/Costa_Rica").toISOString();
+            const fechaEntrega = null;
+            const { error: errorServicio } = await supabase
+                .from("servicios")
+                .insert({
+                    equipo_id: nuevoEquipo.id_equipo,
+                    fecha_ingreso: fechaIngresoCR,
+                    descripcion_falla: data.problema,
+                    estado: "Recibido",
+                    nota_trabajo: data.observaciones || null,
+                    costo_estimado: data.costo_estimado ?? null,
+                    fecha_entrega: fechaEntrega
+                });
+            if (errorServicio) {
+                throw errorServicio;
+            }
+
+            // Mensaje para WhatsApp
+            let mensaje = `🙋‍♂ Hola ${cliente.nombre},\n\n`;
+            mensaje += `✅ *Hemos recibido su equipo.*\n`;
+            mensaje += `\n💻 Dispositivo:\n${data.tipo_dispositivo || ""} ${data.marca || ""} ${data.modelo || ""}`;
+            mensaje += `\n❗ Problema reportado:\n${data.problema || ""}`;
+            mensaje += `\n💰 Costo estimado:\n${data.costo_estimado ? `₡${data.costo_estimado}` : "Pendiente"}`;
+            mensaje += `\n📅 Fecha de ingreso:\n${dayjs(fechaIngresoCR).tz("America/Costa_Rica").format("DD/MM/YYYY HH:mm")}`;
+            mensaje += `\n\nNos comunicaremos con usted cuando el diagnóstico esté listo.\n¡Gracias por confiar en nosotros!`;
+
+            if (cliente.telefono) {
+                const telefonoLimpio = cliente.telefono.replace(/\D/g, "");
+                const linkWhatsApp = `https://wa.me/506${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
+                window.open(linkWhatsApp, "_blank");
+                console.log("Link WhatsApp:", linkWhatsApp);
+            }
+            reset();
+            router.push("/");
         } catch (error) {
-            // ...existing error handling...
+            console.error("Error al registrar servicio:", error);
+            let errorMessage = "Error al registrar el servicio";
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            } else if (typeof error === 'object' && error !== null) {
+                if (typeof error === "object" && error !== null) {
+                    const errObj = error as { message?: string; details?: string };
+                    errorMessage = errObj.message || errObj.details || errorMessage;
+                } else {
+                    errorMessage = String(error) || errorMessage;
+                }
+            }
+            setError("root", {
+                message: errorMessage
+            });
         } finally {
             setIsSubmitting(false);
         }
