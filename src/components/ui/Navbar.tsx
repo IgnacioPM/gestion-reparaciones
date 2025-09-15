@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { supabase } from "@/lib/supabaseClient"
-import { LogOut, Menu, User, ChevronDown } from "lucide-react"
+import { LogOut, User, ChevronDown } from "lucide-react"
 import Image from "next/image"
 import { useAuthStore } from "@/stores/auth"
 import { useUIStore } from "@/stores/ui"
@@ -12,7 +12,7 @@ import { useState, useRef, useEffect } from "react"
 export default function Navbar() {
     const router = useRouter()
     const setUser = useAuthStore((state) => state.setUser)
-    const { isNavbarOpen, toggleNavbar } = useUIStore()
+    // const { isNavbarOpen, toggleNavbar } = useUIStore()
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 

@@ -45,7 +45,7 @@ export default function LoginForm() {
                 setUser(authData.user)
                 router.push('/')
             }
-        } catch (error) {
+    } catch {
             setFormError('root', {
                 message: 'Error al iniciar sesión'
             })

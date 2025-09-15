@@ -13,7 +13,7 @@ if (!(dayjs)._hasTimezonePlugin) {
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { supabase } from "@/lib/supabaseClient"
-import { ArrowLeft, Edit } from "lucide-react"
+import { ArrowLeft } from "lucide-react"
 import Input from "@/components/ui/Input"
 import Button from "@/components/ui/Button"
 import FormError from "@/components/ui/FormError"
