@@ -5,10 +5,12 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 // Inicializar plugins dayjs solo una vez
-if (!(dayjs)._hasTimezonePlugin) {
+// Inicializar plugins dayjs solo una vez (compatible TypeScript)
+let pluginsInitialized = (globalThis as any)._dayjsPluginsInitialized;
+if (!pluginsInitialized) {
     dayjs.extend(utc);
     dayjs.extend(timezone);
-    (dayjs)._hasTimezonePlugin = true;
+    (globalThis as any)._dayjsPluginsInitialized = true;
 }
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -50,80 +52,84 @@ export default function NuevoServicioPage() {
             let clienteId = cliente.id_cliente;
 
             // Si es un cliente nuevo, verificamos si ya existe
-            if (clienteId === "nuevo") {
-                // Primero buscamos si existe un cliente con el mismo teléfono o correo
-                const { data: clienteExistente } = await supabase
-                    .from("clientes")
-                    .select("id_cliente")
-                    .or(`telefono.eq.${cliente.telefono},correo.eq.${cliente.correo}`)
-                    .maybeSingle();
 
-                if (clienteExistente) {
-                    // Si el cliente ya existe, usamos su ID
-                    clienteId = clienteExistente.id_cliente;
-                } else {
-                    // Si no existe, creamos uno nuevo
-                    const { data: nuevoCliente, error: errorCliente } = await supabase
+            try {
+                let clienteId = cliente.id_cliente;
+
+                // Si es un cliente nuevo, verificamos si ya existe
+                if (clienteId === "nuevo") {
+                    // Primero buscamos si existe un cliente con el mismo teléfono o correo
+                    const { data: clienteExistente } = await supabase
                         .from("clientes")
-                        .insert({
-                            nombre: cliente.nombre,
-                            telefono: cliente.telefono,
-                            correo: cliente.correo
-                        })
-                        .select('id_cliente')
-                        .single();
+                        .select("id_cliente")
+                        .or(`telefono.eq.${cliente.telefono},correo.eq.${cliente.correo}`)
+                        .maybeSingle();
 
-                    if (errorCliente) {
-                        throw errorCliente;
+                    if (clienteExistente) {
+                        // Si el cliente ya existe, usamos su ID
+                        clienteId = clienteExistente.id_cliente;
+                    } else {
+                        // Si no existe, creamos uno nuevo
+                        const { data: nuevoCliente, error: errorCliente } = await supabase
+                            .from("clientes")
+                            .insert({
+                                nombre: cliente.nombre,
+                                telefono: cliente.telefono,
+                                correo: cliente.correo
+                            })
+                            .select('id_cliente')
+                            .single();
+
+                        if (errorCliente) {
+                            throw errorCliente;
+                        }
+                        clienteId = nuevoCliente.id_cliente;
                     }
-
-                    clienteId = nuevoCliente.id_cliente;
                 }
-            }
 
-            // Primero crear el equipo
-            const { data: nuevoEquipo, error: errorEquipo } = await supabase
-                .from("equipos")
-                .insert({
-                    cliente_id: clienteId,
-                    tipo: data.tipo_dispositivo,
-                    marca: data.marca,
-                    modelo: data.modelo,
-                    serie: data.numero_serie || null
-                })
-                .select('id_equipo')
-                .single()
+                // Convertir campos numéricos a number si vienen como string
+                const costoEstimado = typeof data.costo_estimado === 'string' ? parseFloat(data.costo_estimado) : data.costo_estimado;
 
-            if (errorEquipo) {
-                throw errorEquipo
-            }
+                // Primero crear el equipo
+                const { data: nuevoEquipo, error: errorEquipo } = await supabase
+                    .from("equipos")
+                    .insert({
+                        cliente_id: clienteId,
+                        tipo: data.tipo_dispositivo,
+                        marca: data.marca,
+                        modelo: data.modelo,
+                        serie: data.numero_serie || null
+                    })
+                    .select('id_equipo')
+                    .single()
 
-            // Luego crear el servicio
-            // Usar la hora local de Costa Rica para fecha_ingreso
-            const fechaIngresoCR = dayjs().tz("America/Costa_Rica").toISOString();
+                if (errorEquipo) {
+                    throw errorEquipo
+                }
 
-            // Si quieres permitir capturar fecha_entrega desde el formulario, aquí puedes agregar el campo y lógica
-            // Por ahora, se envía como null (puedes ajustar si lo agregas al formulario)
-            const fechaEntrega = null;
+                // Luego crear el servicio
+                // Usar la hora local de Costa Rica para fecha_ingreso
+                const fechaIngresoCR = dayjs().tz("America/Costa_Rica").toISOString();
 
-            const { error: errorServicio } = await supabase
-                .from("servicios")
-                .insert({
-                    equipo_id: nuevoEquipo.id_equipo,
-                    fecha_ingreso: fechaIngresoCR,
-                    descripcion_falla: data.problema,
-                    estado: "Recibido", // Si quieres permitir crear como 'Anulado', aquí puedes cambiarlo
-                    nota_trabajo: data.observaciones || null,
-                    costo_estimado: data.costo_estimado || null,
-                    fecha_entrega: fechaEntrega
-                })
+                // Si quieres permitir capturar fecha_entrega desde el formulario, aquí puedes agregar el campo y lógica
+                // Por ahora, se envía como null (puedes ajustar si lo agregas al formulario)
+                const fechaEntrega = null;
 
-            if (errorServicio) {
-                throw errorServicio
-            }
+                const { error: errorServicio } = await supabase
+                    .from("servicios")
+                    .insert({
+                        equipo_id: nuevoEquipo.id_equipo,
+                        fecha_ingreso: fechaIngresoCR,
+                        descripcion_falla: data.problema,
+                        estado: "Recibido", // Si quieres permitir crear como 'Anulado', aquí puedes cambiarlo
+                        nota_trabajo: data.observaciones || null,
+                        costo_estimado: costoEstimado ?? null,
+                        fecha_entrega: fechaEntrega
+                    })
 
-            // Generar link de WhatsApp con +506 y mensaje
-            if (cliente.telefono) {
+                if (errorServicio) {
+                    throw errorServicio
+                }
                 const telefonoLimpio = cliente.telefono.replace(/\D/g, "");
 
                 // Mensaje con iconos más acordes y salto de línea después de los :
@@ -135,10 +141,12 @@ export default function NuevoServicioPage() {
                 mensaje += `\n📅 Fecha de ingreso:\n${dayjs(fechaIngresoCR).tz("America/Costa_Rica").format("DD/MM/YYYY HH:mm")}`;
                 mensaje += `\n\nNos comunicaremos con usted cuando el diagnóstico esté listo.\n¡Gracias por confiar en nosotros!`;
 
-                const linkWhatsApp = `https://wa.me/506${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
-
-                window.open(linkWhatsApp, "_blank");
-                console.log("Link WhatsApp:", linkWhatsApp);
+                if (cliente.telefono) {
+                    const telefonoLimpio = cliente.telefono.replace(/\D/g, "");
+                    const linkWhatsApp = `https://wa.me/506${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
+                    window.open(linkWhatsApp, "_blank");
+                    console.log("Link WhatsApp:", linkWhatsApp);
+                }
             }
 
             // Redireccionar a la página principal
@@ -194,7 +202,7 @@ export default function NuevoServicioPage() {
 
                     <div>
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Información del Dispositivo</h2>
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                        <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Input
                                     label="Tipo de dispositivo"
