@@ -198,7 +198,6 @@ Su equipo *${equipoInfo || "dispositivo"}* ya está listo para ser retirado.
 
 Le agradecemos mucho por confiar en nuestro servicio y quedamos atentos a cualquier consulta adicional.
 
-Lo esperamos.
             `.trim();
 
                                 const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
