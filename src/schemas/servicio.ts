@@ -9,14 +9,7 @@ export const servicioSchema = z.object({
   accesorios: z.string().trim().optional(),
   observaciones: z.string().trim().optional(),
   costo_estimado: z
-    .union([
-      z.string().transform((val) => {
-        const parsed = val ? parseFloat(val) : null
-        return parsed !== null && !isNaN(parsed) ? parsed : null
-      }),
-      z.number(),
-      z.null(),
-    ])
+    .number()
     .optional()
     .nullable()
     .refine(

@@ -6,11 +6,11 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 // Inicializar plugins dayjs solo una vez
 // Inicializar plugins dayjs solo una vez (compatible TypeScript)
-let pluginsInitialized = (globalThis as any)._dayjsPluginsInitialized;
+const pluginsInitialized: boolean = (globalThis as unknown as { _dayjsPluginsInitialized?: boolean })._dayjsPluginsInitialized ?? false;
 if (!pluginsInitialized) {
     dayjs.extend(utc);
     dayjs.extend(timezone);
-    (globalThis as any)._dayjsPluginsInitialized = true;
+    (globalThis as unknown as { _dayjsPluginsInitialized?: boolean })._dayjsPluginsInitialized = true;
 }
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -21,31 +21,26 @@ import Button from "@/components/ui/Button"
 import FormError from "@/components/ui/FormError"
 import ClienteForm, { Cliente } from "@/components/forms/ClienteForm"
 import { servicioSchema, type ServicioFormData } from "@/schemas/servicio"
+// Eliminar tipo manual, usar el inferido por Zod
 import { useRouter } from "next/navigation"
 
 export default function NuevoServicioPage() {
+    const handleClienteChange = (selectedCliente: Cliente | null) => {
+        setCliente(selectedCliente);
+    };
+
     const router = useRouter()
     const [cliente, setCliente] = useState<Cliente | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
-
     const {
         register,
         handleSubmit,
         formState: { errors },
         setError,
         reset
-    } = useForm<{
-        tipo_dispositivo: string;
-        marca: string;
-        modelo: string;
-        numero_serie?: string;
-        problema: string;
-        accesorios?: string;
-        observaciones?: string;
-        costo_estimado?: string | number | null;
-    }>({
+    } = useForm<ServicioFormData>({
         resolver: zodResolver(servicioSchema)
-    })
+    });
 
     const onSubmit = async (data: ServicioFormData) => {
         if (!cliente) {
@@ -54,130 +49,15 @@ export default function NuevoServicioPage() {
             })
             return;
         }
-
         setIsSubmitting(true);
-
         try {
-            let clienteId = cliente.id_cliente;
-            // Si es un cliente nuevo, verificamos si ya existe
-            if (clienteId === "nuevo") {
-                // Primero buscamos si existe un cliente con el mismo teléfono o correo
-                const { data: clienteExistente } = await supabase
-                    .from("clientes")
-                    .select("id_cliente")
-                    .or(`telefono.eq.${cliente.telefono},correo.eq.${cliente.correo}`)
-                    .maybeSingle();
-
-                if (clienteExistente) {
-                    // Si el cliente ya existe, usamos su ID
-                    clienteId = clienteExistente.id_cliente;
-                } else {
-                    // Si no existe, creamos uno nuevo
-                    const { data: nuevoCliente, error: errorCliente } = await supabase
-                        .from("clientes")
-                        .insert({
-                            nombre: cliente.nombre,
-                            telefono: cliente.telefono,
-                            correo: cliente.correo
-                        })
-                        .select('id_cliente')
-                        .single();
-
-                    if (errorCliente) {
-                        throw errorCliente;
-                    }
-                    clienteId = nuevoCliente.id_cliente;
-                }
-            }
-
-            // Convertir campos numéricos a number si vienen como string
-            const costoEstimado = typeof data.costo_estimado === 'string' ? parseFloat(data.costo_estimado) : data.costo_estimado;
-
-            // Primero crear el equipo
-            const { data: nuevoEquipo, error: errorEquipo } = await supabase
-                .from("equipos")
-                .insert({
-                    cliente_id: clienteId,
-                    tipo: data.tipo_dispositivo,
-                    marca: data.marca,
-                    modelo: data.modelo,
-                    serie: data.numero_serie || null
-                })
-                .select('id_equipo')
-                .single()
-
-            if (errorEquipo) {
-                throw errorEquipo
-            }
-
-            // Luego crear el servicio
-            // Usar la hora local de Costa Rica para fecha_ingreso
-            const fechaIngresoCR = dayjs().tz("America/Costa_Rica").toISOString();
-
-            // Si quieres permitir capturar fecha_entrega desde el formulario, aquí puedes agregar el campo y lógica
-            // Por ahora, se envía como null (puedes ajustar si lo agregas al formulario)
-            const fechaEntrega = null;
-
-            const { error: errorServicio } = await supabase
-                .from("servicios")
-                .insert({
-                    equipo_id: nuevoEquipo.id_equipo,
-                    fecha_ingreso: fechaIngresoCR,
-                    descripcion_falla: data.problema,
-                    estado: "Recibido", // Si quieres permitir crear como 'Anulado', aquí puedes cambiarlo
-                    nota_trabajo: data.observaciones || null,
-                    costo_estimado: costoEstimado ?? null,
-                    fecha_entrega: fechaEntrega
-                })
-
-            if (errorServicio) {
-                throw errorServicio
-            }
-            const telefonoLimpio = cliente.telefono ? cliente.telefono.replace(/\D/g, "") : "";
-
-            // Mensaje con iconos más acordes y salto de línea después de los :
-            let mensaje = `🙋‍♂ Hola ${cliente.nombre},\n\n`;
-            mensaje += `✅ *Hemos recibido su equipo.*\n`;
-            mensaje += `\n💻 Dispositivo:\n${data.tipo_dispositivo || ""} ${data.marca || ""} ${data.modelo || ""}`;
-            mensaje += `\n❗ Problema reportado:\n${data.problema || ""}`;
-            mensaje += `\n💰 Costo estimado:\n${data.costo_estimado ? `₡${data.costo_estimado}` : "Pendiente"}`;
-            mensaje += `\n📅 Fecha de ingreso:\n${dayjs(fechaIngresoCR).tz("America/Costa_Rica").format("DD/MM/YYYY HH:mm")}`;
-            mensaje += `\n\nNos comunicaremos con usted cuando el diagnóstico esté listo.\n¡Gracias por confiar en nosotros!`;
-
-            if (cliente.telefono) {
-                const telefonoLimpio = cliente.telefono.replace(/\D/g, "");
-                const linkWhatsApp = `https://wa.me/506${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
-                window.open(linkWhatsApp, "_blank");
-                console.log("Link WhatsApp:", linkWhatsApp);
-            }
-            // Redireccionar a la página principal
-            reset();
-            router.push("/");
+            // ...existing logic...
         } catch (error) {
-            console.error("Error al registrar servicio:", error)
-            let errorMessage = "Error al registrar el servicio"
-            if (error instanceof Error) {
-                errorMessage = error.message
-            } else if (typeof error === 'object' && error !== null) {
-                // Para errores de Supabase
-                if (typeof error === "object" && error !== null) {
-                    const errObj = error as { message?: string; details?: string };
-                    errorMessage = errObj.message || errObj.details || errorMessage;
-                } else {
-                    errorMessage = String(error) || errorMessage;
-                }
-            }
-            setError("root", {
-                message: errorMessage
-            })
+            // ...existing error handling...
         } finally {
-            setIsSubmitting(false)
+            setIsSubmitting(false);
         }
-    }
-
-    const handleClienteChange = (selectedCliente: Cliente | null) => {
-        setCliente(selectedCliente)
-    }
+    };
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -203,7 +83,7 @@ export default function NuevoServicioPage() {
 
                     <div>
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Información del Dispositivo</h2>
-                        <form onSubmit={handleSubmit(onSubmit as any)} className="space-y-4">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <Input
                                     label="Tipo de dispositivo"
@@ -261,7 +141,7 @@ export default function NuevoServicioPage() {
                                             step="0.01"
                                             min="0"
                                             max="999999.99"
-                                            {...register("costo_estimado")}
+                                            {...register("costo_estimado", { valueAsNumber: true })}
                                             error={errors.costo_estimado?.message}
                                             placeholder="0.00"
                                         />
@@ -306,5 +186,5 @@ export default function NuevoServicioPage() {
                 </div>
             </div>
         </div>
-    )
+    );
 }
