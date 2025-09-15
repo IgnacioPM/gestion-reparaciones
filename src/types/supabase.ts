@@ -97,11 +97,10 @@ export interface Database {
           created_at?: string | null
         }
       }
-
     }
-  Views: object
-  Functions: object
-  Enums: object
-  CompositeTypes: object
+    Views: object
+    Functions: object
+    Enums: object
+    CompositeTypes: object
   }
 }
