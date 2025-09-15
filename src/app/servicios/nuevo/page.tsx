@@ -151,7 +151,6 @@ export default function NuevoServicioPage() {
 
             // Redireccionar a la página principal
             reset()
-            reset();
             router.push("/")
         } catch (error) {
             console.error("Error al registrar servicio:", error)
