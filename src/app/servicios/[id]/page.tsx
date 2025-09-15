@@ -9,7 +9,7 @@ import { SectionTitle } from "@/components/ui/SectionTitle"
 import { InfoBlock } from "@/components/ui/InfoBlock"
 import { InfoRow } from "@/components/ui/InfoRow"
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal"
-import React, { useState } from "react"
+import React from "react"
 
 import { Servicio } from "@/types/servicio"
 
@@ -75,7 +75,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
             if (data) {
                 // Si equipo y cliente vienen como array, tomar el primero
                 const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
-                let clienteRaw: any = equipoRaw?.cliente;
+                let clienteRaw = equipoRaw?.cliente as { nombre?: string; telefono?: string; correo?: string } | { nombre?: string; telefono?: string; correo?: string }[] | undefined;
                 if (Array.isArray(clienteRaw)) {
                     clienteRaw = clienteRaw[0];
                 }
