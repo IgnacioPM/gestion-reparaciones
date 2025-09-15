@@ -11,6 +11,8 @@ import { InfoRow } from "@/components/ui/InfoRow"
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal"
 import React, { useState } from "react"
 
+import { Servicio } from "@/types/servicio"
+
 function getBadgeColor(estado: string | null) {
     switch (estado) {
         case "Recibido": return "bg-yellow-100 text-yellow-800"
@@ -36,8 +38,8 @@ function formatFecha(fecha: string) {
 // 👇 hacemos la page asíncrona y sacamos `params` con await
 function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }> }) {
     const [isModalOpen, setIsModalOpen] = React.useState(false);
-    const [servicio, setServicio] = React.useState<any>(null);
-    const [error, setError] = React.useState<any>(null);
+    const [servicio, setServicio] = React.useState<Servicio | null>(null);
+    const [error, setError] = React.useState<{ message?: string } | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [id, setId] = React.useState<string>("");
 
@@ -70,13 +72,45 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                 `)
                 .eq("id_reparacion", id)
                 .single();
-            setServicio(data);
+            if (data) {
+                // Si equipo y cliente vienen como array, tomar el primero
+                const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
+                let clienteRaw: any = equipoRaw?.cliente;
+                if (Array.isArray(clienteRaw)) {
+                    clienteRaw = clienteRaw[0];
+                }
+                const servicioNormalizado: Servicio = {
+                    id_reparacion: data.id_reparacion ?? "",
+                    equipo_id: equipoRaw?.serie ?? "", // Ajusta si tienes el id correcto
+                    fecha_ingreso: data.fecha_ingreso ?? "",
+                    descripcion_falla: data.descripcion_falla ?? null,
+                    estado: data.estado ?? "Recibido",
+                    costo_estimado: data.costo_estimado ?? null,
+                    costo_final: data.costo_final ?? null,
+                    nota_trabajo: data.nota_trabajo ?? null,
+                    fecha_entrega: data.fecha_entrega ?? null,
+                    equipo: equipoRaw ? {
+                        tipo: equipoRaw.tipo ?? "",
+                        marca: equipoRaw.marca ?? "",
+                        modelo: equipoRaw.modelo ?? "",
+                        serie: equipoRaw.serie ?? "",
+                        cliente: clienteRaw && typeof clienteRaw === 'object' ? {
+                            nombre: clienteRaw.nombre ?? "",
+                            telefono: clienteRaw.telefono ?? "",
+                            correo: clienteRaw.correo ?? ""
+                        } : { nombre: "", telefono: "", correo: "" }
+                    } : undefined
+                };
+                setServicio(servicioNormalizado);
+            } else {
+                setServicio(null);
+            }
             setError(error);
             setLoading(false);
         })();
     }, [params, isModalOpen]);
 
-    const handleSave = async (data: Partial<any>) => {
+    const handleSave = async (data: Partial<Servicio>) => {
         if (!id) return;
         await supabase.from("servicios").update(data).eq("id_reparacion", id);
         setIsModalOpen(false);
@@ -141,7 +175,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                             </h1>
                         </div>
                         <span
-                            className={`px-3 py-1 rounded text-sm font-medium border ${getBadgeColor(servicio.estado)} border-opacity-40 shadow-sm select-none`}
+                            className={`px-3 py-1 rounded text-sm font-medium border ${getBadgeColor(servicio.estado ?? "Recibido")} border-opacity-40 shadow-sm select-none`}
                             style={{ letterSpacing: "0.04em" }}
                         >
                             {servicio.estado ?? "Recibido"}
