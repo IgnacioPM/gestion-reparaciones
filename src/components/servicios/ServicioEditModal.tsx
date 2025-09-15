@@ -144,13 +144,113 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                         }
                     />
                 </InfoBlock>
-                <div className="flex justify-end gap-2 mt-6">
-                    <Button type="button" color="secondary" onClick={onClose}>
-                        Cancelar
-                    </Button>
-                    <Button type="button" onClick={handleSave}>
-                        Guardar
-                    </Button>
+                <div className="flex flex-col gap-2 mt-6">
+                    {(estado === "En revisión" && servicio.equipo?.cliente?.telefono) && (
+                        <Button
+                            type="button"
+                            color="success"
+                            className="mb-2"
+                            onClick={() => {
+                                const telefono = servicio.equipo.cliente.telefono.replace(/\D/g, "");
+                                const clienteNombre = servicio.equipo.cliente.nombre || "Estimado cliente";
+                                const equipoInfo = `${servicio.equipo.tipo || ""} ${servicio.equipo.marca || ""} ${servicio.equipo.modelo || ""}`.trim();
+                                const notas = notaTrabajo?.trim() || "No se registraron observaciones adicionales.";
+
+                                let mensaje = `
+Hola ${clienteNombre},
+
+Hemos revisado su equipo *${equipoInfo || "dispositivo"}*.
+
+📋 Estado: En revisión  
+📝 Notas de diagnóstico: ${notas}  
+💵 Costo estimado: ₡${costoEstimado || servicio.costo_estimado || "-"}
+
+Nos confirma si desea que procedamos con la reparación.
+
+Muchas gracias por confiar en nuestro servicio.
+            `.trim();
+
+                                const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
+                                window.open(link, "_blank");
+                            }}
+                        >
+                            Notificar costo estimado
+                        </Button>
+                    )}
+
+                    {(estado === "Listo" && servicio.equipo?.cliente?.telefono) && (
+                        <Button
+                            type="button"
+                            color="success"
+                            className="mb-2"
+                            onClick={() => {
+                                const telefono = servicio.equipo.cliente.telefono.replace(/\D/g, "");
+                                const clienteNombre = servicio.equipo.cliente.nombre || "Estimado cliente";
+                                const equipoInfo = `${servicio.equipo.tipo || ""} ${servicio.equipo.marca || ""} ${servicio.equipo.modelo || ""}`.trim();
+
+                                let mensaje = `
+Hola ${clienteNombre},
+
+Su equipo *${equipoInfo || "dispositivo"}* ya está listo para ser retirado.
+
+📋 Estado: Listo para entrega  
+💵 Costo final: ₡${costoFinal || servicio.costo_final || "-"}
+
+Le agradecemos mucho por confiar en nuestro servicio y quedamos atentos a cualquier consulta adicional.
+
+Lo esperamos.
+            `.trim();
+
+                                const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
+                                window.open(link, "_blank");
+                            }}
+                        >
+                            Notificar equipo listo
+                        </Button>
+                    )}
+                    {(estado === "Entregado" && servicio.equipo?.cliente?.telefono) && (
+                        <Button
+                            type="button"
+                            color="success"
+                            className="mb-2"
+                            onClick={() => {
+                                const telefono = servicio.equipo.cliente.telefono.replace(/\D/g, "");
+                                const clienteNombre = servicio.equipo.cliente.nombre || "Estimado cliente";
+                                const equipoInfo = `${servicio.equipo.tipo || ""} ${servicio.equipo.marca || ""} ${servicio.equipo.modelo || ""}`.trim();
+                                const notas = notaTrabajo?.trim() || "No se registraron observaciones adicionales.";
+                                const costo = costoFinal || servicio.costo_final || "-";
+
+                                let mensaje = `
+Hola ${clienteNombre},
+
+Le confirmamos que su equipo *${equipoInfo || "dispositivo"}* ha sido entregado exitosamente.
+
+📋 Estado final: Entregado  
+📝 Trabajo realizado: ${notas}  
+💵 Costo total cancelado: ₡${costo}
+
+✅ Muchas gracias por confiar en nuestro servicio.  
+🤝 Su satisfacción es muy importante para nosotros.  
+
+📲 Recuerde que puede contactarnos nuevamente para futuras reparaciones o mantenimientos. ¡Con gusto le atenderemos!
+            `.trim();
+
+                                const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
+                                window.open(link, "_blank");
+                            }}
+                        >
+                            Enviar confirmación de entrega
+                        </Button>
+                    )}
+
+                    <div className="flex justify-end gap-2">
+                        <Button type="button" color="secondary" onClick={onClose}>
+                            Cancelar
+                        </Button>
+                        <Button type="button" onClick={handleSave}>
+                            Guardar
+                        </Button>
+                    </div>
                 </div>
             </div>
         </div>
