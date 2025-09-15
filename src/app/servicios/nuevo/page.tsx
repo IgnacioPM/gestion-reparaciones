@@ -61,95 +61,95 @@ export default function NuevoServicioPage() {
             let clienteId = cliente.id_cliente;
             // Si es un cliente nuevo, verificamos si ya existe
             if (clienteId === "nuevo") {
-                    // Primero buscamos si existe un cliente con el mismo teléfono o correo
-                    const { data: clienteExistente } = await supabase
+                // Primero buscamos si existe un cliente con el mismo teléfono o correo
+                const { data: clienteExistente } = await supabase
+                    .from("clientes")
+                    .select("id_cliente")
+                    .or(`telefono.eq.${cliente.telefono},correo.eq.${cliente.correo}`)
+                    .maybeSingle();
+
+                if (clienteExistente) {
+                    // Si el cliente ya existe, usamos su ID
+                    clienteId = clienteExistente.id_cliente;
+                } else {
+                    // Si no existe, creamos uno nuevo
+                    const { data: nuevoCliente, error: errorCliente } = await supabase
                         .from("clientes")
-                        .select("id_cliente")
-                        .or(`telefono.eq.${cliente.telefono},correo.eq.${cliente.correo}`)
-                        .maybeSingle();
+                        .insert({
+                            nombre: cliente.nombre,
+                            telefono: cliente.telefono,
+                            correo: cliente.correo
+                        })
+                        .select('id_cliente')
+                        .single();
 
-                    if (clienteExistente) {
-                        // Si el cliente ya existe, usamos su ID
-                        clienteId = clienteExistente.id_cliente;
-                    } else {
-                        // Si no existe, creamos uno nuevo
-                        const { data: nuevoCliente, error: errorCliente } = await supabase
-                            .from("clientes")
-                            .insert({
-                                nombre: cliente.nombre,
-                                telefono: cliente.telefono,
-                                correo: cliente.correo
-                            })
-                            .select('id_cliente')
-                            .single();
-
-                        if (errorCliente) {
-                            throw errorCliente;
-                        }
-                        clienteId = nuevoCliente.id_cliente;
+                    if (errorCliente) {
+                        throw errorCliente;
                     }
+                    clienteId = nuevoCliente.id_cliente;
                 }
+            }
 
-                // Convertir campos numéricos a number si vienen como string
-                const costoEstimado = typeof data.costo_estimado === 'string' ? parseFloat(data.costo_estimado) : data.costo_estimado;
+            // Convertir campos numéricos a number si vienen como string
+            const costoEstimado = typeof data.costo_estimado === 'string' ? parseFloat(data.costo_estimado) : data.costo_estimado;
 
-                // Primero crear el equipo
-                const { data: nuevoEquipo, error: errorEquipo } = await supabase
-                    .from("equipos")
-                    .insert({
-                        cliente_id: clienteId,
-                        tipo: data.tipo_dispositivo,
-                        marca: data.marca,
-                        modelo: data.modelo,
-                        serie: data.numero_serie || null
-                    })
-                    .select('id_equipo')
-                    .single()
+            // Primero crear el equipo
+            const { data: nuevoEquipo, error: errorEquipo } = await supabase
+                .from("equipos")
+                .insert({
+                    cliente_id: clienteId,
+                    tipo: data.tipo_dispositivo,
+                    marca: data.marca,
+                    modelo: data.modelo,
+                    serie: data.numero_serie || null
+                })
+                .select('id_equipo')
+                .single()
 
-                if (errorEquipo) {
-                    throw errorEquipo
-                }
+            if (errorEquipo) {
+                throw errorEquipo
+            }
 
-                // Luego crear el servicio
-                // Usar la hora local de Costa Rica para fecha_ingreso
-                const fechaIngresoCR = dayjs().tz("America/Costa_Rica").toISOString();
+            // Luego crear el servicio
+            // Usar la hora local de Costa Rica para fecha_ingreso
+            const fechaIngresoCR = dayjs().tz("America/Costa_Rica").toISOString();
 
-                // Si quieres permitir capturar fecha_entrega desde el formulario, aquí puedes agregar el campo y lógica
-                // Por ahora, se envía como null (puedes ajustar si lo agregas al formulario)
-                const fechaEntrega = null;
+            // Si quieres permitir capturar fecha_entrega desde el formulario, aquí puedes agregar el campo y lógica
+            // Por ahora, se envía como null (puedes ajustar si lo agregas al formulario)
+            const fechaEntrega = null;
 
-                const { error: errorServicio } = await supabase
-                    .from("servicios")
-                    .insert({
-                        equipo_id: nuevoEquipo.id_equipo,
-                        fecha_ingreso: fechaIngresoCR,
-                        descripcion_falla: data.problema,
-                        estado: "Recibido", // Si quieres permitir crear como 'Anulado', aquí puedes cambiarlo
-                        nota_trabajo: data.observaciones || null,
-                        costo_estimado: costoEstimado ?? null,
-                        fecha_entrega: fechaEntrega
-                    })
+            const { error: errorServicio } = await supabase
+                .from("servicios")
+                .insert({
+                    equipo_id: nuevoEquipo.id_equipo,
+                    fecha_ingreso: fechaIngresoCR,
+                    descripcion_falla: data.problema,
+                    estado: "Recibido", // Si quieres permitir crear como 'Anulado', aquí puedes cambiarlo
+                    nota_trabajo: data.observaciones || null,
+                    costo_estimado: costoEstimado ?? null,
+                    fecha_entrega: fechaEntrega
+                })
 
-                if (errorServicio) {
-                    throw errorServicio
-                }
-                const telefonoLimpio = cliente.telefono ? cliente.telefono.replace(/\D/g, "") : "";
+            if (errorServicio) {
+                throw errorServicio
+            }
+            const telefonoLimpio = cliente.telefono ? cliente.telefono.replace(/\D/g, "") : "";
 
-                // Mensaje con iconos más acordes y salto de línea después de los :
-                let mensaje = `🙋‍♂ Hola ${cliente.nombre},\n\n`;
-                mensaje += `✅ *Hemos recibido su equipo.*\n`;
-                mensaje += `\n💻 Dispositivo:\n${data.tipo_dispositivo || ""} ${data.marca || ""} ${data.modelo || ""}`;
-                mensaje += `\n❗ Problema reportado:\n${data.problema || ""}`;
-                mensaje += `\n💰 Costo estimado:\n${data.costo_estimado ? `₡${data.costo_estimado}` : "Pendiente"}`;
-                mensaje += `\n📅 Fecha de ingreso:\n${dayjs(fechaIngresoCR).tz("America/Costa_Rica").format("DD/MM/YYYY HH:mm")}`;
-                mensaje += `\n\nNos comunicaremos con usted cuando el diagnóstico esté listo.\n¡Gracias por confiar en nosotros!`;
+            // Mensaje con iconos más acordes y salto de línea después de los :
+            let mensaje = `🙋‍♂ Hola ${cliente.nombre},\n\n`;
+            mensaje += `✅ *Hemos recibido su equipo.*\n`;
+            mensaje += `\n💻 Dispositivo:\n${data.tipo_dispositivo || ""} ${data.marca || ""} ${data.modelo || ""}`;
+            mensaje += `\n❗ Problema reportado:\n${data.problema || ""}`;
+            mensaje += `\n💰 Costo estimado:\n${data.costo_estimado ? `₡${data.costo_estimado}` : "Pendiente"}`;
+            mensaje += `\n📅 Fecha de ingreso:\n${dayjs(fechaIngresoCR).tz("America/Costa_Rica").format("DD/MM/YYYY HH:mm")}`;
+            mensaje += `\n\nNos comunicaremos con usted cuando el diagnóstico esté listo.\n¡Gracias por confiar en nosotros!`;
 
-                if (cliente.telefono) {
-                    const telefonoLimpio = cliente.telefono.replace(/\D/g, "");
-                    const linkWhatsApp = `https://wa.me/506${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
-                    window.open(linkWhatsApp, "_blank");
-                    console.log("Link WhatsApp:", linkWhatsApp);
-                }
+            if (cliente.telefono) {
+                const telefonoLimpio = cliente.telefono.replace(/\D/g, "");
+                const linkWhatsApp = `https://wa.me/506${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
+                window.open(linkWhatsApp, "_blank");
+                console.log("Link WhatsApp:", linkWhatsApp);
+            }
             // Redireccionar a la página principal
             reset();
             router.push("/");
