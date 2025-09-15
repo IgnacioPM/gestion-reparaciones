@@ -34,7 +34,16 @@ export default function NuevoServicioPage() {
         formState: { errors },
         setError,
         reset
-    } = useForm<ServicioFormData>({
+    } = useForm<{
+        tipo_dispositivo: string;
+        marca: string;
+        modelo: string;
+        numero_serie?: string;
+        problema: string;
+        accesorios?: string;
+        observaciones?: string;
+        costo_estimado?: string | number | null;
+    }>({
         resolver: zodResolver(servicioSchema)
     })
 
@@ -43,21 +52,15 @@ export default function NuevoServicioPage() {
             setError("root", {
                 message: "Debe seleccionar o ingresar los datos del cliente"
             })
-            return
+            return;
         }
 
-        setIsSubmitting(true)
+        setIsSubmitting(true);
 
         try {
             let clienteId = cliente.id_cliente;
-
             // Si es un cliente nuevo, verificamos si ya existe
-
-            try {
-                let clienteId = cliente.id_cliente;
-
-                // Si es un cliente nuevo, verificamos si ya existe
-                if (clienteId === "nuevo") {
+            if (clienteId === "nuevo") {
                     // Primero buscamos si existe un cliente con el mismo teléfono o correo
                     const { data: clienteExistente } = await supabase
                         .from("clientes")
@@ -130,7 +133,7 @@ export default function NuevoServicioPage() {
                 if (errorServicio) {
                     throw errorServicio
                 }
-                const telefonoLimpio = cliente.telefono.replace(/\D/g, "");
+                const telefonoLimpio = cliente.telefono ? cliente.telefono.replace(/\D/g, "") : "";
 
                 // Mensaje con iconos más acordes y salto de línea después de los :
                 let mensaje = `🙋‍♂ Hola ${cliente.nombre},\n\n`;
@@ -147,11 +150,9 @@ export default function NuevoServicioPage() {
                     window.open(linkWhatsApp, "_blank");
                     console.log("Link WhatsApp:", linkWhatsApp);
                 }
-            }
-
             // Redireccionar a la página principal
-            reset()
-            router.push("/")
+            reset();
+            router.push("/");
         } catch (error) {
             console.error("Error al registrar servicio:", error)
             let errorMessage = "Error al registrar el servicio"
