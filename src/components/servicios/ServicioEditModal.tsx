@@ -174,7 +174,8 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                                 const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, "") || "";
                                 const clienteNombre = servicio.equipo?.cliente?.nombre || "Estimado cliente";
                                 const equipoInfo = `${servicio.equipo?.tipo || ""} ${servicio.equipo?.marca || ""} ${servicio.equipo?.modelo || ""}`.trim();
-                                const mensaje = `Hola ${clienteNombre},\n\nSu equipo *${equipoInfo || "dispositivo"}* ya está listo para ser retirado.\n\n📋 Estado: Listo para entrega\n💵 Costo final: ₡${costoFinal || servicio.costo_final || "-"}\n\nLe agradecemos mucho por confiar en nuestro servicio y quedamos atentos a cualquier consulta adicional.`;
+                                const notas = notaTrabajo?.trim() || "No se registraron observaciones adicionales.";
+                                const mensaje = `Hola ${clienteNombre},\n\nSu equipo *${equipoInfo || "dispositivo"}* ya está listo para ser retirado.\n\n📋 Estado: Listo para entrega\n📝 Trabajo realizado: ${notas}\n💵 Costo final: ₡${costoFinal || servicio.costo_final || "-"}\n\nLe agradecemos mucho por confiar en nuestro servicio y quedamos atentos a cualquier consulta adicional.`;
                                 const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
                                 window.open(link, "_blank");
                             }}
