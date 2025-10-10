@@ -1,0 +1,40 @@
+/* Show only .print-only elements when printing, hide otherwise */
+.print-only {
+  display: none !important;
+}
+@media print {
+  .print-only {
+    display: block !important;
+  }
+}
+/* Hide .print-only by default, show only when printing */
+.print-only {
+  display: none !important;
+}
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .printable-servicio,
+  .printable-servicio * {
+    visibility: visible !important;
+  }
+  .printable-servicio {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    background: white !important;
+    color: black !important;
+    z-index: 9999;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print\:hidden {
+    display: none !important;
+  }
+}

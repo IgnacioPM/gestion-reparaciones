@@ -2,6 +2,7 @@
 // app/servicios/[id]/page.tsx
 import { supabase } from "@/lib/supabaseClient"
 import Navbar from "@/components/ui/Navbar"
+import "@/styles/print.css"
 import { ArrowLeft, Edit } from "lucide-react"
 import Link from "next/link"
 import { FormattedAmount } from "@/components/ui/FormattedAmount"
@@ -9,7 +10,9 @@ import { SectionTitle } from "@/components/ui/SectionTitle"
 import { InfoBlock } from "@/components/ui/InfoBlock"
 import { InfoRow } from "@/components/ui/InfoRow"
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal"
+
 import React from "react"
+import { ServicioPrintable } from "@/components/servicios/ServicioPrintable"
 
 import { Servicio } from "@/types/servicio"
 
@@ -217,8 +220,26 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                             </InfoBlock>
                         </div>
                     </div>
+
+                    {/* Printable Service Details & Print Button */}
+                    {servicio && (
+                        <div>
+                            <div className="flex justify-end mr-4 mb-4 print:hidden">
+                                <button
+                                    className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors"
+                                    onClick={() => window.print()}
+                                >
+                                    Imprimir
+                                </button>
+                            </div>
+                            <div className="printable-servicio print-only" id="printable-servicio">
+                                <ServicioPrintable servicio={servicio} />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </main>
+
             <ServicioEditModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
