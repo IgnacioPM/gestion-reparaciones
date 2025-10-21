@@ -1,16 +1,92 @@
 import { create } from 'zustand'
-import { User } from '@supabase/supabase-js'
+import { supabase } from '@/lib/supabaseClient' // Asegúrate que la ruta a tu cliente supabase sea correcta
+import { Session, User } from '@supabase/supabase-js'
 
-interface AuthStore {
-  user: User | null
-  isLoading: boolean
-  setUser: (user: User | null) => void
-  setLoading: (isLoading: boolean) => void
+// 1. Definimos los tipos basados en tu esquema
+// Deberías generar estos tipos con la CLI de Supabase para que sean exactos
+type UsuarioProfile = {
+  id_usuario: string;
+  nombre: string;
+  email: string;
+  rol: string;
+  empresa_id: string;
+  empresa: {
+    id: string;
+    nombre: string;
+    // ...otros campos de empresa
+  } | null;
 }
 
-export const useAuthStore = create<AuthStore>((set) => ({
-  user: null,
-  isLoading: true,
-  setUser: (user) => set({ user }),
-  setLoading: (isLoading) => set({ isLoading }),
-}))
+type AuthState = {
+  session: Session | null;
+  profile: UsuarioProfile | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  checkSession: () => Promise<void>;
+}
+
+export const useAuthStore = create<AuthState>((set, get) => ({
+  session: null,
+  profile: null,
+  loading: true,
+
+  // Función de Login Modificada
+  login: async (email, password) => {
+    set({ loading: true });
+    try {
+      // 1. Autenticar al usuario
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      if (authError) throw authError;
+      if (!authData.user) throw new Error('No se encontró el usuario');
+
+      // 2. Obtener el perfil y la empresa desde tu tabla 'usuarios'
+      const { data: profileData, error: profileError } = await supabase
+        .from('usuarios')
+        .select(`
+          *,
+          empresa:empresas(*)
+        `)
+        .eq('auth_uid', authData.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // 3. Actualizar el estado global con toda la información
+      set({ session: authData.session, profile: profileData, loading: false });
+
+    } catch (error) {
+      console.error('Error en el login:', error);
+      set({ loading: false });
+      // Opcional: podrías guardar el mensaje de error en el estado
+      throw error;
+    }
+  },
+
+  // Función de Logout
+  logout: async () => {
+    set({ loading: true });
+    await supabase.auth.signOut();
+    set({ session: null, profile: null, loading: false });
+  },
+
+  // Función para verificar la sesión al cargar la app
+  checkSession: async () => {
+    const { data: authData } = await supabase.auth.getSession();
+    if (authData.session) {
+       const { data: profileData, error: profileError } = await supabase
+        .from('usuarios')
+        .select(`
+          *,
+          empresa:empresas(*)
+        `)
+        .eq('auth_uid', authData.session.user.id)
+        .single();
+      
+      if (profileData) {
+        set({ session: authData.session, profile: profileData });
+      }
+    }
+    set({ loading: false });
+  }
+}));

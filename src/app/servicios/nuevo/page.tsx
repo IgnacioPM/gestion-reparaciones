@@ -5,7 +5,6 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 // Inicializar plugins dayjs solo una vez
-// Inicializar plugins dayjs solo una vez (compatible TypeScript)
 const pluginsInitialized: boolean = (globalThis as unknown as { _dayjsPluginsInitialized?: boolean })._dayjsPluginsInitialized ?? false;
 if (!pluginsInitialized) {
     dayjs.extend(utc);
@@ -21,8 +20,8 @@ import Button from "@/components/ui/Button"
 import FormError from "@/components/ui/FormError"
 import ClienteForm, { Cliente } from "@/components/forms/ClienteForm"
 import { servicioSchema, type ServicioFormData } from "@/schemas/servicio"
-// Eliminar tipo manual, usar el inferido por Zod
 import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/stores/auth"; // <-- 1. IMPORTAR STORE
 
 export default function NuevoServicioPage() {
     const handleClienteChange = (selectedCliente: Cliente | null) => {
@@ -30,6 +29,7 @@ export default function NuevoServicioPage() {
     };
 
     const router = useRouter()
+    const { profile } = useAuthStore(); // <-- 2. OBTENER PERFIL
     const [cliente, setCliente] = useState<Cliente | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const {
@@ -49,6 +49,14 @@ export default function NuevoServicioPage() {
             })
             return;
         }
+
+        // 3. VALIDAR Y OBTENER EMPRESA ID
+        const empresaId = profile?.empresa_id;
+        if (!empresaId) {
+            setError("root", { message: "Error: No se pudo identificar la empresa del usuario." });
+            return;
+        }
+
         setIsSubmitting(true);
         try {
             let clienteId = cliente.id_cliente;
@@ -67,7 +75,8 @@ export default function NuevoServicioPage() {
                         .insert({
                             nombre: cliente.nombre,
                             telefono: cliente.telefono,
-                            correo: cliente.correo
+                            correo: cliente.correo,
+                            empresa_id: empresaId // <-- 4. AÑADIR EMPRESA_ID
                         })
                         .select('id_cliente')
                         .single();
@@ -86,7 +95,8 @@ export default function NuevoServicioPage() {
                     tipo: data.tipo_dispositivo,
                     marca: data.marca,
                     modelo: data.modelo,
-                    serie: data.numero_serie || null
+                    serie: data.numero_serie || null,
+                    empresa_id: empresaId // <-- 4. AÑADIR EMPRESA_ID
                 })
                 .select('id_equipo')
                 .single();
@@ -106,7 +116,8 @@ export default function NuevoServicioPage() {
                     estado: "Recibido",
                     nota_trabajo: data.observaciones || null,
                     costo_estimado: data.costo_estimado ?? null,
-                    fecha_entrega: fechaEntrega
+                    fecha_entrega: fechaEntrega,
+                    empresa_id: empresaId // <-- 4. AÑADIR EMPRESA_ID
                 });
             if (errorServicio) {
                 throw errorServicio;

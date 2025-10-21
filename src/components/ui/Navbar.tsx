@@ -1,24 +1,23 @@
-"use client"
+'use client'
 
 import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabaseClient"
 import { LogOut, User, ChevronDown } from "lucide-react"
 import Image from "next/image"
 import { useAuthStore } from "@/stores/auth"
-import { useUIStore } from "@/stores/ui"
 import { ThemeToggle } from "./ThemeToggle"
 import { useState, useRef, useEffect } from "react"
 
 export default function Navbar() {
     const router = useRouter()
-    const setUser = useAuthStore((state) => state.setUser)
-    // const { isNavbarOpen, toggleNavbar } = useUIStore()
+    // Obtenemos el perfil y la función de logout del store
+    const { profile, logout } = useAuthStore()
+    
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const menuRef = useRef<HTMLDivElement>(null)
 
+    // La nueva función de logout
     const handleLogout = async () => {
-        await supabase.auth.signOut()
-        setUser(null)
+        await logout() // Llama a la función del store
         router.push("/login")
     }
 
@@ -45,7 +44,8 @@ export default function Navbar() {
                     className="object-contain"
                 />
                 <h1 className="text-base sm:text-xl font-semibold text-gray-800 dark:text-white transition-colors">
-                    Control de reparaciones
+                    {/* Muestra el nombre de la empresa si existe */}
+                    {profile?.empresa?.nombre || 'Control de reparaciones'}
                 </h1>
             </div>
 
@@ -58,12 +58,15 @@ export default function Navbar() {
                         className="flex items-center gap-2 text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white transition-colors py-1.5 px-2 rounded-md hover:bg-gray-100 dark:hover:bg-gray-700"
                     >
                         <User className="w-5 h-5" />
-                        <span className="hidden sm:inline">Usuario</span>
+                        {/* Muestra el nombre del usuario si existe */}
+                        <span className="hidden sm:inline font-medium">
+                            {profile?.nombre || profile?.email || 'Usuario'}
+                        </span>
                         <ChevronDown className="w-4 h-4" />
                     </button>
 
                     {isMenuOpen && (
-                        <div className="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5">
+                        <div className="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
                             <div className="py-1">
                                 <button
                                     onClick={handleLogout}

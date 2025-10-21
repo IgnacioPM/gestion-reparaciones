@@ -1,73 +1,48 @@
-"use client"
+'use client'
 
-import { useEffect } from "react"
-import { useAuthStore } from "@/stores/auth"
-import { supabase } from "@/lib/supabaseClient"
+import { useAuthStore } from '@/stores/auth'
+import { supabase } from '@/lib/supabaseClient'
+import { useEffect } from 'react'
 
+/**
+ * Este componente se encarga de:
+ * 1. Verificar si existe una sesión de usuario cuando la app carga.
+ * 2. Mantener el estado de autenticación sincronizado si el usuario
+ *    inicia o cierra sesión en otra pestaña.
+ */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const { setUser, setLoading } = useAuthStore()
+  const { checkSession, loading } = useAuthStore()
 
-    useEffect(() => {
-        setLoading(true);
+  useEffect(() => {
+    // Al montar el componente, verificamos la sesión del usuario.
+    // Esta función obtiene la sesión Y el perfil de la base de datos.
+    checkSession()
 
-        const deviceId = window.navigator.userAgent + window.navigator.platform;
-        const savedDeviceId = localStorage.getItem("deviceId");
+    // Creamos un listener para los cambios en el estado de autenticación.
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Cuando el estado cambia, volvemos a llamar a checkSession
+      // para recargar los datos del perfil o limpiar el estado.
+      checkSession()
+    })
 
-        const initializeAuth = async () => {
-            try {
-                const { data: { session } } = await supabase.auth.getSession();
-                setUser(session?.user ?? null);
+    // Al desmontar el componente, nos desuscribimos del listener.
+    return () => {
+      subscription.unsubscribe()
+    }
+  }, [checkSession])
 
-                // Si no hay sesión, limpiar deviceId y redirigir a login (sin signOut para evitar bucle)
-                if (!session?.user) {
-                    localStorage.removeItem("deviceId");
-                    if (window.location.pathname !== '/login') {
-                        window.location.href = '/login';
-                    }
-                    return;
-                }
+  // Mientras se verifica la sesión por primera vez, mostramos un loader.
+  // Esto previene que se muestren páginas protegidas brevemente.
+  if (loading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        {/* Aquí puedes agregar tu componente Spinner o Logo */}
+        <p>Cargando...</p>
+      </div>
+    )
+  }
 
-                // Si hay sesión y el deviceId guardado es diferente, cerrar sesión
-                if (session?.user && savedDeviceId && savedDeviceId !== deviceId) {
-                    await supabase.auth.signOut();
-                    localStorage.removeItem("deviceId");
-                    window.location.href = '/login';
-                    return;
-                }
-
-                // Si no hay deviceId guardado y hay sesión, guardar el actual
-                if (session?.user && !savedDeviceId) {
-                    localStorage.setItem("deviceId", deviceId);
-                }
-            } catch (error) {
-                console.error('Error initializing auth:', error);
-                setUser(null);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        // Escuchar cambios en la autenticación
-        const { data: { subscription } } = supabase.auth.onAuthStateChange(
-            async (event, session) => {
-                setUser(session?.user ?? null);
-                if (event === 'SIGNED_OUT') {
-                    localStorage.removeItem("deviceId");
-                    window.location.href = '/login';
-                }
-                // Si se inicia sesión en este dispositivo, guardar deviceId
-                if (event === 'SIGNED_IN' && session?.user) {
-                    localStorage.setItem("deviceId", deviceId);
-                }
-            }
-        );
-
-        initializeAuth();
-
-        return () => {
-            subscription.unsubscribe();
-        };
-    }, [setUser, setLoading]);
-
-    return <>{children}</>
+  return <>{children}</>
 }
