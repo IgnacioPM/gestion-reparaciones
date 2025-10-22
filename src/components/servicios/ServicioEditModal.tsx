@@ -7,9 +7,9 @@ import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { FormattedAmount } from "@/components/ui/FormattedAmount";
 import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button";
-import { InfoBlock } from "@/components/ui/InfoBlock";
-import { SectionTitle } from "@/components/ui/SectionTitle";
+import Button from "@/components/ui/Button"; // Keep this line
+import { InfoBlock } from "@/components/ui/InfoBlock"; // Corrected import
+import SectionTitle from "@/components/ui/SectionTitle";
 import { InfoRow } from "@/components/ui/InfoRow";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
