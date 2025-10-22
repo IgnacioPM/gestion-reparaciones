@@ -21,7 +21,7 @@ type AuthState = {
   session: Session | null
   profile: UsuarioProfile | null
   loading: boolean
-  error: string | null 
+  error: string | null
   login: (email: string, password: string) => Promise<void>
   logout: () => Promise<void>
   checkSession: () => Promise<void>
@@ -50,7 +50,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .maybeSingle()
 
       if (profileError) throw profileError
-      if (!profileData) throw new Error('No se encontró el perfil del usuario'+ authData.user.id)
+      if (!profileData)
+        throw new Error(
+          'No se encontró el perfil del usuario' + authData.user.id
+        )
 
       // 3. Actualizar el estado global con toda la información
       set({
@@ -59,27 +62,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         loading: false,
         error: null,
       })
-    } catch (error: any) {
-      // Manejo seguro de errores de Supabase
-      let errorMessage = 'Ocurrió un error'
-      if (error) {
-        if (typeof error === 'string') {
-          errorMessage = error
-        } else if ('message' in error) {
-          errorMessage = error.message
-        } else if ('error' in error && 'description' in error) {
-          errorMessage = `${error.error}: ${error.description}`
-        } else {
-          // fallback seguro sin JSON.stringify
-          errorMessage = Object.keys(error)
-            .map((key) => `${key}: ${String(error[key])}`)
-            .join(', ')
-        }
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error('Error en login:', error.message)
+      } else {
+        console.error('Error en login desconocido:', error)
       }
-
-      console.error('Error en el login:', errorMessage)
-      set({ loading: false, error: errorMessage })
-      throw error
     }
   },
 
