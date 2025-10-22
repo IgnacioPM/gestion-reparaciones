@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { loginSchema, LoginData } from '@/schemas/auth' // Asumo que usas Zod
+import { loginSchema, LoginData } from '@/schemas/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -26,11 +26,13 @@ export default function LoginForm() {
     setError(null)
     try {
       await login(data.email, data.password)
-      // Si el login es exitoso, el AuthProvider o un layout se encargará de redirigir
       router.push('/') // Redirige al dashboard
-    } catch (e: any) {
-      // Aquí puedes usar tu mapeo de errores de 'auth-errors.ts'
-      setError(e.message || 'Ocurrió un error inesperado')
+    } catch (e: unknown) {  // 👈 Aquí está el cambio
+      if (e instanceof Error) {
+        setError(e.message)
+      } else {
+        setError('Ocurrió un error inesperado')
+      }
     }
   }
 
