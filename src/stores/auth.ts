@@ -5,88 +5,103 @@ import { Session, User } from '@supabase/supabase-js'
 // 1. Definimos los tipos basados en tu esquema
 // Deberías generar estos tipos con la CLI de Supabase para que sean exactos
 type UsuarioProfile = {
-  id_usuario: string;
-  nombre: string;
-  email: string;
-  rol: string;
-  empresa_id: string;
+  id_usuario: string
+  nombre: string
+  email: string
+  rol: string
+  empresa_id: string
   empresa: {
-    id: string;
-    nombre: string;
+    id: string
+    nombre: string
     // ...otros campos de empresa
-  } | null;
+  } | null
 }
 
 type AuthState = {
-  session: Session | null;
-  profile: UsuarioProfile | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
-  checkSession: () => Promise<void>;
+  session: Session | null
+  profile: UsuarioProfile | null
+  loading: boolean
+  error: string | null 
+  login: (email: string, password: string) => Promise<void>
+  logout: () => Promise<void>
+  checkSession: () => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   session: null,
   profile: null,
   loading: true,
+  error: null, // <-- inicializamos en null
 
-  // Función de Login Modificada
   login: async (email, password) => {
-    set({ loading: true });
+    set({ loading: true, error: null }) // <-- reseteamos error al iniciar
     try {
       // 1. Autenticar al usuario
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({ email, password });
-      if (authError) throw authError;
-      if (!authData.user) throw new Error('No se encontró el usuario');
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({ email, password })
+      if (authError) throw authError
+      if (!authData.user) throw new Error('No se encontró el usuario')
 
       // 2. Obtener el perfil y la empresa desde tu tabla 'usuarios'
       const { data: profileData, error: profileError } = await supabase
         .from('usuarios')
-        .select(`
-          *,
-          empresa:empresas(*)
-        `)
+        .select(`*, empresa:empresas(*)`)
         .eq('auth_uid', authData.user.id)
-        .single();
+        .maybeSingle()
 
-      if (profileError) throw profileError;
+      if (profileError) throw profileError
+      if (!profileData) throw new Error('No se encontró el perfil del usuario'+ authData.user.id)
 
       // 3. Actualizar el estado global con toda la información
-      set({ session: authData.session, profile: profileData, loading: false });
+      set({
+        session: authData.session,
+        profile: profileData,
+        loading: false,
+        error: null,
+      })
+    } catch (error: any) {
+      // Manejo seguro de errores de Supabase
+      let errorMessage = 'Ocurrió un error'
+      if (error) {
+        if (typeof error === 'string') {
+          errorMessage = error
+        } else if ('message' in error) {
+          errorMessage = error.message
+        } else if ('error' in error && 'description' in error) {
+          errorMessage = `${error.error}: ${error.description}`
+        } else {
+          // fallback seguro sin JSON.stringify
+          errorMessage = Object.keys(error)
+            .map((key) => `${key}: ${String(error[key])}`)
+            .join(', ')
+        }
+      }
 
-    } catch (error) {
-      console.error('Error en el login:', error);
-      set({ loading: false });
-      // Opcional: podrías guardar el mensaje de error en el estado
-      throw error;
+      console.error('Error en el login:', errorMessage)
+      set({ loading: false, error: errorMessage })
+      throw error
     }
   },
 
-  // Función de Logout
   logout: async () => {
-    set({ loading: true });
-    await supabase.auth.signOut();
-    set({ session: null, profile: null, loading: false });
+    set({ loading: true, error: null })
+    await supabase.auth.signOut()
+    set({ session: null, profile: null, loading: false })
   },
 
-  // Función para verificar la sesión al cargar la app
   checkSession: async () => {
-    const { data: authData } = await supabase.auth.getSession();
+    const { data: authData } = await supabase.auth.getSession()
     if (authData.session) {
-       const { data: profileData, error: profileError } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('usuarios')
-        .select(`
-          *,
-          empresa:empresas(*)
-        `)
+        .select(`*, empresa:empresas(*)`)
         .eq('auth_uid', authData.session.user.id)
-        .single();
-      
+        .single()
+
       if (profileData) {
-        set({ session: authData.session, profile: profileData });
+        set({ session: authData.session, profile: profileData })
       }
     }
-    set({ loading: false });
-  }
-}));
+    set({ loading: false })
+  },
+}))

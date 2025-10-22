@@ -22,7 +22,6 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio }
             {/* Encabezado tipo factura */}
             <header className="mb-6 border-b pb-2">
                 <h1 className="text-3xl font-bold">Detalle de Servicio</h1>
-                <p className="text-gray-600 print-only">ID: {servicio.id_reparacion}</p>
                 <p className="text-gray-600">Estado: {servicio.estado}</p>
             </header>
 
