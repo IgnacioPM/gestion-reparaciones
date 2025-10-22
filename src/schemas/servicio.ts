@@ -18,6 +18,7 @@ export const servicioSchema = z.object({
         (typeof val === 'number' && val >= 0 && val <= 999999.99),
       'El costo debe ser un número válido entre 0 y 999,999.99'
     ),
+  creado_por: z.string().optional().nullable(),
 })
 
 export type ServicioFormData = z.infer<typeof servicioSchema>

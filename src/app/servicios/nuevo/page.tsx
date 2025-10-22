@@ -117,7 +117,8 @@ export default function NuevoServicioPage() {
                     nota_trabajo: data.observaciones || null,
                     costo_estimado: data.costo_estimado ?? null,
                     fecha_entrega: fechaEntrega,
-                    empresa_id: empresaId
+                    empresa_id: empresaId,
+                    creado_por: profile.id_usuario
                 });
             if (errorServicio) {
                 throw errorServicio;

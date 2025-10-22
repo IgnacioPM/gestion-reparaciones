@@ -14,6 +14,9 @@ interface Servicio {
     costo_estimado: number | null
     nota_trabajo: string | null
     fecha_entrega: string | null
+    costo_final: number | null
+    creado_por: string | null
+    creador: string // Mapeado a string
     equipo?: {
         tipo: string
         marca: string
@@ -104,8 +107,6 @@ export default function ServiciosTable() {
                 const from = (currentPage - 1) * itemsPerPage
                 const to = from + itemsPerPage - 1
 
-                console.log("Cargando servicios - página:", currentPage);
-
                 // Construir la consulta base
                 let query = supabase
                     .from('servicios')
@@ -119,6 +120,10 @@ export default function ServiciosTable() {
                         costo_final,
                         nota_trabajo,
                         fecha_entrega,
+                        creado_por,
+                        creador:creado_por (
+                            nombre
+                        ),
                         equipo:equipo_id(
                             tipo,
                             marca,
@@ -136,8 +141,6 @@ export default function ServiciosTable() {
                     query = query.eq('estado', filtroEstado)
                 }
 
-                // No aplicar filtros en la consulta, filtrar en el frontend
-
                 // Aplicar paginación y ordenar por fecha más reciente
                 const { data, error, count } = await query
                     .order('fecha_ingreso', { ascending: false })
@@ -150,10 +153,10 @@ export default function ServiciosTable() {
                 if (data && count !== null) {
                     // Transformar los datos para que coincidan con nuestra interfaz Servicio
                     let serviciosFormateados = data.map(item => {
-                        // Si equipo es array, tomar el primero
                         const equipo = Array.isArray(item.equipo) ? item.equipo[0] : item.equipo;
-                        // Si cliente es array, tomar el primero
-                        const cliente = equipo && Array.isArray(equipo.cliente) ? equipo.cliente[0] : equipo?.cliente;
+                        const cliente = equipo && (Array.isArray(equipo.cliente) ? equipo.cliente[0] : equipo.cliente);
+                        const creador = Array.isArray(item.creador) ? item.creador[0] : item.creador;
+
                         return {
                             id_reparacion: item.id_reparacion,
                             equipo_id: item.equipo_id,
@@ -164,17 +167,19 @@ export default function ServiciosTable() {
                             costo_final: item.costo_final,
                             nota_trabajo: item.nota_trabajo,
                             fecha_entrega: item.fecha_entrega,
+                            creado_por: item.creado_por,
+                            creador: creador ? creador.nombre : 'Desconocido',
                             equipo: equipo ? {
                                 tipo: equipo.tipo,
                                 marca: equipo.marca,
                                 modelo: equipo.modelo,
                                 serie: equipo.serie,
                                 cliente: cliente ? {
-                                    nombre: cliente && !Array.isArray(cliente) ? cliente.nombre : undefined,
-                                    telefono: cliente && !Array.isArray(cliente) ? cliente.telefono : undefined
+                                    nombre: cliente.nombre,
+                                    telefono: cliente.telefono
                                 } : undefined
                             } : undefined
-                        }
+                        };
                     });
 
                     // Filtrar en el frontend por los tres campos (OR)
@@ -193,8 +198,8 @@ export default function ServiciosTable() {
                     }
 
                     setServicios(serviciosFormateados)
-                    setTotalServicios(serviciosFormateados.length)
-                    setTotalPages(Math.ceil(serviciosFormateados.length / itemsPerPage))
+                    setTotalServicios(count)
+                    setTotalPages(Math.ceil(count / itemsPerPage))
                 }
             } catch (error) {
                 if (error && typeof error === 'object' && 'message' in error) {
@@ -286,6 +291,9 @@ export default function ServiciosTable() {
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 Fecha
                             </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Creado por
+                            </th>
                         </tr>
                     </thead>
                     <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -348,6 +356,11 @@ export default function ServiciosTable() {
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                                         {formatDate(servicio.fecha_ingreso)}
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm text-gray-900 dark:text-white">
+                                            {servicio.creador || 'Desconocido'}
+                                        </div>
                                     </td>
                                 </tr>
                             ))

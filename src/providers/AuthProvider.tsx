@@ -3,42 +3,46 @@
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabaseClient'
 import { useEffect } from 'react'
+import { usePathname, useRouter } from 'next/navigation'
 
-/**
- * Este componente se encarga de:
- * 1. Verificar si existe una sesión de usuario cuando la app carga.
- * 2. Mantener el estado de autenticación sincronizado si el usuario
- *    inicia o cierra sesión en otra pestaña.
- */
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { checkSession, loading } = useAuthStore()
+  const router = useRouter()
+  const pathname = usePathname()
 
   useEffect(() => {
-    // Al montar el componente, verificamos la sesión del usuario.
-    // Esta función obtiene la sesión Y el perfil de la base de datos.
-    checkSession()
+    const verifySession = async () => {
+      try {
+        await checkSession()
+      } catch (error: any) {
+        if (error.message?.includes('Invalid Refresh Token')) {
+          await supabase.auth.signOut()
+          if (pathname !== '/login') {
+            router.push('/login')
+          }
+        }
+      }
+    }
 
-    // Creamos un listener para los cambios en el estado de autenticación.
+    verifySession()
+
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      // Cuando el estado cambia, volvemos a llamar a checkSession
-      // para recargar los datos del perfil o limpiar el estado.
+      // Si cierra sesión en otra pestaña
+      if ((event === 'SIGNED_OUT' || !session) && pathname !== '/login') {
+        router.push('/login')
+      }
+      // Refresca datos del perfil si hay sesión
       checkSession()
     })
 
-    // Al desmontar el componente, nos desuscribimos del listener.
-    return () => {
-      subscription.unsubscribe()
-    }
-  }, [checkSession])
+    return () => subscription.unsubscribe()
+  }, [checkSession, router, pathname])
 
-  // Mientras se verifica la sesión por primera vez, mostramos un loader.
-  // Esto previene que se muestren páginas protegidas brevemente.
   if (loading) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
-        {/* Aquí puedes agregar tu componente Spinner o Logo */}
         <p>Cargando...</p>
       </div>
     )

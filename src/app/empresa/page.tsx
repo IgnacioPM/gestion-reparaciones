@@ -63,49 +63,77 @@ export default function EditarEmpresaPage() {
     const handleLogoUpload = async (event: ChangeEvent<HTMLInputElement>) => {
         try {
             setUploading(true)
+
             if (!event.target.files || event.target.files.length === 0) {
                 throw new Error('Debes seleccionar una imagen para subir.')
             }
 
             const file = event.target.files[0]
             const fileExt = file.name.split('.').pop()
-            const fileName = `${profile?.empresa_id}-${Date.now()}.${fileExt}`
-            const filePath = `logos/${fileName}`
+            if (!fileExt) throw new Error('El archivo debe tener una extensión válida.')
+
+            const empresaId = profile?.empresa_id
+            if (!empresaId) throw new Error('No se encontró el ID de la empresa.')
+
+            const folderPath = `${empresaId}`
+
+            // 1️⃣ Listar archivos existentes en la carpeta de la empresa.
+            const { data: existingFiles, error: listError } = await supabase.storage
+                .from('logos')
+                .list(folderPath)
+
+            if (listError) {
+                // No es un error fatal si la carpeta no existe, puede ser la primera vez.
+                console.warn(`No se pudo listar la carpeta ${folderPath}:`, listError.message)
+            }
+
+            // 2️⃣ Si hay archivos, borrarlos para asegurar que solo haya un logo.
+            if (existingFiles && existingFiles.length > 0) {
+                const filesToDelete = existingFiles.map(f => `${folderPath}/${f.name}`)
+                const { error: deleteError } = await supabase.storage
+                    .from('logos')
+                    .remove(filesToDelete)
+
+                if (deleteError) {
+                    // Advertir pero no detener el proceso, para permitir subir el nuevo logo.
+                    console.warn('No se pudieron borrar los logos anteriores:', deleteError.message)
+                }
+            }
+
+            // 3️⃣ Subir el nuevo logo a la carpeta de la empresa.
+            const newFileName = `logo-${Date.now()}.${fileExt}`
+            const filePath = `${folderPath}/${newFileName}`
 
             const { error: uploadError } = await supabase.storage
                 .from('logos')
-                .upload(filePath, file, { upsert: true })
-
+                .upload(filePath, file)
             if (uploadError) throw uploadError
 
+            // 4️⃣ Obtener URL pública del nuevo logo.
             const { data: publicUrlData } = supabase.storage
                 .from('logos')
                 .getPublicUrl(filePath)
-
             const logoUrl = publicUrlData.publicUrl
 
+            // 5️⃣ Actualizar la URL del logo en la tabla 'empresas'.
             const { error: updateError } = await supabase
                 .from('empresas')
                 .update({ logo_url: logoUrl })
-                .eq('id', profile?.empresa_id)
-
+                .eq('id', empresaId)
             if (updateError) throw updateError
 
-            if (empresa) {
-                setEmpresa({ ...empresa, logo_url: logoUrl })
-            }
+            if (empresa) setEmpresa({ ...empresa, logo_url: logoUrl })
+
             toast.success('Logo actualizado correctamente')
         } catch (error) {
-            console.error('Error uploading logo:', error)
-            if (error instanceof Error) {
-                toast.error(error.message)
-            } else {
-                toast.error('Error al subir el logo')
-            }
+            console.error('Error al subir el logo:', error)
+            if (error instanceof Error) toast.error(error.message)
+            else toast.error('Error al subir el logo')
         } finally {
             setUploading(false)
         }
     }
+
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
