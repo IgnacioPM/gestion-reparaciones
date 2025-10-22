@@ -13,6 +13,7 @@ import { EmpresaFormData } from '@/schemas/empresa'
 
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import Image from "next/image"
 
 // Definimos el tipo para los datos de la empresa, extendiendo el schema
 interface Empresa extends EmpresaFormData {
@@ -94,9 +95,13 @@ export default function EditarEmpresaPage() {
                 setEmpresa({ ...empresa, logo_url: logoUrl })
             }
             toast.success('Logo actualizado correctamente')
-        } catch (error: any) {
+        } catch (error) {
             console.error('Error uploading logo:', error)
-            toast.error(error.message || 'Error al subir el logo')
+            if (error instanceof Error) {
+                toast.error(error.message)
+            } else {
+                toast.error('Error al subir el logo')
+            }
         } finally {
             setUploading(false)
         }
@@ -197,10 +202,12 @@ export default function EditarEmpresaPage() {
 
                             {empresa.logo_url && (
                                 <div className="flex flex-col items-center mt-4">
-                                    <img
+                                    <Image
                                         src={empresa.logo_url}
                                         alt="Logo"
-                                        className="w-32 h-32 object-contain border rounded-md mb-2"
+                                        width={128}
+                                        height={128}
+                                        className="object-contain border rounded-md mb-2"
                                     />
                                 </div>
                             )}
