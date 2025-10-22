@@ -17,7 +17,7 @@ function DebugInfo() {
         )
     }
 
-    // Creamos un objeto con la información que queremos mostrar
+    // Creamos un objeto con la información que queremos mostrar 1
     const debugData = {
         user: {
             nombre: profile.nombre,
