@@ -1,7 +1,7 @@
 // src/stores/auth.ts
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabaseClient'
-import type { Session } from '@supabase/supabase-js'
+import { Session } from '@supabase/supabase-js'
 
 // --- TIPOS ---
 export type UsuarioProfile = {
@@ -52,7 +52,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       if (profileError) throw profileError
       if (!profileData) throw new Error('No se encontró el perfil del usuario')
 
-      // 3️⃣ Guardar en el estado global
+      // 3️⃣ Guardar en estado global
       set({
         session: authData.session,
         profile: profileData,
@@ -60,11 +60,23 @@ export const useAuthStore = create<AuthState>((set) => ({
         error: null,
       })
     } catch (err: unknown) {
-      let message = 'Ocurrió un error desconocido'
-      if (err instanceof Error) message = err.message
-      console.error('Error en login:', message)
-      set({ loading: false, error: message })
-      throw new Error(message)
+      // ✅ Manejo seguro del error sin usar 'any'
+      let errorMessage = 'Ocurrió un error desconocido'
+      if (err instanceof Error) {
+        errorMessage = err.message
+      } else if (err && typeof err === 'object') {
+        // intentar mapear propiedades comunes de Supabase
+        const e = err as { message?: string; details?: string; error?: string; description?: string }
+        errorMessage =
+          e.message ||
+          e.details ||
+          (e.error && e.description ? `${e.error}: ${e.description}` : undefined) ||
+          errorMessage
+      }
+
+      console.error('Error en login:', errorMessage)
+      set({ loading: false, error: errorMessage })
+      throw new Error(errorMessage)
     }
   },
 
