@@ -41,14 +41,26 @@ export default function LoginForm() {
       {/* Campo de Email */}
       <div className="space-y-1">
         <label htmlFor="email">Email</label>
-        <Input id="email" type="email" {...register('email')} />
+        <Input
+          id="email"
+          type="email"
+          label="Email"
+          error={errors.email?.message}
+          {...register('email')}
+        />
         {errors.email && <p className="text-red-500 text-sm">{errors.email.message}</p>}
       </div>
 
       {/* Campo de Contraseña */}
       <div className="space-y-1">
         <label htmlFor="password">Contraseña</label>
-        <Input id="password" type="password" {...register('password')} />
+        <Input
+          id="password"
+          type="password"
+          label="Contraseña"
+          error={errors.password?.message}
+          {...register('password')}
+        />
         {errors.password && <p className="text-red-500 text-sm">{errors.password.message}</p>}
       </div>
 
