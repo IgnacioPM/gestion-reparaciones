@@ -2,7 +2,7 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { loginSchema, LoginData } from '@/schemas/auth'
+import { loginSchema, LoginFormData } from '@/schemas/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
@@ -18,11 +18,11 @@ export default function LoginForm() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginData>({
+  } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
   })
 
-  const onSubmit = async (data: LoginData) => {
+  const onSubmit = async (data: LoginFormData) => {
     setError(null)
     try {
       await login(data.email, data.password)
