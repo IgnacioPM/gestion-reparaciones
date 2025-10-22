@@ -40,7 +40,6 @@ export default function LoginForm() {
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       {/* Campo de Email */}
       <div className="space-y-1">
-        <label htmlFor="email">Email</label>
         <Input
           id="email"
           type="email"
@@ -53,7 +52,6 @@ export default function LoginForm() {
 
       {/* Campo de Contraseña */}
       <div className="space-y-1">
-        <label htmlFor="password">Contraseña</label>
         <Input
           id="password"
           type="password"
