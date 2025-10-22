@@ -14,8 +14,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const verifySession = async () => {
       try {
         await checkSession()
-      } catch (error: any) {
-        if (error.message?.includes('Invalid Refresh Token')) {
+      } catch (error: unknown) {
+        let message
+        if (error instanceof Error) {
+          message = error.message
+        } else if (error && typeof error === 'object' && 'message' in error) {
+          message = String((error as { message: unknown }).message)
+        }
+
+        if (message?.includes('Invalid Refresh Token')) {
           await supabase.auth.signOut()
           if (pathname !== '/login') {
             router.push('/login')

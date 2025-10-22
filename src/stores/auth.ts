@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabaseClient' // Asegúrate que la ruta a tu cliente supabase sea correcta
-import { Session, User } from '@supabase/supabase-js'
+import { Session } from '@supabase/supabase-js'
 
 // 1. Definimos los tipos basados en tu esquema
 // Deberías generar estos tipos con la CLI de Supabase para que sean exactos
@@ -27,7 +27,7 @@ type AuthState = {
   checkSession: () => Promise<void>
 }
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   session: null,
   profile: null,
   loading: true,
@@ -110,7 +110,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .eq('auth_uid', authData.session.user.id)
         .single()
 
-      if (profileData) {
+      if (profileError) {
+        console.error("Error fetching profile in checkSession:", profileError.message)
+      } else if (profileData) {
         set({ session: authData.session, profile: profileData })
       }
     }
