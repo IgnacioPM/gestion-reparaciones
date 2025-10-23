@@ -1,144 +1,101 @@
-/* ==========================================================
-   CONFIGURACIÓN BASE PARA IMPRESIÓN
-   ========================================================== */
-
-/* Show only .print-only elements when printing, hide otherwise */
+/* --- Ocultar en pantalla: .print-only no aparece nunca en la UI --- */
 .print-only {
   display: none !important;
 }
 
+/* === Reglas para impresión === */
 @media print {
+  /* Mostrar el contenedor imprimible */
   .print-only {
     display: block !important;
   }
-}
 
-/* Oculta todo por defecto al imprimir excepto el contenido imprimible */
-@media print {
+  /* Oculta todo lo demás de la página */
   body * {
     visibility: hidden !important;
   }
 
-  .printable-servicio,
-  .printable-servicio * {
+  /* Muestra sólo el contenido dentro de .print-only */
+  .print-only,
+  .print-only * {
     visibility: visible !important;
   }
 
-  .printable-servicio {
+  /* Posicionar el contenido imprimible en la esquina superior */
+  .print-only {
     position: absolute !important;
     left: 0;
     top: 0;
-    width: 100vw;
+    width: 58mm;
+    margin: 0;
+    padding: 0;
     background: white !important;
     color: black !important;
     z-index: 9999;
-    box-shadow: none !important;
-    padding: 0 !important;
-    margin: 0 !important;
   }
 
-  /* 🔧 Asegura que las imágenes se impriman correctamente */
+  /* Ajustes para evitar múltiples páginas */
+  .printable-servicio {
+    box-shadow: none !important;
+    page-break-after: avoid;
+    page-break-before: avoid;
+    page-break-inside: avoid;
+  }
+
+  /* Forzar tamaño de página para impresoras térmicas 58mm */
+  @page {
+    size: 58mm auto;
+    margin: 0;
+  }
+
+  /* Imágenes (logo) imprimible */
   .printable-servicio img {
     display: block !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    max-width: 100% !important;
+    max-width: 90px !important; /* logo más grande */
     height: auto !important;
+    margin: 0 auto 2mm;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  .print-only {
-    display: block !important;
-  }
-
-  .print\:hidden {
-    display: none !important;
-  }
-}
-
-/* ==========================================================
-   ESTILO GENERAL BASE (para vista previa)
-   ========================================================== */
-
-.printable-servicio {
-  font-family: 'Courier New', monospace;
-  line-height: 1.2;
-  width: 58mm;
-  margin: 0 auto;
-  padding: 4px;
-  background: white;
-  color: black;
-}
-
-.printable-servicio hr {
-  border-top: 1px dashed black;
-  margin: 4px 0;
-}
-
-.printable-servicio p {
-  margin: 2px 0;
-}
-
-/* ==========================================================
-   OPCIÓN 1 — FORMATOS AUTOMÁTICOS SEGÚN TAMAÑO DE PAPEL
-   ========================================================== */
-
-/* === 🧾 Estilo térmico 58mm === */
-@media print and (max-width: 60mm) {
+  /* Tipografía y espaciados para que no salgan 2 hojas */
   .printable-servicio {
-    width: 58mm !important;
     font-family: 'Courier New', monospace;
-    font-size: 11px;
-    line-height: 1.2;
-    padding: 4px;
-    background: white;
-    color: black;
+    font-size: 12.5px;
+    line-height: 1.25;
+    padding: 2mm 3mm;
   }
 
-  .printable-servicio hr {
-    border-top: 1px dashed black;
-    margin: 3px 0;
+  .printable-servicio header {
+    margin-bottom: 2mm;
   }
-
-  .printable-servicio h1,
+  .printable-servicio h1 {
+    font-size: 14px;
+    margin: 0;
+    line-height: 1;
+  }
   .printable-servicio h2 {
     font-size: 12px;
-    text-transform: uppercase;
+    margin: 2mm 0 1mm;
+    text-align: center;
   }
-}
-
-/* === 📄 Estilo A4 o superior === */
-@media print and (min-width: 100mm) {
-  .printable-servicio {
-    width: 100%;
-    max-width: 210mm;
-    font-family: "Arial", sans-serif;
-    font-size: 13px;
-    line-height: 1.4;
-    padding: 12mm;
-    color: #000;
-    background: white;
-  }
-
-  .printable-servicio h1 {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 4mm;
-  }
-
-  .printable-servicio h2 {
-    font-size: 14px;
-    margin-top: 2mm;
-  }
-
-  .printable-servicio hr {
-    border-top: 1px solid #aaa;
-    margin: 6px 0;
-  }
-
   .printable-servicio p {
-    font-size: 13px;
-    margin: 2px 0;
+    margin: 0.4mm 0;
+  }
+  .printable-servicio hr {
+    border: none;
+    border-top: 1px dashed #000;
+    margin: 2mm 0;
+  }
+  .printable-servicio footer {
+    margin-top: 2mm;
+    font-size: 11px;
+    text-align: center;
+  }
+
+  /* Asegura que el contenedor no deje espacio bajo él */
+  .printable-servicio {
+    margin-bottom: 0 !important;
+    padding-bottom: 2mm;
   }
 }

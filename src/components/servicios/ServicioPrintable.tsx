@@ -23,96 +23,85 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio, 
     };
 
     return (
-        <div className="printable-servicio bg-white text-black font-mono text-[11px] w-[58mm] mx-auto p-1 leading-tight">
-            {/* ENCABEZADO */}
-            <header className="text-center mb-2">
-                {logoDataUrl ? (
-                    <Image
-                        src={logoDataUrl}
-                        alt="Logo"
-                        width={48}
-                        height={48}
-                        className="mx-auto object-contain"
-                    />
-                ) : (
-                    <Image
-                        src={profile?.empresa?.logo_url || "/icons/logo-CR.svg"}
-                        alt="Logo"
-                        width={48}
-                        height={48}
-                        className="mx-auto object-contain"
-                    />
-                )}
+        <div className="print-only">
+            <div className="printable-servicio">
+                {/* ENCABEZADO */}
+                <header className="text-center mb-2">
+                    <div className="logo-container">
+                        <Image
+                            src={logoDataUrl || profile?.empresa?.logo_url || "/icons/logo-CR.svg"}
+                            alt="Logo"
+                            width={90}
+                            height={90}
+                            className="mx-auto object-contain"
+                        />
+                    </div>
+                    <h1>{profile?.empresa?.nombre || "Control de Reparaciones"}</h1>
+                    {profile?.empresa?.slogan && <p>{profile.empresa.slogan}</p>}
+                    <p>Dir: {profile?.empresa?.direccion}</p>
+                    {profile?.empresa?.telefono && <p>Tel: {profile?.empresa?.telefono}</p>}
+                </header>
 
-                <h1 className="font-bold uppercase text-[12px] mt-1">
-                    {profile?.empresa?.nombre || "Control de Reparaciones"}
-                </h1>
-                {profile?.empresa?.slogan && <p className="text-[10px]">{profile.empresa.slogan}</p>}
-                <p>Dir: {profile?.empresa?.direccion}</p>
-                {profile?.empresa?.telefono && <p>Tel: {profile?.empresa?.telefono}</p>}
-            </header>
+                <hr />
 
-            <hr className="border border-black border-dashed my-1" />
+                {/* DATOS FACTURA */}
+                <section>
+                    <p><strong>Fecha:</strong> {formatFecha(servicio.fecha_ingreso)}</p>
+                    <p><strong>Estado:</strong> {servicio.estado}</p>
+                </section>
 
-            {/* DATOS FACTURA */}
-            <section className="text-left mb-2">
-                <p><strong>Fecha:</strong> {formatFecha(servicio.fecha_ingreso)}</p>
-                <p><strong>Estado:</strong> {servicio.estado}</p>
-            </section>
+                <hr />
 
-            <hr className="border border-black border-dashed my-1" />
+                {/* CLIENTE */}
+                <section>
+                    <h2>Cliente</h2>
+                    <p><strong>Nombre:</strong> {servicio.equipo?.cliente?.nombre}</p>
+                    {servicio.equipo?.cliente?.telefono && (
+                        <p><strong>Tel:</strong> {servicio.equipo?.cliente?.telefono}</p>
+                    )}
+                </section>
 
-            {/* CLIENTE */}
-            <section className="mb-2">
-                <h2 className="font-bold text-center underline">Cliente</h2>
-                <p><strong>Nombre:</strong> {servicio.equipo?.cliente?.nombre}</p>
-                {servicio.equipo?.cliente?.telefono && (
-                    <p><strong>Tel:</strong> {servicio.equipo?.cliente?.telefono}</p>
-                )}
-            </section>
+                <hr />
 
-            <hr className="border border-black border-dashed my-1" />
+                {/* EQUIPO */}
+                <section>
+                    <h2>Equipo</h2>
+                    <p><strong>Tipo:</strong> {servicio.equipo?.tipo}</p>
+                    <p><strong>Marca:</strong> {servicio.equipo?.marca}</p>
+                    <p><strong>Modelo:</strong> {servicio.equipo?.modelo}</p>
+                    {servicio.equipo?.serie && <p><strong>Serie:</strong> {servicio.equipo?.serie}</p>}
+                </section>
 
-            {/* EQUIPO */}
-            <section className="mb-2">
-                <h2 className="font-bold text-center underline">Equipo</h2>
-                <p><strong>Tipo:</strong> {servicio.equipo?.tipo}</p>
-                <p><strong>Marca:</strong> {servicio.equipo?.marca}</p>
-                <p><strong>Modelo:</strong> {servicio.equipo?.modelo}</p>
-                {servicio.equipo?.serie && <p><strong>Serie:</strong> {servicio.equipo?.serie}</p>}
-            </section>
+                <hr />
 
-            <hr className="border border-black border-dashed my-1" />
+                {/* SERVICIO */}
+                <section>
+                    <h2>Detalle</h2>
+                    <p><strong>Falla:</strong> {servicio.descripcion_falla}</p>
+                    {servicio.nota_trabajo && (
+                        <p><strong>Notas:</strong> {servicio.nota_trabajo}</p>
+                    )}
+                </section>
 
-            {/* SERVICIO */}
-            <section className="mb-2">
-                <h2 className="font-bold text-center underline">Detalle</h2>
-                <p><strong>Falla:</strong> {servicio.descripcion_falla}</p>
-                {servicio.nota_trabajo && (
-                    <p><strong>Notas:</strong> {servicio.nota_trabajo}</p>
-                )}
-            </section>
+                <hr />
 
-            <hr className="border border-black border-dashed my-1" />
+                {/* COSTOS */}
+                <section className="text-right">
+                    {servicio.costo_estimado !== null && (
+                        <p><strong>Estimado:</strong> <FormattedAmount amount={Number(servicio.costo_estimado)} /></p>
+                    )}
+                    {servicio.costo_final !== null && (
+                        <p><strong>Total:</strong> <FormattedAmount amount={Number(servicio.costo_final)} /></p>
+                    )}
+                </section>
 
-            {/* COSTOS */}
-            <section className="text-right mb-1">
-                {servicio.costo_estimado !== null && (
-                    <p><strong>Estimado:</strong> <FormattedAmount amount={Number(servicio.costo_estimado)} /></p>
-                )}
-                {servicio.costo_final !== null && (
-                    <p><strong>Total:</strong> <FormattedAmount amount={Number(servicio.costo_final)} /></p>
-                )}
-            </section>
-
-            {/* PIE */}
-            <footer className="mt-2 text-center text-[10px]">
-                <p>{profile?.empresa?.pie_pagina || 'Gracias por su preferencia'}</p>
-                <p>Comprobante sin valor fiscal</p>
-                <p className="mt-2 text-[9px]">
-                    Generado por {profile?.empresa?.nombre || "Sistema de Reparaciones"}
-                </p>
-            </footer>
+                {/* PIE */}
+                <footer>
+                    <p>{profile?.empresa?.pie_pagina || "Gracias por su preferencia"}</p>
+                    <p>Comprobante sin valor fiscal</p>
+                    <p className="firma">Generado por {profile?.empresa?.nombre || "Sistema de Reparaciones"}</p>
+                </footer>
+            </div>
         </div>
     );
 };
