@@ -22,7 +22,12 @@ export default function EmpleadoForm({ onSubmit, initialData, isSubmitting, isCr
     formState: { errors },
   } = useForm<EmpleadoFormData>({
     resolver: zodResolver(EmpleadoSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      nombre: initialData?.nombre || '',
+      email: initialData?.email || '',
+      rol: initialData?.rol || 'Tecnico',
+      password: initialData?.password || '',
+    },
   });
 
   return (
