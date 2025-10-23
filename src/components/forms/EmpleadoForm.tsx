@@ -1,7 +1,7 @@
 'use client'
 
 import { z } from 'zod';
-import { useForm } from 'react-hook-form';
+import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -18,7 +18,7 @@ export const EmpleadoSchema = z.object({
 export type EmpleadoFormData = z.infer<typeof EmpleadoSchema>;
 
 interface EmpleadoFormProps {
-  onSubmit: (data: EmpleadoFormData) => void;
+  onSubmit: SubmitHandler<EmpleadoFormData>;
   initialData?: Partial<EmpleadoFormData>;
   isSubmitting?: boolean;
   isCreating?: boolean;
@@ -26,15 +26,15 @@ interface EmpleadoFormProps {
 
 export default function EmpleadoForm({ onSubmit, initialData, isSubmitting, isCreating }: EmpleadoFormProps) {
   const defaultValues: EmpleadoFormData = {
-    rol: 'Tecnico',
     nombre: '',
     email: '',
+    rol: 'Tecnico',
     password: undefined,
     ...initialData,
   };
 
   const { register, handleSubmit, formState: { errors } } = useForm<EmpleadoFormData>({
-    resolver: zodResolver(EmpleadoSchema) as any, // ✅ casteamos para evitar conflicto de tipos
+    resolver: zodResolver(EmpleadoSchema),
     defaultValues,
   });
 
@@ -42,9 +42,7 @@ export default function EmpleadoForm({ onSubmit, initialData, isSubmitting, isCr
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Input label="Nombre" {...register('nombre')} error={errors.nombre?.message} />
       <Input label="Email" type="email" {...register('email')} error={errors.email?.message} />
-      {isCreating && (
-        <Input label="Contraseña" type="password" {...register('password')} error={errors.password?.message} />
-      )}
+      {isCreating && <Input label="Contraseña" type="password" {...register('password')} error={errors.password?.message} />}
       <Select label="Rol" {...register('rol')} error={errors.rol?.message}>
         <option value="Tecnico">Técnico</option>
         <option value="Admin">Administrador</option>
