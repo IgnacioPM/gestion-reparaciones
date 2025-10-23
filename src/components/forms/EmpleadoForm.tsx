@@ -1,22 +1,21 @@
 'use client'
 
-import { EmpleadoFormData, EmpleadoSchema } from "@/schemas/empleado";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { EmpleadoSchema, EmpleadoFormData } from "@/schemas/empleado";
 import Input from "@/components/ui/Input";
-import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 
 interface EmpleadoFormProps {
-  onSubmit: (data: EmpleadoFormData) => void;
   initialData: EmpleadoFormData;
+  onSubmit: (data: EmpleadoFormData) => void;
   isSubmitting?: boolean;
   isCreating?: boolean;
 }
 
 export default function EmpleadoForm({
-  onSubmit,
   initialData,
+  onSubmit,
   isSubmitting,
   isCreating,
 }: EmpleadoFormProps) {
@@ -25,12 +24,10 @@ export default function EmpleadoForm({
     handleSubmit,
     formState: { errors },
   } = useForm<EmpleadoFormData>({
-    // 🔹 Evita el error de ESLint
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     resolver: zodResolver(EmpleadoSchema),
     defaultValues: {
-      rol: "Tecnico", // aseguramos que nunca sea undefined
       ...initialData,
+      rol: initialData.rol || "Tecnico", // aseguramos que nunca sea undefined
     },
   });
 
@@ -43,29 +40,22 @@ export default function EmpleadoForm({
       />
       <Input
         label="Email"
-        type="email"
         {...register("email")}
         error={errors.email?.message}
       />
       <Input
-        label="Contraseña"
+        label="Password"
         type="password"
         {...register("password")}
         error={errors.password?.message}
-        placeholder={isCreating ? "Ingrese una contraseña" : "Dejar en blanco para no cambiar"}
       />
-      <Select
-        label="Rol"
-        {...register("rol")}
-        options={[
-          { label: "Técnico", value: "Tecnico" },
-          { label: "Admin", value: "Admin" },
-        ]}
-        error={errors.rol?.message}
-      />
+      <select {...register("rol")} className="w-full p-2 border rounded">
+        <option value="Tecnico">Tecnico</option>
+        <option value="Admin">Admin</option>
+      </select>
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
-          {isCreating ? "Crear" : "Guardar"}
+          {isCreating ? "Crear" : "Actualizar"}
         </Button>
       </div>
     </form>

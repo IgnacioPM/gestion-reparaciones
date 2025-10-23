@@ -9,13 +9,13 @@ interface Empleado {
   id_usuario: string;
   nombre: string;
   email: string;
-  rol: string | null;
+  rol: "Tecnico" | "Admin";
 }
 
 interface EmpleadoEditModalProps {
   isOpen: boolean;
   onClose: () => void;
-  empleado: Partial<Empleado> | null; // Partial for new employee
+  empleado: Partial<Empleado> | null; // Partial para nuevo empleado
   onSave: (data: EmpleadoFormData, id_usuario: string | null) => void;
   isSubmitting?: boolean;
 }
@@ -30,10 +30,10 @@ export default function EmpleadoEditModal({
   if (!isOpen) return null;
 
   const initialData: EmpleadoFormData = {
-    nombre: empleado?.nombre || '',
-    email: empleado?.email || '',
-    rol: empleado?.rol === 'Admin' ? 'Admin' : 'Tecnico',
-    password: '', // inicializamos password vacío
+    nombre: empleado?.nombre || "",
+    email: empleado?.email || "",
+    rol: empleado?.rol === "Admin" ? "Admin" : "Tecnico",
+    password: "",
   };
 
   const handleSubmit = (data: EmpleadoFormData) => {
@@ -50,7 +50,6 @@ export default function EmpleadoEditModal({
         >
           &times;
         </button>
-
         <SectionTitle className="mb-4">
           {empleado?.id_usuario ? "Editar Empleado" : "Nuevo Empleado"}
         </SectionTitle>
