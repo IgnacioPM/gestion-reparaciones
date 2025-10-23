@@ -9,8 +9,8 @@ import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import FormError from '@/components/ui/FormError';
 
-// Inferimos el tipo directamente desde Zod
-type EmpleadoFormData = z.infer<typeof EmpleadoSchema>;
+// Tipo inferido directamente desde Zod
+export type EmpleadoFormData = z.infer<typeof EmpleadoSchema>;
 
 interface EmpleadoFormProps {
   onSubmit: SubmitHandler<EmpleadoFormData>;
@@ -25,15 +25,13 @@ export default function EmpleadoForm({
   isSubmitting,
   isCreating,
 }: EmpleadoFormProps) {
-  const form = useForm<EmpleadoFormData>({
+  const { register, handleSubmit, formState: { errors } } = useForm<EmpleadoFormData>({
     resolver: zodResolver(EmpleadoSchema),
     defaultValues: {
-      rol: 'Tecnico', // siempre definido
+      rol: 'Tecnico', // aseguramos que nunca sea undefined
       ...initialData,
     },
   });
-
-  const { register, handleSubmit, formState: { errors } } = form;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
