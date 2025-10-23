@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from "next/navigation"
-import { LogOut, User, ChevronDown, Building } from "lucide-react"
+import { LogOut, User, ChevronDown, Building, Users } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useAuthStore } from "@/stores/auth"
@@ -38,8 +38,8 @@ export default function Navbar() {
             {/* Logo + App Name */}
             <div className="flex items-center gap-2">
                 <Image
-                    src="/icons/logo-CR.svg"
-                    alt="Logo Reparaciones"
+                    src={profile?.empresa?.logo_url || "/icons/logo-CR.svg"}
+                    alt={profile?.empresa?.nombre || "Logo Reparaciones"}
                     width={44}
                     height={44}
                     className="object-contain"
@@ -69,10 +69,18 @@ export default function Navbar() {
                     {isMenuOpen && (
                         <div className="absolute right-0 mt-1 w-48 rounded-md shadow-lg bg-white dark:bg-gray-700 ring-1 ring-black ring-opacity-5 z-10">
                             <div className="py-1">
-                                <Link href="/empresa" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 w-full text-left">
-                                    <Building className="w-4 h-4" />
-                                    Datos de la empresa
-                                </Link>
+                                {profile?.rol === 'Admin' && (
+                                    <>
+                                        <Link href="/empleados" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 w-full text-left">
+                                            <Users className="w-4 h-4" />
+                                            Empleados
+                                        </Link>
+                                        <Link href="/empresa" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 w-full text-left">
+                                            <Building className="w-4 h-4" />
+                                            Datos de la empresa
+                                        </Link>
+                                    </>
+                                )}
                                 <button
                                     onClick={handleLogout}
                                     className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-600 w-full text-left"

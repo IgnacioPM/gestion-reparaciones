@@ -1,64 +1,117 @@
+'use client'
+
 import React from "react";
+import Image from "next/image";
 import { Servicio } from "@/types/servicio";
+import { useAuthStore } from "@/stores/auth";
 import { FormattedAmount } from "../ui/FormattedAmount";
 
 interface ServicioPrintableProps {
     servicio: Servicio;
+    logoDataUrl: string | null;
 }
 
-export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio }) => {
+export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio, logoDataUrl }) => {
+    const { profile } = useAuthStore();
+
     const formatFecha = (fecha: string) => {
         return new Date(fecha).toLocaleDateString("es-ES", {
             day: "2-digit",
             month: "2-digit",
             year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
         });
     };
 
     return (
-        <div className="p-6 text-gray-900 bg-white w-full font-sans">
-            {/* Encabezado tipo factura */}
-            <header className="mb-6 border-b pb-2">
-                <h1 className="text-3xl font-bold">Detalle de Servicio</h1>
-                <p className="text-gray-600">Estado: {servicio.estado}</p>
+        <div className="printable-servicio bg-white text-black font-mono text-[11px] w-[58mm] mx-auto p-1 leading-tight">
+            {/* ENCABEZADO */}
+            <header className="text-center mb-2">
+                {logoDataUrl ? (
+                    <Image
+                        src={logoDataUrl}
+                        alt="Logo"
+                        width={48}
+                        height={48}
+                        className="mx-auto object-contain"
+                    />
+                ) : (
+                    <Image
+                        src={profile?.empresa?.logo_url || "/icons/logo-CR.svg"}
+                        alt="Logo"
+                        width={48}
+                        height={48}
+                        className="mx-auto object-contain"
+                    />
+                )}
+
+                <h1 className="font-bold uppercase text-[12px] mt-1">
+                    {profile?.empresa?.nombre || "Control de Reparaciones"}
+                </h1>
+                {profile?.empresa?.slogan && <p className="text-[10px]">{profile.empresa.slogan}</p>}
+                <p>Dir: {profile?.empresa?.direccion}</p>
+                {profile?.empresa?.telefono && <p>Tel: {profile?.empresa?.telefono}</p>}
             </header>
 
-            {/* Cliente */}
-            <section className="mb-6">
-                <h2 className="font-semibold text-lg mb-2 border-b pb-1">Cliente</h2>
-                <p>Nombre: {servicio.equipo?.cliente?.nombre}</p>
-                <p>Teléfono: {servicio.equipo?.cliente?.telefono}</p>
-                <p>Correo: {servicio.equipo?.cliente?.correo}</p>
+            <hr className="border border-black border-dashed my-1" />
+
+            {/* DATOS FACTURA */}
+            <section className="text-left mb-2">
+                <p><strong>Fecha:</strong> {formatFecha(servicio.fecha_ingreso)}</p>
+                <p><strong>Estado:</strong> {servicio.estado}</p>
             </section>
 
-            {/* Equipo */}
-            <section className="mb-6">
-                <h2 className="font-semibold text-lg mb-2 border-b pb-1">Equipo</h2>
-                <p>Tipo: {servicio.equipo?.tipo}</p>
-                <p>Marca: {servicio.equipo?.marca}</p>
-                <p>Modelo: {servicio.equipo?.modelo}</p>
-                <p>Serie: {servicio.equipo?.serie}</p>
+            <hr className="border border-black border-dashed my-1" />
+
+            {/* CLIENTE */}
+            <section className="mb-2">
+                <h2 className="font-bold text-center underline">Cliente</h2>
+                <p><strong>Nombre:</strong> {servicio.equipo?.cliente?.nombre}</p>
+                {servicio.equipo?.cliente?.telefono && (
+                    <p><strong>Tel:</strong> {servicio.equipo?.cliente?.telefono}</p>
+                )}
             </section>
 
-            {/* Servicio */}
-            <section className="mb-6">
-                <h2 className="font-semibold text-lg mb-2 border-b pb-1">Servicio</h2>
-                <p>Fecha ingreso: {formatFecha(servicio.fecha_ingreso)}</p>
-                {servicio.fecha_entrega && <p>Fecha entrega: {formatFecha(servicio.fecha_entrega)}</p>}
-                {servicio.descripcion_falla && <p>Falla: {servicio.descripcion_falla}</p>}
-                {servicio.nota_trabajo && <p>Notas de trabajo: {servicio.nota_trabajo}</p>}
+            <hr className="border border-black border-dashed my-1" />
+
+            {/* EQUIPO */}
+            <section className="mb-2">
+                <h2 className="font-bold text-center underline">Equipo</h2>
+                <p><strong>Tipo:</strong> {servicio.equipo?.tipo}</p>
+                <p><strong>Marca:</strong> {servicio.equipo?.marca}</p>
+                <p><strong>Modelo:</strong> {servicio.equipo?.modelo}</p>
+                {servicio.equipo?.serie && <p><strong>Serie:</strong> {servicio.equipo?.serie}</p>}
+            </section>
+
+            <hr className="border border-black border-dashed my-1" />
+
+            {/* SERVICIO */}
+            <section className="mb-2">
+                <h2 className="font-bold text-center underline">Detalle</h2>
+                <p><strong>Falla:</strong> {servicio.descripcion_falla}</p>
+                {servicio.nota_trabajo && (
+                    <p><strong>Notas:</strong> {servicio.nota_trabajo}</p>
+                )}
+            </section>
+
+            <hr className="border border-black border-dashed my-1" />
+
+            {/* COSTOS */}
+            <section className="text-right mb-1">
                 {servicio.costo_estimado !== null && (
-                    <p>Costo estimado: <FormattedAmount amount={Number(servicio.costo_estimado)} /></p>
+                    <p><strong>Estimado:</strong> <FormattedAmount amount={Number(servicio.costo_estimado)} /></p>
                 )}
                 {servicio.costo_final !== null && (
-                    <p>Costo final: <FormattedAmount amount={Number(servicio.costo_final)} /></p>
+                    <p><strong>Total:</strong> <FormattedAmount amount={Number(servicio.costo_final)} /></p>
                 )}
             </section>
 
-            <footer className="mt-6 border-t pt-2 text-gray-600 text-sm">
-                <p>Gracias por confiar en nuestro servicio.</p>
+            {/* PIE */}
+            <footer className="mt-2 text-center text-[10px]">
+                <p>{profile?.empresa?.pie_pagina || 'Gracias por su preferencia'}</p>
+                <p>Comprobante sin valor fiscal</p>
+                <p className="mt-2 text-[9px]">
+                    Generado por {profile?.empresa?.nombre || "Sistema de Reparaciones"}
+                </p>
             </footer>
         </div>
     );

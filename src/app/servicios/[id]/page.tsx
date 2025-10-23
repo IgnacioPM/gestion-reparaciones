@@ -16,6 +16,8 @@ import { ServicioPrintable } from "@/components/servicios/ServicioPrintable"
 
 import { Servicio } from "@/types/servicio"
 
+import { useAuthStore } from "@/stores/auth";
+
 function getBadgeColor(estado: string | null) {
     switch (estado) {
         case "Recibido": return "bg-yellow-100 text-yellow-800"
@@ -40,11 +42,13 @@ function formatFecha(fecha: string) {
 
 // 👇 hacemos la page asíncrona y sacamos `params` con await
 function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }> }) {
+    const { profile } = useAuthStore();
     const [isModalOpen, setIsModalOpen] = React.useState(false);
     const [servicio, setServicio] = React.useState<Servicio | null>(null);
     const [error, setError] = React.useState<{ message?: string } | null>(null);
     const [loading, setLoading] = React.useState(true);
     const [id, setId] = React.useState<string>("");
+    const [logoDataUrl, setLogoDataUrl] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         (async () => {
@@ -105,13 +109,27 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                     } : undefined
                 };
                 setServicio(servicioNormalizado);
+
+                if (profile?.empresa?.logo_url) {
+                    try {
+                        const response = await fetch(profile.empresa.logo_url);
+                        const blob = await response.blob();
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            setLogoDataUrl(reader.result as string);
+                        };
+                        reader.readAsDataURL(blob);
+                    } catch (error) {
+                        console.error("Error fetching or converting logo:", error);
+                    }
+                }
             } else {
                 setServicio(null);
             }
             setError(error);
             setLoading(false);
         })();
-    }, [params, isModalOpen]);
+    }, [params, isModalOpen, profile]);
 
     const handleSave = async (data: Partial<Servicio>) => {
         if (!id) return;
@@ -147,6 +165,10 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             <Navbar />
             <main className="container mx-auto px-4 py-8">
+                {/* Preload logo for printing */}
+                {profile?.empresa?.logo_url && (
+                    <img src={profile.empresa.logo_url} alt="" className="w-0 h-0 opacity-0 absolute print:hidden" />
+                )}
                 {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div className="flex w-full">
@@ -233,7 +255,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                                 </button>
                             </div>
                             <div className="printable-servicio print-only" id="printable-servicio">
-                                <ServicioPrintable servicio={servicio} />
+                                <ServicioPrintable servicio={servicio} logoDataUrl={logoDataUrl} />
                             </div>
                         </div>
                     )}

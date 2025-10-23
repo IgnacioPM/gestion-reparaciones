@@ -13,7 +13,11 @@ type UsuarioProfile = {
   empresa: {
     id: string
     nombre: string
-    // ...otros campos de empresa
+    logo_url: string | null
+    direccion: string | null
+    telefono: string | null
+    slogan: string | null
+    pie_pagina: string | null
   } | null
 }
 

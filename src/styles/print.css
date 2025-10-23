@@ -1,24 +1,29 @@
+/* ==========================================================
+   CONFIGURACIÓN BASE PARA IMPRESIÓN
+   ========================================================== */
+
 /* Show only .print-only elements when printing, hide otherwise */
 .print-only {
   display: none !important;
 }
+
 @media print {
   .print-only {
     display: block !important;
   }
 }
-/* Hide .print-only by default, show only when printing */
-.print-only {
-  display: none !important;
-}
+
+/* Oculta todo por defecto al imprimir excepto el contenido imprimible */
 @media print {
   body * {
     visibility: hidden !important;
   }
+
   .printable-servicio,
   .printable-servicio * {
     visibility: visible !important;
   }
+
   .printable-servicio {
     position: absolute !important;
     left: 0;
@@ -31,10 +36,109 @@
     padding: 0 !important;
     margin: 0 !important;
   }
+
+  /* 🔧 Asegura que las imágenes se impriman correctamente */
+  .printable-servicio img {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    max-width: 100% !important;
+    height: auto !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   .print-only {
     display: block !important;
   }
+
   .print\:hidden {
     display: none !important;
+  }
+}
+
+/* ==========================================================
+   ESTILO GENERAL BASE (para vista previa)
+   ========================================================== */
+
+.printable-servicio {
+  font-family: 'Courier New', monospace;
+  line-height: 1.2;
+  width: 58mm;
+  margin: 0 auto;
+  padding: 4px;
+  background: white;
+  color: black;
+}
+
+.printable-servicio hr {
+  border-top: 1px dashed black;
+  margin: 4px 0;
+}
+
+.printable-servicio p {
+  margin: 2px 0;
+}
+
+/* ==========================================================
+   OPCIÓN 1 — FORMATOS AUTOMÁTICOS SEGÚN TAMAÑO DE PAPEL
+   ========================================================== */
+
+/* === 🧾 Estilo térmico 58mm === */
+@media print and (max-width: 60mm) {
+  .printable-servicio {
+    width: 58mm !important;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+    line-height: 1.2;
+    padding: 4px;
+    background: white;
+    color: black;
+  }
+
+  .printable-servicio hr {
+    border-top: 1px dashed black;
+    margin: 3px 0;
+  }
+
+  .printable-servicio h1,
+  .printable-servicio h2 {
+    font-size: 12px;
+    text-transform: uppercase;
+  }
+}
+
+/* === 📄 Estilo A4 o superior === */
+@media print and (min-width: 100mm) {
+  .printable-servicio {
+    width: 100%;
+    max-width: 210mm;
+    font-family: "Arial", sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
+    padding: 12mm;
+    color: #000;
+    background: white;
+  }
+
+  .printable-servicio h1 {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 4mm;
+  }
+
+  .printable-servicio h2 {
+    font-size: 14px;
+    margin-top: 2mm;
+  }
+
+  .printable-servicio hr {
+    border-top: 1px solid #aaa;
+    margin: 6px 0;
+  }
+
+  .printable-servicio p {
+    font-size: 13px;
+    margin: 2px 0;
   }
 }

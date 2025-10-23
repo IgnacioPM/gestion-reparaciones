@@ -19,6 +19,8 @@ import Image from "next/image"
 interface Empresa extends EmpresaFormData {
     id: string;
     logo_url?: string | null;
+    slogan?: string | null;
+    pie_pagina?: string | null;
 }
 
 export default function EditarEmpresaPage() {
@@ -149,6 +151,8 @@ export default function EditarEmpresaPage() {
                     direccion: empresa.direccion,
                     correo: empresa.correo,
                     sitio_web: empresa.sitio_web,
+                    slogan: empresa.slogan,
+                    pie_pagina: empresa.pie_pagina,
                 })
                 .eq('id', profile?.empresa_id)
 
@@ -225,6 +229,24 @@ export default function EditarEmpresaPage() {
                                 name="sitio_web"
                                 label="Sitio Web"
                                 value={empresa.sitio_web || ''}
+                                onChange={handleInputChange}
+                            />
+
+                            <Textarea
+                                id="slogan"
+                                name="slogan"
+                                label="Slogan"
+                                rows={2}
+                                value={empresa.slogan || ''}
+                                onChange={handleInputChange}
+                            />
+
+                            <Textarea
+                                id="pie_pagina"
+                                name="pie_pagina"
+                                label="Pie de Página (para recibos)"
+                                rows={3}
+                                value={empresa.pie_pagina || ''}
                                 onChange={handleInputChange}
                             />
 

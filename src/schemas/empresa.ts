@@ -7,6 +7,8 @@ export const empresaSchema = z.object({
   logo_url: z.string().optional().nullable(),
   correo: z.string().email('Correo electrónico no válido').optional().nullable(),
   sitio_web: z.string().optional().nullable(),
+  slogan: z.string().trim().optional().nullable(),
+  pie_pagina: z.string().trim().optional().nullable(),
 })
 
 export type EmpresaFormData = z.infer<typeof empresaSchema>
