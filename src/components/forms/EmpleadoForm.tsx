@@ -23,8 +23,12 @@ export default function EmpleadoForm({ onSubmit, initialData, isSubmitting, isCr
     formState: { errors },
   } = useForm<z.input<typeof EmpleadoSchema>>({
     resolver: zodResolver(EmpleadoSchema),
-    defaultValues: initialData,
+    defaultValues: {
+      rol: 'Tecnico',
+      ...initialData,
+    },
   });
+
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
