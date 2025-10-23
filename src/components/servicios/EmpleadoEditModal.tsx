@@ -2,15 +2,11 @@
 
 import { useForm, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { EmpleadoSchema } from '@/schemas/empleado';
-import { z } from 'zod';
+import { EmpleadoSchema, EmpleadoFormData } from '@/schemas/empleado';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import FormError from '@/components/ui/FormError';
-
-// Tipo inferido directamente desde Zod
-export type EmpleadoFormData = z.infer<typeof EmpleadoSchema>;
 
 interface EmpleadoFormProps {
   onSubmit: SubmitHandler<EmpleadoFormData>;
@@ -26,9 +22,9 @@ export default function EmpleadoForm({
   isCreating,
 }: EmpleadoFormProps) {
   const { register, handleSubmit, formState: { errors } } = useForm<EmpleadoFormData>({
-    resolver: zodResolver(EmpleadoSchema),
+    resolver: zodResolver(EmpleadoSchema) as unknown as SubmitHandler<EmpleadoFormData>,
     defaultValues: {
-      rol: 'Tecnico', // aseguramos que nunca sea undefined
+      rol: 'Tecnico',
       ...initialData,
     },
   });
