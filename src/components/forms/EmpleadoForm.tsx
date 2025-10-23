@@ -1,13 +1,15 @@
 'use client'
 
+import { z } from 'zod';
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { EmpleadoSchema, EmpleadoFormData } from "@/schemas/empleado";
 import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
 import Button from "@/components/ui/Button";
 
 interface EmpleadoFormProps {
-  initialData: EmpleadoFormData;
+  initialData?: z.input<typeof EmpleadoSchema>;
   onSubmit: (data: EmpleadoFormData) => void;
   isSubmitting?: boolean;
   isCreating?: boolean;
@@ -23,12 +25,9 @@ export default function EmpleadoForm({
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<EmpleadoFormData>({
+  } = useForm<z.input<typeof EmpleadoSchema>>({
     resolver: zodResolver(EmpleadoSchema),
-    defaultValues: {
-      ...initialData,
-      rol: initialData.rol || "Tecnico", // aseguramos que nunca sea undefined
-    },
+    defaultValues: initialData,
   });
 
   return (
@@ -43,16 +42,22 @@ export default function EmpleadoForm({
         {...register("email")}
         error={errors.email?.message}
       />
-      <Input
-        label="Password"
-        type="password"
-        {...register("password")}
-        error={errors.password?.message}
-      />
-      <select {...register("rol")} className="w-full p-2 border rounded">
-        <option value="Tecnico">Tecnico</option>
-        <option value="Admin">Admin</option>
-      </select>
+      {isCreating && (
+        <Input
+          label="Password"
+          type="password"
+          {...register("password")}
+          error={errors.password?.message}
+        />
+      )}
+      <Select
+        label="Rol"
+        {...register("rol")}
+        error={errors.rol?.message}
+      >
+        <option value="Tecnico">Técnico</option>
+        <option value="Admin">Administrador</option>
+      </Select>
       <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
           {isCreating ? "Crear" : "Actualizar"}
