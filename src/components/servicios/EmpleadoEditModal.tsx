@@ -15,7 +15,7 @@ interface Empleado {
 interface EmpleadoEditModalProps {
     isOpen: boolean;
     onClose: () => void;
-    empleado: Partial<Empleado> | null; // Partial for new employee
+    empleado: Partial<Empleado> | null; // Partial para nuevo empleado
     onSave: (data: EmpleadoFormData, id_usuario: string | null) => void;
     isSubmitting?: boolean;
 }
@@ -29,10 +29,10 @@ export default function EmpleadoEditModal({
 }: EmpleadoEditModalProps) {
     if (!isOpen) return null;
 
-    const initialData = {
+    const initialData: EmpleadoFormData = {
         nombre: empleado?.nombre || '',
         email: empleado?.email || '',
-        rol: empleado?.rol === 'Admin' ? 'Admin' : 'Tecnico',
+        rol: empleado?.rol === 'Admin' ? 'Admin' : 'Tecnico', // nunca undefined
     };
 
     const handleSubmit = (data: EmpleadoFormData) => {
@@ -59,11 +59,12 @@ export default function EmpleadoEditModal({
                     isSubmitting={isSubmitting}
                     isCreating={!empleado?.id_usuario}
                 />
-                 <div className="flex justify-end gap-2 mt-4">
-                        <Button type="button" color="secondary" onClick={onClose}>
-                            Cancelar
-                        </Button>
-                    </div>
+
+                <div className="flex justify-end gap-2 mt-4">
+                    <Button type="button" color="secondary" onClick={onClose}>
+                        Cancelar
+                    </Button>
+                </div>
             </div>
         </div>
     );

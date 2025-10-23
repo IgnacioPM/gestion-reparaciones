@@ -1,17 +1,16 @@
 'use client'
 
-import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { EmpleadoSchema } from '@/schemas/empleado';
+import { EmpleadoSchema, EmpleadoFormData } from '@/schemas/empleado';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
 import FormError from '@/components/ui/FormError';
 
 interface EmpleadoFormProps {
-  onSubmit: (data: z.input<typeof EmpleadoSchema>) => void;
-  initialData?: z.input<typeof EmpleadoSchema>;
+  onSubmit: (data: EmpleadoFormData) => void;
+  initialData?: EmpleadoFormData;
   isSubmitting?: boolean;
   isCreating?: boolean;
 }
@@ -22,22 +21,16 @@ export default function EmpleadoForm({
   isSubmitting,
   isCreating,
 }: EmpleadoFormProps) {
-
-  const defaultValues: z.input<typeof EmpleadoSchema> = {
-    nombre: '',
-    email: '',
-    rol: 'Tecnico', // asegura que siempre haya un valor
-    password: undefined,
-    ...initialData,
-  };
-
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<z.input<typeof EmpleadoSchema>>({
+  } = useForm<EmpleadoFormData>({
     resolver: zodResolver(EmpleadoSchema),
-    defaultValues,
+    defaultValues: {
+      rol: 'Tecnico', // aseguramos que nunca sea undefined
+      ...initialData,
+    },
   });
 
   return (
