@@ -1,71 +1,73 @@
 'use client'
 
-import { useForm, SubmitHandler } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { EmpleadoSchema, EmpleadoFormData } from '@/schemas/empleado';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
-import FormError from '@/components/ui/FormError';
+import { EmpleadoFormData } from "@/schemas/empleado";
+import EmpleadoForm from "@/components/forms/EmpleadoForm";
+import SectionTitle from "@/components/ui/SectionTitle";
+import Button from "@/components/ui/Button";
 
-interface EmpleadoFormProps {
-  onSubmit: SubmitHandler<EmpleadoFormData>;
-  initialData?: Partial<EmpleadoFormData>;
-  isSubmitting?: boolean;
-  isCreating?: boolean;
+interface Empleado {
+  id_usuario: string;
+  nombre: string;
+  email: string;
+  rol: string | null;
 }
 
-export default function EmpleadoForm({
-  onSubmit,
-  initialData,
+interface EmpleadoEditModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  empleado: Partial<Empleado> | null; // Partial for new employee
+  onSave: (data: EmpleadoFormData, id_usuario: string | null) => void;
+  isSubmitting?: boolean;
+}
+
+export default function EmpleadoEditModal({
+  isOpen,
+  onClose,
+  empleado,
+  onSave,
   isSubmitting,
-  isCreating,
-}: EmpleadoFormProps) {
-  const { register, handleSubmit, formState: { errors } } = useForm<EmpleadoFormData>({
-    resolver: zodResolver(EmpleadoSchema) as unknown as SubmitHandler<EmpleadoFormData>,
-    defaultValues: {
-      rol: 'Tecnico',
-      ...initialData,
-    },
-  });
+}: EmpleadoEditModalProps) {
+  if (!isOpen) return null;
+
+  const initialData: EmpleadoFormData = {
+    nombre: empleado?.nombre || '',
+    email: empleado?.email || '',
+    rol: empleado?.rol === 'Admin' ? 'Admin' : 'Tecnico',
+    password: '', // inicializamos password vacío
+  };
+
+  const handleSubmit = (data: EmpleadoFormData) => {
+    onSave(data, empleado?.id_usuario || null);
+  };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      <Input
-        label="Nombre"
-        {...register('nombre')}
-        error={errors.nombre?.message}
-      />
-      <Input
-        label="Email"
-        type="email"
-        {...register('email')}
-        error={errors.email?.message}
-      />
-      {isCreating && (
-        <Input
-          label="Contraseña"
-          type="password"
-          {...register('password')}
-          error={errors.password?.message}
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-md relative">
+        <button
+          className="absolute top-2 right-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl"
+          onClick={onClose}
+          title="Cerrar"
+        >
+          &times;
+        </button>
+
+        <SectionTitle className="mb-4">
+          {empleado?.id_usuario ? "Editar Empleado" : "Nuevo Empleado"}
+        </SectionTitle>
+
+        <EmpleadoForm
+          onSubmit={handleSubmit}
+          initialData={initialData}
+          isSubmitting={isSubmitting}
+          isCreating={!empleado?.id_usuario}
         />
-      )}
-      <Select
-        label="Rol"
-        {...register('rol')}
-        error={errors.rol?.message}
-      >
-        <option value="Tecnico">Técnico</option>
-        <option value="Admin">Administrador</option>
-      </Select>
 
-      {errors.root && <FormError message={errors.root.message} />}
-
-      <div className="flex justify-end mt-6">
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Guardando...' : 'Guardar'}
-        </Button>
+        <div className="flex justify-end gap-2 mt-4">
+          <Button type="button" color="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+        </div>
       </div>
-    </form>
+    </div>
   );
 }

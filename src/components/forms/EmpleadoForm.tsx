@@ -1,16 +1,15 @@
 'use client'
 
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { EmpleadoSchema, EmpleadoFormData } from '@/schemas/empleado';
-import Input from '@/components/ui/Input';
-import Select from '@/components/ui/Select';
-import Button from '@/components/ui/Button';
-import FormError from '@/components/ui/FormError';
+import { EmpleadoFormData, EmpleadoSchema } from "@/schemas/empleado";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
 
 interface EmpleadoFormProps {
   onSubmit: (data: EmpleadoFormData) => void;
-  initialData?: Partial<EmpleadoFormData>;
+  initialData: EmpleadoFormData;
   isSubmitting?: boolean;
   isCreating?: boolean;
 }
@@ -21,51 +20,52 @@ export default function EmpleadoForm({
   isSubmitting,
   isCreating,
 }: EmpleadoFormProps) {
-  const form = useForm<EmpleadoFormData>({
-    resolver: zodResolver(EmpleadoSchema) as any, // <--- CAST para evitar conflicto TS
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<EmpleadoFormData>({
+    // 🔹 Evita el error de ESLint
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(EmpleadoSchema),
     defaultValues: {
-      rol: 'Tecnico',
+      rol: "Tecnico", // aseguramos que nunca sea undefined
       ...initialData,
     },
   });
-
-  const { register, handleSubmit, formState: { errors } } = form;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
       <Input
         label="Nombre"
-        {...register('nombre')}
+        {...register("nombre")}
         error={errors.nombre?.message}
       />
       <Input
         label="Email"
         type="email"
-        {...register('email')}
+        {...register("email")}
         error={errors.email?.message}
       />
-      {isCreating && (
-        <Input
-          label="Contraseña"
-          type="password"
-          {...register('password')}
-          error={errors.password?.message}
-        />
-      )}
+      <Input
+        label="Contraseña"
+        type="password"
+        {...register("password")}
+        error={errors.password?.message}
+        placeholder={isCreating ? "Ingrese una contraseña" : "Dejar en blanco para no cambiar"}
+      />
       <Select
         label="Rol"
-        {...register('rol')}
+        {...register("rol")}
+        options={[
+          { label: "Técnico", value: "Tecnico" },
+          { label: "Admin", value: "Admin" },
+        ]}
         error={errors.rol?.message}
-      >
-        <option value="Tecnico">Técnico</option>
-        <option value="Admin">Administrador</option>
-      </Select>
-
-      {errors.root && <FormError message={errors.root.message} />}
-
-      <div className="flex justify-end mt-6">
+      />
+      <div className="flex justify-end">
         <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Guardando...' : 'Guardar'}
+          {isCreating ? "Crear" : "Guardar"}
         </Button>
       </div>
     </form>
