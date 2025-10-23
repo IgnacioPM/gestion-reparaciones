@@ -1,5 +1,6 @@
 'use client'
 
+import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { EmpleadoSchema, EmpleadoFormData } from '@/schemas/empleado';
@@ -20,7 +21,7 @@ export default function EmpleadoForm({ onSubmit, initialData, isSubmitting, isCr
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<EmpleadoFormData>({
+  } = useForm<z.input<typeof EmpleadoSchema>>({
     resolver: zodResolver(EmpleadoSchema),
     defaultValues: {
       nombre: initialData?.nombre || '',
