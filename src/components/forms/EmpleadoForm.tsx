@@ -10,7 +10,7 @@ import FormError from '@/components/ui/FormError';
 
 interface EmpleadoFormProps {
   onSubmit: (data: EmpleadoFormData) => void;
-  initialData?: EmpleadoFormData;
+  initialData?: Partial<EmpleadoFormData>;
   isSubmitting?: boolean;
   isCreating?: boolean;
 }
@@ -21,17 +21,15 @@ export default function EmpleadoForm({
   isSubmitting,
   isCreating,
 }: EmpleadoFormProps) {
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useForm<EmpleadoFormData>({
-    resolver: zodResolver(EmpleadoSchema),
+  const form = useForm<EmpleadoFormData>({
+    resolver: zodResolver(EmpleadoSchema) as any, // <--- CAST para evitar conflicto TS
     defaultValues: {
-      rol: 'Tecnico', // aseguramos que nunca sea undefined
+      rol: 'Tecnico',
       ...initialData,
     },
   });
+
+  const { register, handleSubmit, formState: { errors } } = form;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
