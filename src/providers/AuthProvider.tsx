@@ -6,7 +6,7 @@ import { useEffect } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { checkSession, loading } = useAuthStore()
+  const { checkSession, loading, profile } = useAuthStore()
   const router = useRouter()
   const pathname = usePathname()
 
@@ -36,18 +36,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      // Si cierra sesión en otra pestaña
       if ((event === 'SIGNED_OUT' || !session) && pathname !== '/login') {
+        useAuthStore.setState({ session: null, profile: null })
         router.push('/login')
+      } else {
+        checkSession()
       }
-      // Refresca datos del perfil si hay sesión
-      checkSession()
     })
 
     return () => subscription.unsubscribe()
   }, [checkSession, router, pathname])
 
-  if (loading) {
+  useEffect(() => {
+    if (loading) return // Espera a que la sesión se verifique
+
+    const isAuthPage = pathname === '/login'
+
+    // Si no hay perfil y no estamos en la página de login, redirige a login
+    if (!profile && !isAuthPage) {
+      router.push('/login')
+    }
+
+    // Si hay perfil y estamos en la página de login, redirige al inicio
+    if (profile && isAuthPage) {
+      router.push('/')
+    }
+  }, [loading, profile, pathname, router])
+
+  // Muestra el loader solo si la sesión se está verificando y no hay perfil
+  // O si estamos en una página protegida sin perfil
+  if (loading || (!profile && pathname !== '/login')) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <p>Cargando...</p>
