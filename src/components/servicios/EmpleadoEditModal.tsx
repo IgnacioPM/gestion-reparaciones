@@ -24,11 +24,10 @@ export default function EmpleadoEditModal({
 }: EmpleadoEditModalProps) {
   if (!isOpen) return null;
 
-  const initialData: EmpleadoFormData = {
+  const initialData: Partial<EmpleadoFormData> = {
     nombre: empleado?.nombre || "",
     email: empleado?.email || "",
     rol: empleado?.rol === "Admin" ? "Admin" : "Tecnico",
-    password: "",
   };
 
   const handleSubmit = (data: EmpleadoFormData) => {

@@ -112,7 +112,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         .from('usuarios')
         .select(`*, empresa:empresas(*)`)
         .eq('auth_uid', authData.session.user.id)
-        .single()
+        .maybeSingle()
 
       if (profileError) {
         console.error("Error fetching profile in checkSession:", profileError.message)

@@ -34,6 +34,7 @@ export default function EmpleadoForm({ onSubmit, initialData, isSubmitting, isCr
         label="Email"
         {...register("email")}
         error={errors.email?.message}
+        disabled={!isCreating}
       />
       {isCreating && (
         <Input

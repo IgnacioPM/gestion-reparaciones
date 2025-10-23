@@ -84,14 +84,17 @@ export default function EmpleadosTable() {
     const handleSaveEmpleado = async (data: EmpleadoFormData, id_usuario: string | null) => {
         setIsSubmitting(true);
         try {
-            const dataToSave = { ...data, rol: data.rol || 'Tecnico' };
+            // Exclude password from the data to be saved in the 'usuarios' table
+            const { password, ...dataToSave } = data;
+            const finalData = { ...dataToSave, rol: dataToSave.rol || 'Tecnico' };
 
             if (id_usuario) {
-                // Update
+                // Update user in public.usuarios
                 const { error } = await supabase
                     .from('usuarios')
-                    .update(dataToSave)
+                    .update(finalData)
                     .eq('id_usuario', id_usuario);
+
                 if (error) throw error;
                 toast.success("Empleado actualizado correctamente");
             } else {
@@ -117,7 +120,7 @@ export default function EmpleadosTable() {
 
                 const { error: dbError } = await supabase
                     .from('usuarios')
-                    .insert([{ ...dataToSave, empresa_id: empresaId, auth_uid: auth_uid }]);
+                    .insert([{ ...finalData, empresa_id: empresaId, auth_uid: auth_uid }]);
                 
                 if (dbError) throw dbError;
 
