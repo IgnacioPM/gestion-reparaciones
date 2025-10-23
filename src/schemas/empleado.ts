@@ -1,10 +1,11 @@
-import { z } from 'zod';
+// schemas/empleado.ts
+import { z } from 'zod'
 
 export const EmpleadoSchema = z.object({
-  nombre: z.string().min(3, 'El nombre debe tener al menos 3 caracteres'),
-  email: z.string().email('El correo electrónico no es válido'),
-  rol: z.enum(['Admin', 'Tecnico']).default('Tecnico'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres').optional(),
-});
+  nombre: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(6).optional(),
+  rol: z.enum(['Tecnico', 'Admin']).default('Tecnico'),
+})
 
-export type EmpleadoFormData = z.infer<typeof EmpleadoSchema>;
+export type EmpleadoFormData = z.infer<typeof EmpleadoSchema>
