@@ -8,3 +8,4 @@ export const EmpleadoSchema = z.object({
 });
 
 export type EmpleadoFormData = z.infer<typeof EmpleadoSchema>;
+export type EmpleadoFormInput = z.input<typeof EmpleadoSchema>;

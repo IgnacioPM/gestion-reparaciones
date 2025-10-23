@@ -3,7 +3,7 @@
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { EmpleadoSchema, EmpleadoFormData } from '@/schemas/empleado';
+import { EmpleadoSchema, EmpleadoFormData, EmpleadoFormInput } from '@/schemas/empleado';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
@@ -11,7 +11,7 @@ import FormError from '@/components/ui/FormError';
 
 interface EmpleadoFormProps {
   onSubmit: (data: EmpleadoFormData) => void;
-  initialData?: Partial<EmpleadoFormData>;
+  initialData?: EmpleadoFormInput;
   isSubmitting?: boolean;
   isCreating?: boolean;
 }
@@ -21,14 +21,9 @@ export default function EmpleadoForm({ onSubmit, initialData, isSubmitting, isCr
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<z.input<typeof EmpleadoSchema>>({
+  } = useForm<EmpleadoFormInput>({
     resolver: zodResolver(EmpleadoSchema),
-    defaultValues: {
-      nombre: initialData?.nombre || '',
-      email: initialData?.email || '',
-      rol: initialData?.rol || 'Tecnico',
-      password: initialData?.password || '',
-    },
+    defaultValues: initialData,
   });
 
   return (
