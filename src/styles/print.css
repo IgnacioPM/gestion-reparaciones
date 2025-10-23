@@ -1,18 +1,11 @@
 @media print {
-  /* 🔹 Reset total */
   html,
   body {
-    padding: 0 !important;
     margin: 0 !important;
+    padding: 0 !important;
     width: 100% !important;
+    height: auto !important;
     background: white !important;
-  }
-
-  body {
-    display: flex !important;
-    justify-content: center !important;
-    align-items: flex-start !important;
-    overflow: hidden !important;
   }
 
   body * {
@@ -28,74 +21,76 @@
     display: block !important;
   }
 
-  /* 🔹 Ticket */
   .printable-servicio {
-    width: 56mm; /* un poco menos que 58mm */
-    height: auto; /* se ajusta al contenido */
-    background: white !important;
-    color: black !important;
-    font-family: 'Courier New', monospace;
-    font-size: 12.5px;
-    line-height: 1.35;
-    text-align: center;
-    padding: 2mm;
-    margin: 0 auto !important;
+    width: 100%;
+    margin: 0 !important;
+    padding: 5mm;
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* centrado horizontal */
+    font-family: 'Courier New', monospace;
+    font-size: 16px;
+    line-height: 1.5;
+    color: black !important;
+    background: white !important;
+    display: block;
   }
 
-  /* Secciones */
-  .printable-servicio header {
-    margin-bottom: 2mm;
-  }
-
-  .printable-servicio h1 {
-    font-size: 13.5px;
-    font-weight: bold;
-    margin: 1mm 0;
-    text-transform: uppercase;
-  }
-
-  .printable-servicio h2 {
-    font-size: 12px;
-    margin: 1mm 0;
-    text-decoration: underline;
-  }
-
-  .printable-servicio p {
-    margin: 0.8mm 0;
-    word-break: break-word;
-  }
-
-  .printable-servicio hr {
-    border: none;
-    border-top: 1px dashed black;
-    margin: 1.2mm 0;
-  }
-
-  .printable-servicio footer {
-    font-size: 10.5px;
-    margin-top: 1mm;
-  }
-
-  .printable-servicio .firma {
-    font-size: 9.5px;
-    margin-top: 1mm;
+  .logo-container {
+    text-align: center;
+    margin-bottom: 5mm;
   }
 
   .printable-servicio img {
     display: block !important;
-    max-width: 80%;
+    max-width: 50%;
     height: auto;
-    margin: 0 auto 1mm;
+    margin: 0 auto;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
+  header,
+  section,
+  footer {
+    margin: 0 0 5mm 0;
+    padding: 0;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: bold;
+    margin: 0.2em 0;
+    text-align: center;
+  }
+
+  h2 {
+    font-size: 18px;
+    margin: 0.2em 0;
+    text-decoration: underline;
+  }
+
+  p {
+    margin: 0.2em 0;
+    word-break: break-word;
+  }
+
+  hr {
+    border: none;
+    border-top: 1px dashed black;
+    margin: 0.5em 0;
+  }
+
+  footer {
+    font-size: 14px;
+    margin-top: 1em;
+  }
+
+  .firma {
+    font-size: 13px;
+    margin-top: 0.3em;
+  }
+
   @page {
-    size: 58mm auto; /* ancho fijo, altura automática */
+    size: auto; /* que la impresora determine altura */
     margin: 0; /* sin márgenes */
   }
 }

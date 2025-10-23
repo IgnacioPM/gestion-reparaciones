@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import Image from "next/image";
 import { Servicio } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
@@ -23,32 +23,23 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio, 
         });
     };
 
-    // ✅ Función para imprimir sin mostrar en pantalla
     const handlePrint = () => {
-        const printable = printRef.current;
-        if (!printable) return;
-
-        printable.classList.remove("hidden");
         window.print();
-        printable.classList.add("hidden");
     };
 
     return (
         <>
-            {/* Botón visible solo en modo desarrollo o si querés probar */}
             <button
                 onClick={handlePrint}
-                className="hidden print:hidden fixed top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded text-sm z-50"
+                className="fixed top-4 right-4 bg-blue-600 text-white px-3 py-1 rounded text-sm z-50 print:hidden"
             >
                 🖨 Imprimir
             </button>
 
-            {/* CONTENIDO IMPRIMIBLE (oculto hasta imprimir) */}
-            <div ref={printRef} className="hidden print-only">
+            <div ref={printRef} className="print-only hidden">
                 <div className="printable-servicio">
-                    {/* ENCABEZADO */}
-                    <header className="text-center mb-2">
-                        <div className="logo-container mb-1">
+                    <header>
+                        <div className="logo-container">
                             <Image
                                 src={logoDataUrl || profile?.empresa?.logo_url || "/icons/logo-CR.svg"}
                                 alt="Logo"
@@ -65,7 +56,6 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio, 
 
                     <hr />
 
-                    {/* DATOS FACTURA */}
                     <section>
                         <p><strong>Fecha:</strong> {formatFecha(servicio.fecha_ingreso)}</p>
                         <p><strong>Estado:</strong> {servicio.estado}</p>
@@ -73,7 +63,6 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio, 
 
                     <hr />
 
-                    {/* CLIENTE */}
                     <section>
                         <h2>Cliente</h2>
                         <p><strong>Nombre:</strong> {servicio.equipo?.cliente?.nombre}</p>
@@ -84,7 +73,6 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio, 
 
                     <hr />
 
-                    {/* EQUIPO */}
                     <section>
                         <h2>Equipo</h2>
                         <p><strong>Tipo:</strong> {servicio.equipo?.tipo}</p>
@@ -95,18 +83,14 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio, 
 
                     <hr />
 
-                    {/* SERVICIO */}
                     <section>
                         <h2>Detalle</h2>
                         <p><strong>Falla:</strong> {servicio.descripcion_falla}</p>
-                        {servicio.nota_trabajo && (
-                            <p><strong>Notas:</strong> {servicio.nota_trabajo}</p>
-                        )}
+                        {servicio.nota_trabajo && <p><strong>Notas:</strong> {servicio.nota_trabajo}</p>}
                     </section>
 
                     <hr />
 
-                    {/* COSTOS */}
                     <section className="text-right">
                         {servicio.costo_estimado !== null && (
                             <p><strong>Estimado:</strong> <FormattedAmount amount={Number(servicio.costo_estimado)} /></p>
@@ -116,7 +100,6 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({ servicio, 
                         )}
                     </section>
 
-                    {/* PIE */}
                     <footer>
                         <p>{profile?.empresa?.pie_pagina || "Gracias por su preferencia"}</p>
                         <p>Comprobante sin valor fiscal</p>
