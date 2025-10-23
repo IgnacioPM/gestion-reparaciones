@@ -5,12 +5,7 @@ import EmpleadoForm from "@/components/forms/EmpleadoForm";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 
-interface Empleado {
-  id_usuario: string;
-  nombre: string;
-  email: string;
-  rol: "Tecnico" | "Admin";
-}
+import { Empleado } from "@/types/empleado";
 
 interface EmpleadoEditModalProps {
   isOpen: boolean;

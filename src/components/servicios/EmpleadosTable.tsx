@@ -8,12 +8,7 @@ import { useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
 import { EmpleadoFormData } from "@/schemas/empleado";
 
-interface Empleado {
-    id_usuario: string
-    nombre: string
-    email: string
-    rol: string | null
-}
+import { Empleado } from "@/types/empleado";
 
 export default function EmpleadosTable() {
     const { profile } = useAuthStore();
