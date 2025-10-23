@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, useCallback } from "react"
 import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { supabase } from "@/lib/supabaseClient"
 import EmpleadoEditModal from "@/components/servicios/EmpleadoEditModal";
 import { useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
+import { EmpleadoFormData } from "@/schemas/empleado";
 
 interface Empleado {
     id_usuario: string
@@ -16,7 +16,6 @@ interface Empleado {
 }
 
 export default function EmpleadosTable() {
-    const router = useRouter()
     const { profile } = useAuthStore();
     const [empleados, setEmpleados] = useState<Empleado[]>([])
     const [loading, setLoading] = useState(true)
@@ -28,6 +27,49 @@ export default function EmpleadosTable() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedEmpleado, setSelectedEmpleado] = useState<Partial<Empleado> | null>(null);
     const itemsPerPage = 10
+
+    const fetchEmpleados = useCallback(async () => {
+        setLoading(true)
+        try {
+            const from = (currentPage - 1) * itemsPerPage
+            const to = from + itemsPerPage - 1
+
+            const empresaId = profile?.empresa_id;
+            if (!empresaId) {
+                setEmpleados([]);
+                setTotalEmpleados(0);
+                setTotalPages(1);
+                setLoading(false);
+                return;
+            }
+
+            let query = supabase
+                .from('usuarios')
+                .select('id_usuario, nombre, email, rol', { count: 'exact' })
+                .eq('empresa_id', empresaId);
+
+            if (searchQuery.trim() !== "") {
+                const q = `%${searchQuery.trim()}%`
+                query = query.or(`nombre.ilike.${q},email.ilike.${q}`)
+            }
+
+            const { data, error, count } = await query
+                .order('nombre', { ascending: true })
+                .range(from, to)
+
+            if (error) throw error
+
+            if (data && count !== null) {
+                setEmpleados(data)
+                setTotalEmpleados(count)
+                setTotalPages(Math.ceil(count / itemsPerPage))
+            }
+        } catch (error) {
+            console.error('Error al cargar empleados:', error)
+        } finally {
+            setLoading(false)
+        }
+    }, [currentPage, profile, searchQuery])
 
     const handleNewEmpleado = () => {
         setSelectedEmpleado({});
@@ -44,7 +86,7 @@ export default function EmpleadosTable() {
         setSelectedEmpleado(null);
     }
 
-    const handleSaveEmpleado = async (data: any, id_usuario: string | null) => {
+    const handleSaveEmpleado = async (data: EmpleadoFormData, id_usuario: string | null) => {
         setIsSubmitting(true);
         try {
             if (id_usuario) {
@@ -86,61 +128,22 @@ export default function EmpleadosTable() {
             }
             fetchEmpleados(); // Refresh table
             handleCloseModal();
-        } catch (error: any) {
-            toast.error(error.message || "Ocurrió un error");
+        } catch (error: unknown) {
+            if (error instanceof Error) {
+                toast.error(error.message || "Ocurrió un error");
+            } else {
+                toast.error("Ocurrió un error desconocido");
+            }
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    const fetchEmpleados = async () => {
-        setLoading(true)
-        try {
-            const from = (currentPage - 1) * itemsPerPage
-            const to = from + itemsPerPage - 1
-
-            const empresaId = profile?.empresa_id;
-            if (!empresaId) {
-                setEmpleados([]);
-                setTotalEmpleados(0);
-                setTotalPages(1);
-                setLoading(false);
-                return;
-            }
-
-            let query = supabase
-                .from('usuarios')
-                .select('id_usuario, nombre, email, rol', { count: 'exact' })
-                .eq('empresa_id', empresaId);
-
-            if (searchQuery.trim() !== "") {
-                const q = `%${searchQuery.trim()}%`
-                query = query.or(`nombre.ilike.${q},email.ilike.${q}`)
-            }
-
-            const { data, error, count } = await query
-                .order('nombre', { ascending: true })
-                .range(from, to)
-
-            if (error) throw error
-
-            if (data && count !== null) {
-                setEmpleados(data)
-                setTotalEmpleados(count)
-                setTotalPages(Math.ceil(count / itemsPerPage))
-            }
-        } catch (error) {
-            console.error('Error al cargar empleados:', error)
-        } finally {
-            setLoading(false)
-        }
-    }
-
     useEffect(() => {
         if (profile) {
             fetchEmpleados()
         }
-    }, [currentPage, searchQuery, profile])
+    }, [profile, fetchEmpleados])
 
     return (
         <div className="w-full">
