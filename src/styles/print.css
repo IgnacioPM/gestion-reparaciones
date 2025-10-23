@@ -1,101 +1,101 @@
-/* --- Ocultar en pantalla: .print-only no aparece nunca en la UI --- */
-.print-only {
-  display: none !important;
-}
-
-/* === Reglas para impresión === */
 @media print {
-  /* Mostrar el contenedor imprimible */
-  .print-only {
-    display: block !important;
+  /* 🔹 Reset total */
+  html,
+  body {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+    background: white !important;
   }
 
-  /* Oculta todo lo demás de la página */
+  body {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    overflow: hidden !important;
+  }
+
   body * {
     visibility: hidden !important;
   }
 
-  /* Muestra sólo el contenido dentro de .print-only */
-  .print-only,
-  .print-only * {
+  .printable-servicio,
+  .printable-servicio * {
     visibility: visible !important;
   }
 
-  /* Posicionar el contenido imprimible en la esquina superior */
   .print-only {
-    position: absolute !important;
-    left: 0;
-    top: 0;
-    width: 58mm;
-    margin: 0;
-    padding: 0;
+    display: block !important;
+  }
+
+  /* 🔹 Ticket */
+  .printable-servicio {
+    width: 56mm; /* un poco menos que 58mm */
+    height: auto; /* se ajusta al contenido */
     background: white !important;
     color: black !important;
-    z-index: 9999;
+    font-family: 'Courier New', monospace;
+    font-size: 12.5px;
+    line-height: 1.35;
+    text-align: center;
+    padding: 2mm;
+    margin: 0 auto !important;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* centrado horizontal */
   }
 
-  /* Ajustes para evitar múltiples páginas */
-  .printable-servicio {
-    box-shadow: none !important;
-    page-break-after: avoid;
-    page-break-before: avoid;
-    page-break-inside: avoid;
+  /* Secciones */
+  .printable-servicio header {
+    margin-bottom: 2mm;
   }
 
-  /* Forzar tamaño de página para impresoras térmicas 58mm */
-  @page {
-    size: 58mm auto;
-    margin: 0;
+  .printable-servicio h1 {
+    font-size: 13.5px;
+    font-weight: bold;
+    margin: 1mm 0;
+    text-transform: uppercase;
   }
 
-  /* Imágenes (logo) imprimible */
+  .printable-servicio h2 {
+    font-size: 12px;
+    margin: 1mm 0;
+    text-decoration: underline;
+  }
+
+  .printable-servicio p {
+    margin: 0.8mm 0;
+    word-break: break-word;
+  }
+
+  .printable-servicio hr {
+    border: none;
+    border-top: 1px dashed black;
+    margin: 1.2mm 0;
+  }
+
+  .printable-servicio footer {
+    font-size: 10.5px;
+    margin-top: 1mm;
+  }
+
+  .printable-servicio .firma {
+    font-size: 9.5px;
+    margin-top: 1mm;
+  }
+
   .printable-servicio img {
     display: block !important;
-    max-width: 90px !important; /* logo más grande */
-    height: auto !important;
-    margin: 0 auto 2mm;
+    max-width: 80%;
+    height: auto;
+    margin: 0 auto 1mm;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
 
-  /* Tipografía y espaciados para que no salgan 2 hojas */
-  .printable-servicio {
-    font-family: 'Courier New', monospace;
-    font-size: 12.5px;
-    line-height: 1.25;
-    padding: 2mm 3mm;
-  }
-
-  .printable-servicio header {
-    margin-bottom: 2mm;
-  }
-  .printable-servicio h1 {
-    font-size: 14px;
-    margin: 0;
-    line-height: 1;
-  }
-  .printable-servicio h2 {
-    font-size: 12px;
-    margin: 2mm 0 1mm;
-    text-align: center;
-  }
-  .printable-servicio p {
-    margin: 0.4mm 0;
-  }
-  .printable-servicio hr {
-    border: none;
-    border-top: 1px dashed #000;
-    margin: 2mm 0;
-  }
-  .printable-servicio footer {
-    margin-top: 2mm;
-    font-size: 11px;
-    text-align: center;
-  }
-
-  /* Asegura que el contenedor no deje espacio bajo él */
-  .printable-servicio {
-    margin-bottom: 0 !important;
-    padding-bottom: 2mm;
+  @page {
+    size: 58mm auto; /* ancho fijo, altura automática */
+    margin: 0; /* sin márgenes */
   }
 }
