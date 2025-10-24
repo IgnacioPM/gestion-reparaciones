@@ -47,6 +47,15 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
     const [loading, setLoading] = useState(true);
     const [id, setId] = useState<string>("");
 
+    const handlePrint = useCallback(() => {
+        if (servicio?.id_reparacion) {
+            const printWindow = window.open(`/servicios/${servicio.id_reparacion}/print`, '_blank');
+            if (printWindow) {
+                printWindow.focus();
+            }
+        }
+    }, [servicio]);
+
     const handleSave = async (data: Partial<Servicio>) => {
         if (!id) return;
         await supabase.from("servicios").update(data).eq("id_reparacion", id);
