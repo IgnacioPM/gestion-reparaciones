@@ -45,8 +45,8 @@
 }
 
 @media print {
-    /* Hide everything by default */
-    body > * {
+    /* Hide the main Next.js app root */
+    #__next {
         display: none !important;
     }
 

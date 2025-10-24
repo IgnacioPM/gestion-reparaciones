@@ -12,6 +12,7 @@ import { InfoRow } from "@/components/ui/InfoRow";
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
 import { ServicioPrintable } from "@/components/servicios/ServicioPrintable";
 import React, { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Servicio, Cliente } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
@@ -273,20 +274,23 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                 </div>
             </main>
 
-            {isPrinting && servicio && (
-                <ServicioPrintable
-                    servicio={servicio}
-                    profile={profile}
-                    logoSrc={logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg"}
-                />
-            )}
-
             <ServicioEditModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
                 servicio={servicio}
                 onSave={handleSave}
             />
+
+            {isPrinting && servicio && document.body && (
+                createPortal(
+                    <ServicioPrintable
+                        servicio={servicio}
+                        profile={profile}
+                        logoSrc={logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg"}
+                    />,
+                    document.body
+                )
+            )}
         </div>
     );
 }
