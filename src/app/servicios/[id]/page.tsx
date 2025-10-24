@@ -1,28 +1,28 @@
 ﻿'use client';
 // app/servicios/[id]/page.tsx
-import { supabase } from "@/lib/supabaseClient"
-import Navbar from "@/components/ui/Navbar"
-import "@/styles/print.css"
-import { ArrowLeft, Edit } from "lucide-react"
-import Link from "next/link"
-import { FormattedAmount } from "@/components/ui/FormattedAmount"
-import SectionTitle from "@/components/ui/SectionTitle"
-import { InfoBlock } from "@/components/ui/InfoBlock"
-import { InfoRow } from "@/components/ui/InfoRow"
-import { ServicioEditModal } from "@/components/servicios/ServicioEditModal"
-import React from "react"
-import { Servicio } from "@/types/servicio"
-import { useAuthStore } from "@/stores/auth"
-import { useCallback } from "react";
+import { supabase } from "@/lib/supabaseClient";
+import Navbar from "@/components/ui/Navbar";
+import "@/styles/print.css";
+import { ArrowLeft, Edit } from "lucide-react";
+import Link from "next/link";
+import { FormattedAmount } from "@/components/ui/FormattedAmount";
+import SectionTitle from "@/components/ui/SectionTitle";
+import { InfoBlock } from "@/components/ui/InfoBlock";
+import { InfoRow } from "@/components/ui/InfoRow";
+import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
+import React, { useCallback, useEffect, useState } from "react";
+import { Servicio } from "@/types/servicio";
+import { useAuthStore } from "@/stores/auth";
 
-export function useServicioPrintable(servicio: Servicio | null) {
+// ------------------- Hook interno para imprimir ticket -------------------
+function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
     const { profile } = useAuthStore();
 
     const printTicket = useCallback(() => {
         if (!servicio) return;
 
-        // Logo directo como URL pública, igual que en Navbar
-        const logoSrc = profile?.empresa?.logo_url || "/icons/logo-CR.svg";
+        // Usamos logoDataUrl si está cargado, sino URL pública
+        const logoSrc = logoDataUrl || profile?.empresa?.logo_url || "/icons/logo-CR.svg";
 
         const ticketContent = `
       <html>
@@ -96,20 +96,21 @@ export function useServicioPrintable(servicio: Servicio | null) {
         printWindow.focus();
         printWindow.print();
         printWindow.close();
-    }, [servicio, profile]);
+    }, [servicio, profile, logoDataUrl]);
 
     return { printTicket };
 }
-// ------------------- Página del detalle del servicio -------------------
+
+// ------------------- Página -------------------
 function getBadgeColor(estado: string | null) {
     switch (estado) {
-        case "Recibido": return "bg-yellow-100 text-yellow-800"
-        case "En revisión": return "bg-orange-100 text-orange-800"
-        case "En reparacion": return "bg-blue-100 text-blue-800"
-        case "Listo": return "bg-green-100 text-green-800"
-        case "Entregado": return "bg-gray-100 text-gray-800"
-        case "Anulado": return "bg-red-100 text-red-800"
-        default: return "bg-gray-100 text-gray-800"
+        case "Recibido": return "bg-yellow-100 text-yellow-800";
+        case "En revisión": return "bg-orange-100 text-orange-800";
+        case "En reparacion": return "bg-blue-100 text-blue-800";
+        case "Listo": return "bg-green-100 text-green-800";
+        case "Entregado": return "bg-gray-100 text-gray-800";
+        case "Anulado": return "bg-red-100 text-red-800";
+        default: return "bg-gray-100 text-gray-800";
     }
 }
 
@@ -120,52 +121,51 @@ function formatFechaSimple(fecha: string) {
         year: "numeric",
         hour: "2-digit",
         minute: "2-digit",
-    })
+    });
 }
 
 function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }> }) {
     const { profile } = useAuthStore();
-    const [isModalOpen, setIsModalOpen] = React.useState(false);
-    const [servicio, setServicio] = React.useState<Servicio | null>(null);
-    const [error, setError] = React.useState<{ message?: string } | null>(null);
-    const [loading, setLoading] = React.useState(true);
-    const [id, setId] = React.useState<string>("");
-    const [logoDataUrl, setLogoDataUrl] = React.useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [servicio, setServicio] = useState<Servicio | null>(null);
+    const [error, setError] = useState<{ message?: string } | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [id, setId] = useState<string>("");
+    const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
 
-    // ------------------- Carga de datos -------------------
-    React.useEffect(() => {
+    useEffect(() => {
         (async () => {
             const { id } = await params;
             setId(id);
             const { data, error } = await supabase
                 .from("servicios")
                 .select(`
-                    id_reparacion,
-                    fecha_ingreso,
-                    descripcion_falla,
-                    estado,
-                    costo_estimado,
-                    costo_final,
-                    nota_trabajo,
-                    fecha_entrega,
-                    equipo:equipo_id (
-                        tipo,
-                        marca,
-                        modelo,
-                        serie,
-                        cliente:cliente_id (
-                            nombre,
-                            telefono,
-                            correo
-                        )
-                    )
-                `)
+          id_reparacion,
+          fecha_ingreso,
+          descripcion_falla,
+          estado,
+          costo_estimado,
+          costo_final,
+          nota_trabajo,
+          fecha_entrega,
+          equipo:equipo_id (
+              tipo,
+              marca,
+              modelo,
+              serie,
+              cliente:cliente_id (
+                  nombre,
+                  telefono,
+                  correo
+              )
+          )
+        `)
                 .eq("id_reparacion", id)
                 .single();
 
             if (data) {
                 const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
-                let clienteRaw = equipoRaw?.cliente as { nombre?: string; telefono?: string; correo?: string } | { nombre?: string; telefono?: string; correo?: string }[] | undefined;
+                let clienteRaw = equipoRaw?.cliente as any;
                 if (Array.isArray(clienteRaw)) clienteRaw = clienteRaw[0];
 
                 const servicioNormalizado: Servicio = {
@@ -183,7 +183,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         marca: equipoRaw.marca ?? "",
                         modelo: equipoRaw.modelo ?? "",
                         serie: equipoRaw.serie ?? "",
-                        cliente: clienteRaw && typeof clienteRaw === 'object' ? {
+                        cliente: clienteRaw ? {
                             nombre: clienteRaw.nombre ?? "",
                             telefono: clienteRaw.telefono ?? "",
                             correo: clienteRaw.correo ?? ""
@@ -193,6 +193,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
 
                 setServicio(servicioNormalizado);
 
+                // Convertir logo a Data URL para imprimir seguro
                 if (profile?.empresa?.logo_url) {
                     try {
                         const response = await fetch(profile.empresa.logo_url);
@@ -200,8 +201,8 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         const reader = new FileReader();
                         reader.onloadend = () => setLogoDataUrl(reader.result as string);
                         reader.readAsDataURL(blob);
-                    } catch (error) {
-                        console.error("Error fetching or converting logo:", error);
+                    } catch (err) {
+                        console.error("Error al cargar logo:", err);
                     }
                 }
             } else {
@@ -211,7 +212,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
             setError(error);
             setLoading(false);
         })();
-    }, [params, isModalOpen, profile]);
+    }, [params, profile]);
 
     const handleSave = async (data: Partial<Servicio>) => {
         if (!id) return;
@@ -248,7 +249,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             <Navbar />
             <main className="container mx-auto px-4 py-8">
-                {/* Preload logo for printing */}
+                {/* Preload logo para impresión */}
                 {profile?.empresa?.logo_url && (
                     <img src={profile.empresa.logo_url} alt="" className="w-0 h-0 opacity-0 absolute print:hidden" />
                 )}
