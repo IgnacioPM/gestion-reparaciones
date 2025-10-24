@@ -29,14 +29,15 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
         <head>
           <title>Comprobante</title>
           <style>
-            body { font-family: 'Courier New', monospace; font-size: 20px; margin: 5mm; }
+            body { font-family: 'Courier New', monospace; font-size: 12px; margin: 2mm; }
+            .printable-servicio { max-width: 58mm; margin: 0 auto; box-sizing: border-box; }
             .header, .footer { text-align: center; }
-            .logo { margin-bottom: 5mm; }
-            .logo img { max-width: 150px; height: auto; display:block; margin:0 auto; }
-            h1 { font-size: 24px; margin: 6px 0; text-align: center; }
-            h2 { font-size: 22px; margin: 4px 0; }
-            p { margin: 3px 0; word-break: break-word; }
-            hr { border: none; border-top: 1px dashed black; margin: 5px 0; }
+            .logo { margin-bottom: 3mm; }
+            .logo img { max-width: 100%; height: auto; display:block; margin:0 auto; }
+            h1 { font-size: 16px; margin: 4px 0; text-align: center; }
+            h2 { font-size: 14px; margin: 3px 0; }
+            p { margin: 2px 0; word-break: break-word; }
+            hr { border: none; border-top: 1px dashed black; margin: 3px 0; }
           </style>
         </head>
         <body>
