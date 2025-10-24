@@ -43,3 +43,15 @@
     @apply translate-x-0;
   }
 }
+
+@media print {
+    body > div:not(.printable-servicio) {
+        display: none;
+    }
+    .printable-servicio {
+        display: block !important;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+}
