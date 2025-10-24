@@ -15,7 +15,7 @@ function PrintServicioPage({ params }: { params: Promise<{ id: string }> }) {
 
     useEffect(() => {
         const fetchServicio = async () => {
-            const { id } = params;
+            const { id } = await params;
             if (!id) {
                 setError("ID de servicio no proporcionado.");
                 setLoading(false);
