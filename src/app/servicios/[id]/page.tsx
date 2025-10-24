@@ -19,102 +19,112 @@ import { useAuthStore } from "@/stores/auth";
 function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
     const { profile } = useAuthStore();
 
-    const printTicket = useCallback(() => {
-        if (!servicio) return;
-
-        const logoSrc = logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg";
-
-        const ticketContent = `
-      <html>
-        <head>
-          <title>Comprobante</title>
-          <style>
-            body { font-family: 'Courier New', monospace; font-size: 12px; margin: 2mm; }
-            .printable-servicio { max-width: 58mm; margin: 0 auto; box-sizing: border-box; }
-            .header, .footer { text-align: center; }
-            .logo { margin-bottom: 3mm; }
-            .logo img { max-width: 100%; height: auto; display:block; margin:0 auto; }
-            h1 { font-size: 16px; margin: 4px 0; text-align: center; }
-            h2 { font-size: 14px; margin: 3px 0; }
-            p { margin: 2px 0; word-break: break-word; }
-            hr { border: none; border-top: 1px dashed black; margin: 3px 0; }
-          </style>
-        </head>
-        <body>
-          <div class="printable-servicio">
-            <div class="header">
-              <div class="logo">
-                <img src="${logoSrc}" alt="${profile?.empresa?.nombre ?? 'Logo'}" />
-              </div>
-              <h1>${profile?.empresa?.nombre ?? "Control de Reparaciones"}</h1>
-              ${profile?.empresa?.slogan ? `<p>${profile.empresa.slogan}</p>` : ""}
-              <p>Dir: ${profile?.empresa?.direccion ?? ""}</p>
-              ${profile?.empresa?.telefono ? `<p>Tel: ${profile.empresa.telefono}</p>` : ""}
-            </div>
-
-            <hr/>
-
-            <h2>Cliente</h2>
-            <p>Nombre: ${servicio.equipo?.cliente?.nombre ?? ""}</p>
-            <p>Tel: ${servicio.equipo?.cliente?.telefono ?? ""}</p>
-            <p>Correo: ${servicio.equipo?.cliente?.correo ?? ""}</p>
-
-            <hr/>
-
-            <h2>Equipo</h2>
-            <p>Tipo: ${servicio.equipo?.tipo ?? ""}</p>
-            <p>Marca: ${servicio.equipo?.marca ?? ""}</p>
-            <p>Modelo: ${servicio.equipo?.modelo ?? ""}</p>
-            <p>Serie: ${servicio.equipo?.serie ?? ""}</p>
-
-            <hr/>
-
-            <h2>Detalle</h2>
-            <p>Falla: ${servicio.descripcion_falla ?? ""}</p>
-            <p>Notas: ${servicio.nota_trabajo ?? ""}</p>
-
-            <hr/>
-
-            <p>Estimado: ${servicio.costo_estimado ?? ""}</p>
-            <p>Total: ${servicio.costo_final ?? ""}</p>
-
-            <hr/>
-
-            <div class="footer">
-              <p>${profile?.empresa?.pie_pagina ?? "Gracias por su preferencia"}</p>
-              <p>Comprobante sin valor fiscal</p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-        // Crear iframe temporal para imprimir
-        const iframe = document.createElement("iframe");
-        iframe.style.position = "fixed";
-        iframe.style.right = "0";
-        iframe.style.bottom = "0";
-        iframe.style.width = "0";
-        iframe.style.height = "0";
-        iframe.style.border = "0";
-        document.body.appendChild(iframe);
-
-        const doc = iframe.contentWindow?.document;
-        if (!doc) return;
-
-        doc.open();
-        doc.write(ticketContent);
-        doc.close();
-
-        iframe.onload = () => {
-            iframe.contentWindow?.focus();
-            iframe.contentWindow?.print();
-
-            // Eliminar iframe después de imprimir
-            setTimeout(() => document.body.removeChild(iframe), 500);
-        };
-    }, [servicio, profile, logoDataUrl]);
-
+            const printTicket = useCallback(() => {
+                if (!servicio) return;
+    
+                const logoSrc = logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg";
+    
+                const ticketContent = `
+              <html>
+                <head>
+                  <title>Comprobante</title>
+                  <style>
+                    body { font-family: 'Courier New', monospace; font-size: 20px; margin: 5mm; }
+                    .header, .footer { text-align: center; }
+                    .logo { margin-bottom: 5mm; }
+                    .logo img { max-width: 150px; height: auto; display:block; margin:0 auto; }
+                    h1 { font-size: 24px; margin: 6px 0; text-align: center; }
+                    h2 { font-size: 22px; margin: 4px 0; }
+                    p { margin: 3px 0; word-break: break-word; }
+                    hr { border: none; border-top: 1px dashed black; margin: 5px 0; }
+                  </style>
+                </head>
+                <body>
+                  <div class="printable-servicio">
+                    <div class="header">
+                      <div class="logo">
+                        <img src="${logoSrc}" alt="${profile?.empresa?.nombre ?? 'Logo'}" />
+                      </div>
+                      <h1>${profile?.empresa?.nombre ?? "Control de Reparaciones"}</h1>
+                      ${profile?.empresa?.slogan ? `<p>${profile.empresa.slogan}</p>` : ""}
+                      <p>Dir: ${profile?.empresa?.direccion ?? ""}</p>
+                      ${profile?.empresa?.telefono ? `<p>Tel: ${profile.empresa.telefono}</p>` : ""}
+                    </div>
+    
+                    <hr/>
+    
+                    <h2>Cliente</h2>
+                    <p>Nombre: ${servicio.equipo?.cliente?.nombre ?? ""}</p>
+                    <p>Tel: ${servicio.equipo?.cliente?.telefono ?? ""}</p>
+                    <p>Correo: ${servicio.equipo?.cliente?.correo ?? ""}</p>
+    
+                    <hr/>
+    
+                    <h2>Equipo</h2>
+                    <p>Tipo: ${servicio.equipo?.tipo ?? ""}</p>
+                    <p>Marca: ${servicio.equipo?.marca ?? ""}</p>
+                    <p>Modelo: ${servicio.equipo?.modelo ?? ""}</p>
+                    <p>Serie: ${servicio.equipo?.serie ?? ""}</p>
+    
+                    <hr/>
+    
+                    <h2>Detalle</h2>
+                    <p>Falla: ${servicio.descripcion_falla ?? ""}</p>
+                    <p>Notas: ${servicio.nota_trabajo ?? ""}</p>
+    
+                    <hr/>
+    
+                    <p>Estimado: ${servicio.costo_estimado ?? ""}</p>
+                    <p>Total: ${servicio.costo_final ?? ""}</p>
+    
+                    <hr/>
+    
+                    <div class="footer">
+                      <p>${profile?.empresa?.pie_pagina ?? "Gracias por su preferencia"}</p>
+                      <p>Comprobante sin valor fiscal</p>
+                    </div>
+                  </div>
+                </body>
+              </html>
+            `;
+    
+                const originalBody = document.body.innerHTML;
+                const originalBodyStyles = document.body.style.cssText;
+    
+                const iframe = document.createElement("iframe");
+                iframe.style.position = "absolute";
+                iframe.style.top = "0";
+                iframe.style.left = "0";
+                iframe.style.width = "100%";
+                iframe.style.height = "100%";
+                iframe.style.border = "0";
+                iframe.style.zIndex = "9999"; // Ensure it's on top
+    
+                document.body.innerHTML = ''; // Clear body
+                document.body.style.cssText = 'margin: 0; padding: 0; overflow: hidden;'; // Hide scrollbars
+                document.body.appendChild(iframe);
+    
+                const doc = iframe.contentWindow?.document;
+                if (!doc) {
+                    document.body.innerHTML = originalBody;
+                    document.body.style.cssText = originalBodyStyles;
+                    return;
+                }
+    
+                doc.open();
+                doc.write(ticketContent);
+                doc.close();
+    
+                iframe.onload = () => {
+                    iframe.contentWindow?.focus();
+                    iframe.contentWindow?.print();
+    
+                    // Restore original body content and styles after printing
+                    document.body.innerHTML = originalBody;
+                    document.body.style.cssText = originalBodyStyles;
+                    document.body.removeChild(iframe);
+                };
+            }, [servicio, profile, logoDataUrl]);
     return { printTicket };
 }
 
