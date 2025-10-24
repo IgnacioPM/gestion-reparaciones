@@ -11,7 +11,7 @@ import { InfoBlock } from "@/components/ui/InfoBlock";
 import { InfoRow } from "@/components/ui/InfoRow";
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
 import React, { useCallback, useEffect, useState } from "react";
-import { Servicio } from "@/types/servicio";
+import { Servicio, Cliente, Equipo } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 
 // ------------------- Hook interno para imprimir ticket -------------------
@@ -21,8 +21,7 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
     const printTicket = useCallback(() => {
         if (!servicio) return;
 
-        // Usamos logoDataUrl si está cargado, sino URL pública
-        const logoSrc = logoDataUrl || profile?.empresa?.logo_url || "/icons/logo-CR.svg";
+        const logoSrc = logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg";
 
         const ticketContent = `
       <html>
@@ -46,7 +45,7 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
                 <img src="${logoSrc}" alt="${profile?.empresa?.nombre ?? 'Logo'}" />
               </div>
               <h1>${profile?.empresa?.nombre ?? "Control de Reparaciones"}</h1>
-              ${profile?.empresa?.slogan ? `<p>${profile.empresa.slogan}</p>` : ""}
+              ${profile?.empresa?.slogan ?? "" ? `<p>${profile.empresa.slogan}</p>` : ""}
               <p>Dir: ${profile?.empresa?.direccion ?? ""}</p>
               ${profile?.empresa?.telefono ? `<p>Tel: ${profile.empresa.telefono}</p>` : ""}
             </div>
@@ -132,42 +131,46 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
     const [error, setError] = useState<{ message?: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [id, setId] = useState<string>("");
-    const [logoDataUrl, setLogoDataUrl] = useState<string | null>(null);
+    const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined);
 
     useEffect(() => {
         (async () => {
             const { id } = await params;
             setId(id);
+
             const { data, error } = await supabase
                 .from("servicios")
                 .select(`
-                    id_reparacion,
-                    fecha_ingreso,
-                    descripcion_falla,
-                    estado,
-                    costo_estimado,
-                    costo_final,
-                    nota_trabajo,
-                    fecha_entrega,
-                    equipo:equipo_id (
-                        tipo,
-                        marca,
-                        modelo,
-                        serie,
-                        cliente:cliente_id (
-                            nombre,
-                            telefono,
-                            correo
-                        )
-                    )
-                `)
+          id_reparacion,
+          fecha_ingreso,
+          descripcion_falla,
+          estado,
+          costo_estimado,
+          costo_final,
+          nota_trabajo,
+          fecha_entrega,
+          equipo:equipo_id (
+              tipo,
+              marca,
+              modelo,
+              serie,
+              cliente:cliente_id (
+                  nombre,
+                  telefono,
+                  correo
+              )
+          )
+        `)
                 .eq("id_reparacion", id)
                 .single();
 
             if (data) {
                 const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
-                let clienteRaw = equipoRaw?.cliente as any;
-                if (Array.isArray(clienteRaw)) clienteRaw = clienteRaw[0];
+                const clienteRaw: Cliente | undefined = equipoRaw?.cliente
+                    ? Array.isArray(equipoRaw.cliente)
+                        ? equipoRaw.cliente[0]
+                        : equipoRaw.cliente
+                    : undefined;
 
                 const servicioNormalizado: Servicio = {
                     id_reparacion: data.id_reparacion ?? "",
@@ -179,22 +182,20 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                     costo_final: data.costo_final ?? null,
                     nota_trabajo: data.nota_trabajo ?? null,
                     fecha_entrega: data.fecha_entrega ?? null,
-                    equipo: equipoRaw ? {
-                        tipo: equipoRaw.tipo ?? "",
-                        marca: equipoRaw.marca ?? "",
-                        modelo: equipoRaw.modelo ?? "",
-                        serie: equipoRaw.serie ?? "",
-                        cliente: clienteRaw ? {
-                            nombre: clienteRaw.nombre ?? "",
-                            telefono: clienteRaw.telefono ?? "",
-                            correo: clienteRaw.correo ?? ""
-                        } : { nombre: "", telefono: "", correo: "" }
-                    } : undefined
+                    equipo: equipoRaw
+                        ? {
+                            tipo: equipoRaw.tipo ?? "",
+                            marca: equipoRaw.marca ?? "",
+                            modelo: equipoRaw.modelo ?? "",
+                            serie: equipoRaw.serie ?? "",
+                            cliente: clienteRaw ?? { nombre: "", telefono: "", correo: "" },
+                        }
+                        : undefined,
                 };
 
                 setServicio(servicioNormalizado);
 
-                // Convertir logo a Data URL para impresión
+                // Convertir logo a Data URL
                 if (profile?.empresa?.logo_url) {
                     try {
                         const response = await fetch(profile.empresa.logo_url);
@@ -221,8 +222,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
         setIsModalOpen(false);
     };
 
-    // ⚠ Aquí hacemos el ajuste para que logoDataUrl nulo pase como undefined
-    const { printTicket } = useServicioPrintable(servicio, logoDataUrl ?? undefined);
+    const { printTicket } = useServicioPrintable(servicio, logoDataUrl);
 
     if (loading)
         return (
@@ -231,7 +231,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
             </div>
         );
 
-    if (error || !servicio) {
+    if (error || !servicio)
         return (
             <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
                 <Navbar />
@@ -250,12 +250,12 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                 </div>
             </div>
         );
-    }
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             <Navbar />
             <main className="container mx-auto px-4 py-8">
+
                 {/* Preload logo para impresión */}
                 {profile?.empresa?.logo_url && (
                     <img src={profile.empresa.logo_url} alt="" className="w-0 h-0 opacity-0 absolute print:hidden" />
