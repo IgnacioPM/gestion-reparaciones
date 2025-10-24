@@ -46,7 +46,7 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
                 <img src="${logoSrc}" alt="${profile?.empresa?.nombre ?? 'Logo'}" />
               </div>
               <h1>${profile?.empresa?.nombre ?? "Control de Reparaciones"}</h1>
-              ${profile?.empresa?.slogan ?? "" ? `<p>${profile.empresa.slogan}</p>` : ""}
+              ${profile?.empresa?.slogan ? `<p>${profile.empresa.slogan}</p>` : ""}
               <p>Dir: ${profile?.empresa?.direccion ?? ""}</p>
               ${profile?.empresa?.telefono ? `<p>Tel: ${profile.empresa.telefono}</p>` : ""}
             </div>
