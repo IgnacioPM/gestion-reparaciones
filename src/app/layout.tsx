@@ -1,6 +1,7 @@
 import { Metadata } from "next"
 import Providers from "@/providers"
 import "@/styles/globals.css"
+import "@/styles/print.css"
 import { Toaster } from "sonner"
 
 export const metadata: Metadata = {
