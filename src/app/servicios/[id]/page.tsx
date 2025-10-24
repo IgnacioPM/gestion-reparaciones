@@ -15,6 +15,11 @@ import Image from "next/image";
 import { Servicio } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 
+type PageProps = {
+    params: { id: string };
+    searchParams: { [key: string]: string | string[] | undefined };
+};
+
 // ------------------- Funciones auxiliares -------------------
 function getBadgeColor(estado: string | null) {
     switch (estado) {
@@ -39,7 +44,7 @@ function formatFechaSimple(fecha: string) {
 }
 
 // ------------------- Página -------------------
-function ServicioDetallePageWrapper({ params }: { params: { id: string } }) {
+function ServicioDetallePageWrapper({ params }: PageProps) {
     const { profile } = useAuthStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [servicio, setServicio] = useState<Servicio | null>(null);
