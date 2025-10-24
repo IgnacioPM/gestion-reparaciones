@@ -39,13 +39,98 @@ function formatFechaSimple(fecha: string) {
 }
 
 // ------------------- Página -------------------
-function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }> }) {
+function ServicioDetallePageWrapper({ params }: { params: { id: string } }) {
     const { profile } = useAuthStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [servicio, setServicio] = useState<Servicio | null>(null);
     const [error, setError] = useState<{ message?: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [id, setId] = useState<string>("");
+
+    useEffect(() => {
+        if (params.id) {
+            setId(params.id);
+        }
+    }, [params.id]);
+
+    useEffect(() => {
+        const fetchServicio = async () => {
+            if (!id) return;
+            setLoading(true);
+            setError(null);
+            try {
+                const { data, error } = await supabase
+                    .from("servicios")
+                    .select(`
+                        id_reparacion,
+                        fecha_ingreso,
+                        descripcion_falla,
+                        estado,
+                        costo_estimado,
+                        costo_final,
+                        nota_trabajo,
+                        fecha_entrega,
+                        equipo:equipo_id (
+                            tipo,
+                            marca,
+                            modelo,
+                            serie,
+                            cliente:cliente_id (
+                                nombre,
+                                telefono,
+                                correo
+                            )
+                        )
+                    `)
+                    .eq("id_reparacion", id)
+                    .single();
+
+                if (error) {
+                    throw error;
+                }
+
+                if (data) {
+                    const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
+                    const clienteRaw = equipoRaw?.cliente
+                        ? Array.isArray(equipoRaw.cliente)
+                            ? equipoRaw.cliente[0]
+                            : equipoRaw.cliente
+                        : undefined;
+
+                    const servicioNormalizado: Servicio = {
+                        id_reparacion: data.id_reparacion ?? "",
+                        equipo_id: equipoRaw?.serie ?? "",
+                        fecha_ingreso: data.fecha_ingreso ?? "",
+                        descripcion_falla: data.descripcion_falla ?? null,
+                        estado: data.estado ?? "Recibido",
+                        costo_estimado: data.costo_estimado ?? null,
+                        costo_final: data.costo_final ?? null,
+                        nota_trabajo: data.nota_trabajo ?? null,
+                        fecha_entrega: data.fecha_entrega ?? null,
+                        equipo: equipoRaw
+                            ? {
+                                tipo: equipoRaw.tipo ?? "",
+                                marca: equipoRaw.marca ?? "",
+                                modelo: equipoRaw.modelo ?? "",
+                                serie: equipoRaw.serie ?? "",
+                                cliente: clienteRaw ?? { nombre: "", telefono: "", correo: "" },
+                            }
+                            : undefined,
+                    };
+                    setServicio(servicioNormalizado);
+                } else {
+                    setServicio(null);
+                }
+            } catch (err: any) {
+                console.error("Error fetching servicio:", err);
+                setError({ message: err.message || "Error desconocido al cargar el servicio." });
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchServicio();
+    }, [id]);
 
     const handlePrint = useCallback(() => {
         if (servicio?.id_reparacion) {

@@ -87,6 +87,7 @@ export default function EmpleadosTable() {
             // Exclude password from the data to be saved in the 'usuarios' table
             let dataToSave: Partial<EmpleadoFormData>;
             if (id_usuario) {
+                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 const { password: _, ...rest } = data;
                 dataToSave = rest;
             } else {
