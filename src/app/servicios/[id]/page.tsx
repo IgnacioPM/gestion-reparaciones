@@ -105,11 +105,13 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
         doc.write(ticketContent);
         doc.close();
 
-        iframe.contentWindow?.focus();
-        iframe.contentWindow?.print();
+        iframe.onload = () => {
+            iframe.contentWindow?.focus();
+            iframe.contentWindow?.print();
 
-        // Eliminar iframe después de imprimir
-        setTimeout(() => document.body.removeChild(iframe), 500);
+            // Eliminar iframe después de imprimir
+            setTimeout(() => document.body.removeChild(iframe), 500);
+        };
     }, [servicio, profile, logoDataUrl]);
 
     return { printTicket };
