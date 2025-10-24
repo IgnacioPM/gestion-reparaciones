@@ -56,7 +56,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
         setTimeout(() => {
             window.print();
             setIsPrinting(false);
-        }, 500);
+        }, 1000);
     }, []);
 
     useEffect(() => {
