@@ -21,7 +21,6 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
     const printTicket = useCallback(() => {
         if (!servicio) return;
 
-        // Usamos logoDataUrl si está cargado, sino URL pública
         const logoSrc = logoDataUrl || profile?.empresa?.logo_url || "/icons/logo-CR.svg";
 
         const ticketContent = `
@@ -140,32 +139,35 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
             const { data, error } = await supabase
                 .from("servicios")
                 .select(`
-          id_reparacion,
-          fecha_ingreso,
-          descripcion_falla,
-          estado,
-          costo_estimado,
-          costo_final,
-          nota_trabajo,
-          fecha_entrega,
-          equipo:equipo_id (
-              tipo,
-              marca,
-              modelo,
-              serie,
-              cliente:cliente_id (
-                  nombre,
-                  telefono,
-                  correo
-              )
-          )
-        `)
+                    id_reparacion,
+                    fecha_ingreso,
+                    descripcion_falla,
+                    estado,
+                    costo_estimado,
+                    costo_final,
+                    nota_trabajo,
+                    fecha_entrega,
+                    equipo:equipo_id (
+                        tipo,
+                        marca,
+                        modelo,
+                        serie,
+                        cliente:cliente_id (
+                            nombre,
+                            telefono,
+                            correo
+                        )
+                    )
+                `)
                 .eq("id_reparacion", id)
                 .single();
 
             if (data) {
                 const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
-                let clienteRaw = equipoRaw?.cliente as any;
+
+                // --- Cambio principal: tipar clienteRaw sin usar 'any' ---
+                type ClienteRaw = { nombre?: string; telefono?: string; correo?: string } | { nombre?: string; telefono?: string; correo?: string }[];
+                let clienteRaw: ClienteRaw = equipoRaw?.cliente ?? { nombre: "", telefono: "", correo: "" };
                 if (Array.isArray(clienteRaw)) clienteRaw = clienteRaw[0];
 
                 const servicioNormalizado: Servicio = {
@@ -183,17 +185,19 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         marca: equipoRaw.marca ?? "",
                         modelo: equipoRaw.modelo ?? "",
                         serie: equipoRaw.serie ?? "",
-                        cliente: clienteRaw ? {
-                            nombre: clienteRaw.nombre ?? "",
-                            telefono: clienteRaw.telefono ?? "",
-                            correo: clienteRaw.correo ?? ""
-                        } : { nombre: "", telefono: "", correo: "" }
+                        cliente: clienteRaw
+                            ? {
+                                nombre: clienteRaw.nombre ?? "",
+                                telefono: clienteRaw.telefono ?? "",
+                                correo: clienteRaw.correo ?? ""
+                            }
+                            : { nombre: "", telefono: "", correo: "" }
                     } : undefined
                 };
 
                 setServicio(servicioNormalizado);
 
-                // Convertir logo a Data URL para imprimir seguro
+                // Convertir logo a Data URL para impresión
                 if (profile?.empresa?.logo_url) {
                     try {
                         const response = await fetch(profile.empresa.logo_url);
@@ -249,12 +253,10 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             <Navbar />
             <main className="container mx-auto px-4 py-8">
-                {/* Preload logo para impresión */}
                 {profile?.empresa?.logo_url && (
                     <img src={profile.empresa.logo_url} alt="" className="w-0 h-0 opacity-0 absolute print:hidden" />
                 )}
 
-                {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div className="flex w-full">
                         <Link
@@ -277,7 +279,6 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                     </div>
                 </div>
 
-                {/* Detalles */}
                 <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                     <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                         <div>
@@ -330,7 +331,6 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         </div>
                     </div>
 
-                    {/* Botón de impresión */}
                     <div className="flex justify-end mr-4 mb-4">
                         <button
                             className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors"
