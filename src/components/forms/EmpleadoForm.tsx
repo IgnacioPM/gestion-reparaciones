@@ -1,6 +1,7 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { EmpleadoSchema, EmpleadoFormData } from '@/schemas/empleado';
+import type { EmpleadoFormData } from '@/schemas/empleado';
+import { EmpleadoSchema } from '@/schemas/empleado';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';

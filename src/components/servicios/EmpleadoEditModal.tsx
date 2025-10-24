@@ -1,11 +1,11 @@
 'use client'
 
-import { EmpleadoFormData } from "@/schemas/empleado";
+import type { EmpleadoFormData } from "@/schemas/empleado";
 import EmpleadoForm from "@/components/forms/EmpleadoForm";
 import SectionTitle from "@/components/ui/SectionTitle";
 import Button from "@/components/ui/Button";
 
-import { Empleado } from "@/types/empleado";
+import type { Empleado } from "@/types/empleado";
 
 interface EmpleadoEditModalProps {
   isOpen: boolean;

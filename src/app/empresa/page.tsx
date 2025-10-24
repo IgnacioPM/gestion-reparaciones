@@ -1,6 +1,7 @@
 'use client'
 
-import { useEffect, useState, ChangeEvent, FormEvent } from 'react'
+import type { ChangeEvent, FormEvent } from 'react';
+import { useEffect, useState } from 'react'
 import { useAuthStore } from '@/stores/auth'
 import { supabase } from '@/lib/supabaseClient'
 import Input from '@/components/ui/Input'
@@ -9,7 +10,7 @@ import Textarea from '@/components/ui/Textarea'
 import { toast } from 'sonner'
 import Navbar from '@/components/ui/Navbar'
 import SectionTitle from '@/components/ui/SectionTitle'
-import { EmpresaFormData } from '@/schemas/empresa'
+import type { EmpresaFormData } from '@/schemas/empresa'
 
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'

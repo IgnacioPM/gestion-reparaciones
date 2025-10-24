@@ -1,8 +1,7 @@
-// tailwind.config.mjs
-import forms from '@tailwindcss/forms'
-
 /** @type {import('tailwindcss').Config} */
-export default {
+const forms = require('@tailwindcss/forms');
+
+module.exports = {
   darkMode: 'class',
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
@@ -18,4 +17,4 @@ export default {
     },
   },
   plugins: [forms],
-}
+};

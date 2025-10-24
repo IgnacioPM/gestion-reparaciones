@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Servicio } from "@/types/servicio";
+import type { Servicio } from "@/types/servicio";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";

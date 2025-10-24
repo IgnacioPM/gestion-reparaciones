@@ -2,7 +2,8 @@
 
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { loginSchema, LoginFormData } from '@/schemas/auth'
+import type { LoginFormData } from '@/schemas/auth';
+import { loginSchema } from '@/schemas/auth'
 import { useAuthStore } from '@/stores/auth'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'

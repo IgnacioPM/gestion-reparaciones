@@ -12,12 +12,11 @@ import { InfoRow } from "@/components/ui/InfoRow";
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
 import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Servicio } from "@/types/servicio";
+import type { Servicio } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 
 type PageProps = {
     params: { id: string };
-    searchParams: { [key: string]: string | string[] | undefined };
 };
 
 // ------------------- Funciones auxiliares -------------------

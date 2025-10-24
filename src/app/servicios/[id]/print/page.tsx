@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from "@/lib/supabaseClient";
-import { Servicio, Cliente } from "@/types/servicio";
+import type { Servicio, Cliente } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 import { ServicioPrintable } from "@/components/servicios/ServicioPrintable";
 

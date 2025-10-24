@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
-import { Servicio } from "@/types/servicio";
-import { Profile } from "@/stores/auth";
+import type { Servicio } from "@/types/servicio";
+import type { Profile } from "@/stores/auth";
 
 interface ServicioPrintableProps {
     servicio: Servicio;

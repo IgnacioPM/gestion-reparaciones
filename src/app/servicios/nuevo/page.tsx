@@ -18,7 +18,8 @@ import { ArrowLeft } from "lucide-react"
 import Input from "@/components/ui/Input"
 import Button from "@/components/ui/Button"
 import FormError from "@/components/ui/FormError"
-import ClienteForm, { Cliente } from "@/components/forms/ClienteForm"
+import type { Cliente } from "@/components/forms/ClienteForm";
+import ClienteForm from "@/components/forms/ClienteForm"
 import { servicioSchema, type ServicioFormData } from "@/schemas/servicio"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/stores/auth"; // <-- 1. IMPORTAR STORE

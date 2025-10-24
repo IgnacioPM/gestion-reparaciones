@@ -1,6 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '@/lib/supabaseClient' // Asegúrate que la ruta a tu cliente supabase sea correcta
-import { Session } from '@supabase/supabase-js'
+import type { Session } from '@supabase/supabase-js'
 
 // 1. Definimos los tipos basados en tu esquema
 // Deberías generar estos tipos con la CLI de Supabase para que sean exactos

@@ -6,9 +6,9 @@ import { supabase } from "@/lib/supabaseClient"
 import EmpleadoEditModal from "@/components/servicios/EmpleadoEditModal";
 import { useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
-import { EmpleadoFormData } from "@/schemas/empleado";
+import type { EmpleadoFormData } from "@/schemas/empleado";
 
-import { Empleado } from "@/types/empleado";
+import type { Empleado } from "@/types/empleado";
 
 export default function EmpleadosTable() {
     const { profile } = useAuthStore();
@@ -87,7 +87,7 @@ export default function EmpleadosTable() {
             // Exclude password from the data to be saved in the 'usuarios' table
             let dataToSave: Partial<EmpleadoFormData>;
             if (id_usuario) {
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                 
                 const { password: _, ...rest } = data;
                 dataToSave = rest;
             } else {
