@@ -10,7 +10,6 @@ import SectionTitle from "@/components/ui/SectionTitle";
 import { InfoBlock } from "@/components/ui/InfoBlock";
 import { InfoRow } from "@/components/ui/InfoRow";
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
-import { ServicioPrintable } from "@/components/servicios/ServicioPrintable";
 import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import { Servicio, Cliente } from "@/types/servicio";
@@ -47,99 +46,6 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
     const [error, setError] = useState<{ message?: string } | null>(null);
     const [loading, setLoading] = useState(true);
     const [id, setId] = useState<string>("");
-    const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined);
-
-    const handlePrint = useCallback(() => {
-        if (servicio?.id_reparacion) {
-            const printWindow = window.open(`/servicios/${servicio.id_reparacion}/print`, '_blank');
-            if (printWindow) {
-                printWindow.focus();
-            }
-        }
-    }, [servicio]);
-
-    useEffect(() => {
-        (async () => {
-            const { id } = await params;
-            setId(id);
-
-            const { data, error } = await supabase
-                .from("servicios")
-                .select(`
-          id_reparacion,
-          fecha_ingreso,
-          descripcion_falla,
-          estado,
-          costo_estimado,
-          costo_final,
-          nota_trabajo,
-          fecha_entrega,
-          equipo:equipo_id (
-              tipo,
-              marca,
-              modelo,
-              serie,
-              cliente:cliente_id (
-                  nombre,
-                  telefono,
-                  correo
-              )
-          )
-        `)
-                .eq("id_reparacion", id)
-                .single();
-
-            if (data) {
-                const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
-                const clienteRaw: Cliente | undefined = equipoRaw?.cliente
-                    ? Array.isArray(equipoRaw.cliente)
-                        ? equipoRaw.cliente[0]
-                        : equipoRaw.cliente
-                    : undefined;
-
-                const servicioNormalizado: Servicio = {
-                    id_reparacion: data.id_reparacion ?? "",
-                    equipo_id: equipoRaw?.serie ?? "",
-                    fecha_ingreso: data.fecha_ingreso ?? "",
-                    descripcion_falla: data.descripcion_falla ?? null,
-                    estado: data.estado ?? "Recibido",
-                    costo_estimado: data.costo_estimado ?? null,
-                    costo_final: data.costo_final ?? null,
-                    nota_trabajo: data.nota_trabajo ?? null,
-                    fecha_entrega: data.fecha_entrega ?? null,
-                    equipo: equipoRaw
-                        ? {
-                            tipo: equipoRaw.tipo ?? "",
-                            marca: equipoRaw.marca ?? "",
-                            modelo: equipoRaw.modelo ?? "",
-                            serie: equipoRaw.serie ?? "",
-                            cliente: clienteRaw ?? { nombre: "", telefono: "", correo: "" },
-                        }
-                        : undefined,
-                };
-
-                setServicio(servicioNormalizado);
-
-                // Convertir logo a Data URL
-                if (profile?.empresa?.logo_url) {
-                    try {
-                        const response = await fetch(profile.empresa.logo_url);
-                        const blob = await response.blob();
-                        const reader = new FileReader();
-                        reader.onloadend = () => setLogoDataUrl(reader.result as string);
-                        reader.readAsDataURL(blob);
-                    } catch (err) {
-                        console.error("Error al cargar logo:", err);
-                    }
-                }
-            } else {
-                setServicio(null);
-            }
-
-            setError(error);
-            setLoading(false);
-        })();
-    }, [params, profile]);
 
     const handleSave = async (data: Partial<Servicio>) => {
         if (!id) return;
