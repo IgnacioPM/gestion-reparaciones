@@ -12,7 +12,7 @@ import { InfoRow } from "@/components/ui/InfoRow";
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
 import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Servicio, Cliente } from "@/types/servicio";
+import { Servicio } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 
 // ------------------- Funciones auxiliares -------------------

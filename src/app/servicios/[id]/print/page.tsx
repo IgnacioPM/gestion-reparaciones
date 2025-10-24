@@ -6,7 +6,11 @@ import { Servicio, Cliente } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 import { ServicioPrintable } from "@/components/servicios/ServicioPrintable";
 
-function PrintServicioPage({ params }: { params: { id: string } }) {
+interface PageProps {
+    params: { id: string };
+}
+
+function PrintServicioPage({ params }: PageProps) {
     const { profile } = useAuthStore();
     const [servicio, setServicio] = useState<Servicio | null>(null);
     const [loading, setLoading] = useState(true);
