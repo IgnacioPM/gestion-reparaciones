@@ -21,6 +21,7 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
     const printTicket = useCallback(() => {
         if (!servicio) return;
 
+        // Usamos logoDataUrl si está cargado, sino URL pública
         const logoSrc = logoDataUrl || profile?.empresa?.logo_url || "/icons/logo-CR.svg";
 
         const ticketContent = `
@@ -100,7 +101,7 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
     return { printTicket };
 }
 
-// ------------------- Página -------------------
+// ------------------- Funciones auxiliares -------------------
 function getBadgeColor(estado: string | null) {
     switch (estado) {
         case "Recibido": return "bg-yellow-100 text-yellow-800";
@@ -123,6 +124,7 @@ function formatFechaSimple(fecha: string) {
     });
 }
 
+// ------------------- Página -------------------
 function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }> }) {
     const { profile } = useAuthStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -164,10 +166,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
 
             if (data) {
                 const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
-
-                // --- Cambio principal: tipar clienteRaw sin usar 'any' ---
-                type ClienteRaw = { nombre?: string; telefono?: string; correo?: string } | { nombre?: string; telefono?: string; correo?: string }[];
-                let clienteRaw: ClienteRaw = equipoRaw?.cliente ?? { nombre: "", telefono: "", correo: "" };
+                let clienteRaw = equipoRaw?.cliente as any;
                 if (Array.isArray(clienteRaw)) clienteRaw = clienteRaw[0];
 
                 const servicioNormalizado: Servicio = {
@@ -185,13 +184,11 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         marca: equipoRaw.marca ?? "",
                         modelo: equipoRaw.modelo ?? "",
                         serie: equipoRaw.serie ?? "",
-                        cliente: clienteRaw
-                            ? {
-                                nombre: clienteRaw.nombre ?? "",
-                                telefono: clienteRaw.telefono ?? "",
-                                correo: clienteRaw.correo ?? ""
-                            }
-                            : { nombre: "", telefono: "", correo: "" }
+                        cliente: clienteRaw ? {
+                            nombre: clienteRaw.nombre ?? "",
+                            telefono: clienteRaw.telefono ?? "",
+                            correo: clienteRaw.correo ?? ""
+                        } : { nombre: "", telefono: "", correo: "" }
                     } : undefined
                 };
 
@@ -224,9 +221,15 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
         setIsModalOpen(false);
     };
 
-    const { printTicket } = useServicioPrintable(servicio, logoDataUrl);
+    // ⚠ Aquí hacemos el ajuste para que logoDataUrl nulo pase como undefined
+    const { printTicket } = useServicioPrintable(servicio, logoDataUrl ?? undefined);
 
-    if (loading) return <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center"><span className="text-gray-600 dark:text-gray-300">Cargando...</span></div>;
+    if (loading)
+        return (
+            <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center">
+                <span className="text-gray-600 dark:text-gray-300">Cargando...</span>
+            </div>
+        );
 
     if (error || !servicio) {
         return (
@@ -253,10 +256,12 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
             <Navbar />
             <main className="container mx-auto px-4 py-8">
+                {/* Preload logo para impresión */}
                 {profile?.empresa?.logo_url && (
                     <img src={profile.empresa.logo_url} alt="" className="w-0 h-0 opacity-0 absolute print:hidden" />
                 )}
 
+                {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div className="flex w-full">
                         <Link
@@ -279,6 +284,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                     </div>
                 </div>
 
+                {/* Detalles */}
                 <div className="bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden">
                     <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
                         <div>
@@ -331,6 +337,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         </div>
                     </div>
 
+                    {/* Botón de impresión */}
                     <div className="flex justify-end mr-4 mb-4">
                         <button
                             className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors"
