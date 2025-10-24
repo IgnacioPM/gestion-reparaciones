@@ -23,7 +23,7 @@ export type Profile = {
 
 type AuthState = {
   session: Session | null
-  profile: UsuarioProfile | null
+  profile: Profile | null
   loading: boolean
   error: string | null
   login: (email: string, password: string) => Promise<void>
