@@ -1,4 +1,4 @@
-﻿"use client";
+﻿'use client';
 // app/servicios/[id]/page.tsx
 import { supabase } from "@/lib/supabaseClient"
 import Navbar from "@/components/ui/Navbar"
@@ -10,14 +10,97 @@ import SectionTitle from "@/components/ui/SectionTitle"
 import { InfoBlock } from "@/components/ui/InfoBlock"
 import { InfoRow } from "@/components/ui/InfoRow"
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal"
-
 import React from "react"
-import { ServicioPrintable } from "@/components/servicios/ServicioPrintable"
-
 import { Servicio } from "@/types/servicio"
+import { useAuthStore } from "@/stores/auth"
+import { useCallback } from "react";
 
-import { useAuthStore } from "@/stores/auth";
+export function useServicioPrintable(servicio: Servicio | null) {
+    const { profile } = useAuthStore();
 
+    const printTicket = useCallback(() => {
+        if (!servicio) return;
+
+        // Logo directo como URL pública, igual que en Navbar
+        const logoSrc = profile?.empresa?.logo_url || "/icons/logo-CR.svg";
+
+        const ticketContent = `
+      <html>
+        <head>
+          <title>Comprobante</title>
+          <style>
+            body { font-family: 'Courier New', monospace; font-size: 20px; margin: 5mm; }
+            .header, .footer { text-align: center; }
+            .logo { margin-bottom: 5mm; }
+            .logo img { max-width: 150px; height: auto; display:block; margin:0 auto; }
+            h1 { font-size: 24px; margin: 6px 0; text-align: center; }
+            h2 { font-size: 22px; margin: 4px 0; }
+            p { margin: 3px 0; word-break: break-word; }
+            hr { border: none; border-top: 1px dashed black; margin: 5px 0; }
+          </style>
+        </head>
+        <body>
+          <div class="printable-servicio">
+            <div class="header">
+              <div class="logo">
+                <img src="${logoSrc}" alt="${profile?.empresa?.nombre ?? 'Logo'}" />
+              </div>
+              <h1>${profile?.empresa?.nombre ?? "Control de Reparaciones"}</h1>
+              ${profile?.empresa?.slogan ? `<p>${profile.empresa.slogan}</p>` : ""}
+              <p>Dir: ${profile?.empresa?.direccion ?? ""}</p>
+              ${profile?.empresa?.telefono ? `<p>Tel: ${profile.empresa.telefono}</p>` : ""}
+            </div>
+
+            <hr/>
+
+            <h2>Cliente</h2>
+            <p>Nombre: ${servicio.equipo?.cliente?.nombre ?? ""}</p>
+            <p>Tel: ${servicio.equipo?.cliente?.telefono ?? ""}</p>
+            <p>Correo: ${servicio.equipo?.cliente?.correo ?? ""}</p>
+
+            <hr/>
+
+            <h2>Equipo</h2>
+            <p>Tipo: ${servicio.equipo?.tipo ?? ""}</p>
+            <p>Marca: ${servicio.equipo?.marca ?? ""}</p>
+            <p>Modelo: ${servicio.equipo?.modelo ?? ""}</p>
+            <p>Serie: ${servicio.equipo?.serie ?? ""}</p>
+
+            <hr/>
+
+            <h2>Detalle</h2>
+            <p>Falla: ${servicio.descripcion_falla ?? ""}</p>
+            <p>Notas: ${servicio.nota_trabajo ?? ""}</p>
+
+            <hr/>
+
+            <p>Estimado: ${servicio.costo_estimado ?? ""}</p>
+            <p>Total: ${servicio.costo_final ?? ""}</p>
+
+            <hr/>
+
+            <div class="footer">
+              <p>${profile?.empresa?.pie_pagina ?? "Gracias por su preferencia"}</p>
+              <p>Comprobante sin valor fiscal</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+
+        const printWindow = window.open("", "_blank", "width=800,height=600");
+        if (!printWindow) return;
+        printWindow.document.open();
+        printWindow.document.write(ticketContent);
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    }, [servicio, profile]);
+
+    return { printTicket };
+}
+// ------------------- Página del detalle del servicio -------------------
 function getBadgeColor(estado: string | null) {
     switch (estado) {
         case "Recibido": return "bg-yellow-100 text-yellow-800"
@@ -30,17 +113,16 @@ function getBadgeColor(estado: string | null) {
     }
 }
 
-function formatFecha(fecha: string) {
+function formatFechaSimple(fecha: string) {
     return new Date(fecha).toLocaleDateString("es-ES", {
         day: "2-digit",
         month: "2-digit",
         year: "numeric",
         hour: "2-digit",
-        minute: "2-digit"
+        minute: "2-digit",
     })
 }
 
-// 👇 hacemos la page asíncrona y sacamos `params` con await
 function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }> }) {
     const { profile } = useAuthStore();
     const [isModalOpen, setIsModalOpen] = React.useState(false);
@@ -50,6 +132,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
     const [id, setId] = React.useState<string>("");
     const [logoDataUrl, setLogoDataUrl] = React.useState<string | null>(null);
 
+    // ------------------- Carga de datos -------------------
     React.useEffect(() => {
         (async () => {
             const { id } = await params;
@@ -79,16 +162,15 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                 `)
                 .eq("id_reparacion", id)
                 .single();
+
             if (data) {
-                // Si equipo y cliente vienen como array, tomar el primero
                 const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo;
                 let clienteRaw = equipoRaw?.cliente as { nombre?: string; telefono?: string; correo?: string } | { nombre?: string; telefono?: string; correo?: string }[] | undefined;
-                if (Array.isArray(clienteRaw)) {
-                    clienteRaw = clienteRaw[0];
-                }
+                if (Array.isArray(clienteRaw)) clienteRaw = clienteRaw[0];
+
                 const servicioNormalizado: Servicio = {
                     id_reparacion: data.id_reparacion ?? "",
-                    equipo_id: equipoRaw?.serie ?? "", // Ajusta si tienes el id correcto
+                    equipo_id: equipoRaw?.serie ?? "",
                     fecha_ingreso: data.fecha_ingreso ?? "",
                     descripcion_falla: data.descripcion_falla ?? null,
                     estado: data.estado ?? "Recibido",
@@ -108,6 +190,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         } : { nombre: "", telefono: "", correo: "" }
                     } : undefined
                 };
+
                 setServicio(servicioNormalizado);
 
                 if (profile?.empresa?.logo_url) {
@@ -115,9 +198,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         const response = await fetch(profile.empresa.logo_url);
                         const blob = await response.blob();
                         const reader = new FileReader();
-                        reader.onloadend = () => {
-                            setLogoDataUrl(reader.result as string);
-                        };
+                        reader.onloadend = () => setLogoDataUrl(reader.result as string);
                         reader.readAsDataURL(blob);
                     } catch (error) {
                         console.error("Error fetching or converting logo:", error);
@@ -126,6 +207,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
             } else {
                 setServicio(null);
             }
+
             setError(error);
             setLoading(false);
         })();
@@ -137,9 +219,10 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
         setIsModalOpen(false);
     };
 
-    if (loading) {
-        return <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center"><span className="text-gray-600 dark:text-gray-300">Cargando...</span></div>;
-    }
+    const { printTicket } = useServicioPrintable(servicio, logoDataUrl);
+
+    if (loading) return <div className="min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center"><span className="text-gray-600 dark:text-gray-300">Cargando...</span></div>;
+
     if (error || !servicio) {
         return (
             <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
@@ -169,6 +252,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                 {profile?.empresa?.logo_url && (
                     <img src={profile.empresa.logo_url} alt="" className="w-0 h-0 opacity-0 absolute print:hidden" />
                 )}
+
                 {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <div className="flex w-full">
@@ -179,6 +263,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                             <ArrowLeft className="h-5 w-5 mr-2" />
                             <span>Ir al inicio</span>
                         </Link>
+
                         {servicio.estado !== "Entregado" && (
                             <button
                                 className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors ml-auto"
@@ -221,11 +306,12 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                                 <InfoRow label="Serie" value={servicio.equipo?.serie} />
                             </InfoBlock>
                         </div>
+
                         <div className="space-y-6">
                             <InfoBlock title={<SectionTitle>Servicio</SectionTitle>}>
-                                <InfoRow label="Fecha ingreso" value={formatFecha(servicio.fecha_ingreso)} />
+                                <InfoRow label="Fecha ingreso" value={formatFechaSimple(servicio.fecha_ingreso)} />
                                 {servicio.fecha_entrega && (
-                                    <InfoRow label="Fecha entrega" value={formatFecha(servicio.fecha_entrega)} />
+                                    <InfoRow label="Fecha entrega" value={formatFechaSimple(servicio.fecha_entrega)} />
                                 )}
                                 {servicio.descripcion_falla && (
                                     <InfoRow label="Falla" value={servicio.descripcion_falla} />
@@ -243,22 +329,15 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         </div>
                     </div>
 
-                    {/* Printable Service Details & Print Button */}
-                    {servicio && (
-                        <div>
-                            <div className="flex justify-end mr-4 mb-4 print:hidden">
-                                <button
-                                    className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors"
-                                    onClick={() => window.print()}
-                                >
-                                    Imprimir
-                                </button>
-                            </div>
-                            <div className="printable-servicio print-only" id="printable-servicio">
-                                <ServicioPrintable servicio={servicio} logoDataUrl={logoDataUrl} />
-                            </div>
-                        </div>
-                    )}
+                    {/* Botón de impresión */}
+                    <div className="flex justify-end mr-4 mb-4">
+                        <button
+                            className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors"
+                            onClick={() => printTicket()}
+                        >
+                            Imprimir
+                        </button>
+                    </div>
                 </div>
             </main>
 
