@@ -88,14 +88,28 @@ function useServicioPrintable(servicio: Servicio | null, logoDataUrl?: string) {
       </html>
     `;
 
-        const printWindow = window.open("", "_blank", "width=800,height=600");
-        if (!printWindow) return;
-        printWindow.document.open();
-        printWindow.document.write(ticketContent);
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.close();
+        // Crear iframe temporal para imprimir
+        const iframe = document.createElement("iframe");
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "0";
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentWindow?.document;
+        if (!doc) return;
+
+        doc.open();
+        doc.write(ticketContent);
+        doc.close();
+
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+
+        // Eliminar iframe después de imprimir
+        setTimeout(() => document.body.removeChild(iframe), 500);
     }, [servicio, profile, logoDataUrl]);
 
     return { printTicket };
