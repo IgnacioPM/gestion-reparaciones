@@ -44,7 +44,7 @@ function formatFechaSimple(fecha: string) {
 }
 
 // ------------------- Página -------------------
-function ServicioDetallePageWrapper({ params }: PageProps) {
+function ServicioDetallePage({ params }: PageProps) {
     const { profile } = useAuthStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [servicio, setServicio] = useState<Servicio | null>(null);
@@ -227,8 +227,7 @@ function ServicioDetallePageWrapper({ params }: PageProps) {
                             </h1>
                         </div>
                         <span
-                            className={`px-3 py-1 rounded text-sm font-medium border ${getBadgeColor(servicio.estado ?? "Recibido")} border-opacity-40 shadow-sm select-none`}
-                            style={{ letterSpacing: "0.04em" }}
+                            className={`px-3 py-1 rounded text-sm font-medium border ${getBadgeColor(servicio.estado ?? "Recibido")} border-opacity-40 shadow-sm select-none tracking-wide-sm`}
                         >
                             {servicio.estado ?? "Recibido"}
                         </span>
@@ -293,4 +292,4 @@ function ServicioDetallePageWrapper({ params }: PageProps) {
     );
 }
 
-export default ServicioDetallePageWrapper;
+export default ServicioDetallePage;

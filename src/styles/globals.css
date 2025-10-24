@@ -43,3 +43,9 @@
     @apply translate-x-0;
   }
 }
+
+@layer utilities {
+  .tracking-wide-sm {
+    letter-spacing: 0.04em;
+  }
+}
