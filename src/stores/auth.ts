@@ -4,7 +4,7 @@ import { Session } from '@supabase/supabase-js'
 
 // 1. Definimos los tipos basados en tu esquema
 // Deberías generar estos tipos con la CLI de Supabase para que sean exactos
-type UsuarioProfile = {
+export type Profile = {
   id_usuario: string
   nombre: string
   email: string

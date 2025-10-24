@@ -1,6 +1,7 @@
 import React from "react";
+import Image from "next/image";
 import { Servicio } from "@/types/servicio";
-import { Profile } from "@/types/supabase";
+import { Profile } from "@/stores/auth";
 
 interface ServicioPrintableProps {
     servicio: Servicio;
@@ -25,60 +26,9 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
 }) => {
     return (
         <div className="printable-servicio">
-            <style jsx global>{`
-                @media print {
-                    body > div:not(.printable-servicio) {
-                        display: none;
-                    }
-                    .printable-servicio {
-                        display: block !important;
-                        width: 100%;
-                        margin: 0;
-                        padding: 0;
-                    }
-                    body {
-                        font-family: 'Courier New', monospace;
-                        font-size: 20px;
-                        margin: 5mm;
-                    }
-                    .header, .footer {
-                        text-align: center;
-                    }
-                    .logo {
-                        margin-bottom: 5mm;
-                    }
-                    .logo img {
-                        max-width: 150px;
-                        height: auto;
-                        display: block;
-                        margin: 0 auto;
-                    }
-                    h1 {
-                        font-size: 24px;
-                        margin: 6px 0;
-                        text-align: center;
-                    }
-                    h2 {
-                        font-size: 22px;
-                        margin: 4px 0;
-                    }
-                    p {
-                        margin: 3px 0;
-                        word-break: break-word;
-                    }
-                    hr {
-                        border: none;
-                        border-top: 1px dashed black;
-                        margin: 5px 0;
-                    }
-                }
-                .printable-servicio {
-                    display: none; /* Hidden by default, only visible when printing */
-                }
-            `}</style>
             <div className="header">
                 <div className="logo">
-                    <img src={logoSrc} alt={profile?.empresa?.nombre ?? "Logo"} />
+                    <Image src={logoSrc} alt={profile?.empresa?.nombre ?? "Logo"} width={150} height={150} style={{ objectFit: "contain" }} />
                 </div>
                 <h1>{profile?.empresa?.nombre ?? "Control de Reparaciones"}</h1>
                 {profile?.empresa?.slogan ? <p>{profile.empresa.slogan}</p> : ""}
@@ -109,6 +59,8 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
 
             <hr />
 
+            <p>Fecha ingreso: {formatFechaSimple(servicio.fecha_ingreso)}</p>
+            {servicio.fecha_entrega && <p>Fecha entrega: {formatFechaSimple(servicio.fecha_entrega)}</p>}
             <p>Estimado: {servicio.costo_estimado ?? ""}</p>
             <p>Total: {servicio.costo_final ?? ""}</p>
 

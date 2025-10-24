@@ -13,7 +13,7 @@ import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
 import { ServicioPrintable } from "@/components/servicios/ServicioPrintable";
 import React, { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
-import { Servicio, Cliente, Equipo } from "@/types/servicio";
+import { Servicio, Cliente } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 
 // ------------------- Funciones auxiliares -------------------

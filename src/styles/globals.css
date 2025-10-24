@@ -45,13 +45,70 @@
 }
 
 @media print {
+    /* Hide everything except the printable content */
     body > div:not(.printable-servicio) {
-        display: none;
+        display: none !important;
     }
+
+    /* Ensure printable content is visible and correctly sized */
     .printable-servicio {
         display: block !important;
+        position: absolute;
+        left: 0;
+        top: 0;
         width: 100%;
         margin: 0;
         padding: 0;
+        font-family: 'Courier New', monospace;
+        font-size: 20px;
+    }
+
+    /* General print styles */
+    body {
+        margin: 0 !important;
+        padding: 0 !important;
+        -webkit-print-color-adjust: exact;
+        color-adjust: exact;
+    }
+
+    * {
+        box-sizing: border-box;
+    }
+
+    .header, .footer {
+        text-align: center;
+    }
+
+    .logo {
+        margin-bottom: 5mm;
+    }
+
+    .logo img, .logo .next-image-wrapper {
+        max-width: 150px;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+    }
+
+    h1 {
+        font-size: 24px;
+        margin: 6px 0;
+        text-align: center;
+    }
+
+    h2 {
+        font-size: 22px;
+        margin: 4px 0;
+    }
+
+    p {
+        margin: 3px 0;
+        word-break: break-word;
+    }
+
+    hr {
+        border: none;
+        border-top: 1px dashed black;
+        margin: 5px 0;
     }
 }
