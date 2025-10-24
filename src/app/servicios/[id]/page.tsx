@@ -12,7 +12,6 @@ import { InfoRow } from "@/components/ui/InfoRow";
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
 import { ServicioPrintable } from "@/components/servicios/ServicioPrintable";
 import React, { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Servicio, Cliente } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
@@ -49,16 +48,15 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
     const [loading, setLoading] = useState(true);
     const [id, setId] = useState<string>("");
     const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined);
-    const [isPrinting, setIsPrinting] = useState(false);
 
     const handlePrint = useCallback(() => {
-        setIsPrinting(true);
-        // Use a timeout to ensure the component has rendered before printing
-        setTimeout(() => {
-            window.print();
-            setIsPrinting(false);
-        }, 1000);
-    }, []);
+        if (servicio?.id_reparacion) {
+            const printWindow = window.open(`/servicios/${servicio.id_reparacion}/print`, '_blank');
+            if (printWindow) {
+                printWindow.focus();
+            }
+        }
+    }, [servicio]);
 
     useEffect(() => {
         (async () => {
@@ -280,17 +278,6 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                 servicio={servicio}
                 onSave={handleSave}
             />
-
-            {isPrinting && servicio && document.body && (
-                createPortal(
-                    <ServicioPrintable
-                        servicio={servicio}
-                        profile={profile}
-                        logoSrc={logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg"}
-                    />,
-                    document.body
-                )
-            )}
         </div>
     );
 }
