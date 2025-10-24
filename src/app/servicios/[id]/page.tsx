@@ -121,9 +121,15 @@ function ServicioDetallePageWrapper({ params }: { params: { id: string } }) {
                 } else {
                     setServicio(null);
                 }
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error("Error fetching servicio:", err);
-                setError({ message: err.message || "Error desconocido al cargar el servicio." });
+                let message = "Error desconocido al cargar el servicio.";
+                if (err instanceof Error) {
+                    message = err.message;
+                } else if (err && typeof err === 'object' && 'message' in err) {
+                    message = String((err as { message: unknown }).message);
+                }
+                setError({ message });
             } finally {
                 setLoading(false);
             }
