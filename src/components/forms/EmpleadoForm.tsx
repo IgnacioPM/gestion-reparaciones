@@ -4,7 +4,6 @@ import { EmpleadoSchema, EmpleadoFormData } from '@/schemas/empleado';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
 import Button from '@/components/ui/Button';
-import FormError from '@/components/ui/FormError';
 
 interface EmpleadoFormProps {
   onSubmit: (data: EmpleadoFormData) => void;

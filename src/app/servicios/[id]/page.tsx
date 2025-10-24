@@ -11,6 +11,7 @@ import { InfoBlock } from "@/components/ui/InfoBlock";
 import { InfoRow } from "@/components/ui/InfoRow";
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
 import React, { useCallback, useEffect, useState } from "react";
+import Image from "next/image";
 import { Servicio, Cliente, Equipo } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 
@@ -258,7 +259,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
 
                 {/* Preload logo para impresión */}
                 {profile?.empresa?.logo_url && (
-                    <img src={profile.empresa.logo_url} alt="" className="w-0 h-0 opacity-0 absolute print:hidden" />
+                    <Image src={profile.empresa.logo_url} alt="" width={0} height={0} className="w-0 h-0 opacity-0 absolute print:hidden" />
                 )}
 
                 {/* Encabezado */}

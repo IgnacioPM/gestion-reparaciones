@@ -1,3 +1,17 @@
+export interface Cliente {
+  nombre?: string
+  telefono?: string
+  correo?: string
+}
+
+export interface Equipo {
+  tipo?: string
+  marca?: string
+  modelo?: string
+  serie?: string
+  cliente?: Cliente
+}
+
 export interface Servicio {
   id_reparacion: string
   equipo_id: string
@@ -16,15 +30,5 @@ export interface Servicio {
   fecha_entrega?: string | null
   created_at?: string | null
   costo_final?: number | null
-  equipo?: {
-    tipo?: string
-    marca?: string
-    modelo?: string
-    serie?: string
-    cliente?: {
-      nombre?: string
-      telefono?: string
-      correo?: string
-    }
-  }
+  equipo?: Equipo
 }
