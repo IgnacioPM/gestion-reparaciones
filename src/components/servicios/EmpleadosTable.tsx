@@ -85,7 +85,13 @@ export default function EmpleadosTable() {
         setIsSubmitting(true);
         try {
             // Exclude password from the data to be saved in the 'usuarios' table
-            const { password: _, ...dataToSave } = data;
+            let dataToSave: Partial<EmpleadoFormData>;
+            if (id_usuario) {
+                const { password, ...rest } = data;
+                dataToSave = rest;
+            } else {
+                dataToSave = data;
+            }
             const finalData = { ...dataToSave, rol: dataToSave.rol || 'Tecnico' };
 
             if (id_usuario) {
