@@ -312,5 +312,3 @@ export default function ServicioDetallePage({ params }: ServicioDetallePageProps
     </div>
   )
 }
-
-export default ServicioDetallePage
