@@ -1,5 +1,4 @@
 ﻿'use client'
-// app/servicios/[id]/page.tsx
 import { ServicioEditModal } from '@/components/servicios/ServicioEditModal'
 import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { InfoBlock } from '@/components/ui/InfoBlock'
@@ -15,12 +14,11 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
-/** 🔧 Tipo compatible con el nuevo sistema de rutas de Next.js */
-interface ServicioDetallePageProps {
-  params: { id: string } | Promise<{ id: string }>
+// 🔹 Tipado explícito que evita el conflicto con Next 15
+type ServicioDetallePageProps = {
+  params: Promise<{ id: string }> | { id: string }
 }
 
-// ------------------- Funciones auxiliares -------------------
 function getBadgeColor(estado: string | null) {
   switch (estado) {
     case 'Recibido':
@@ -50,7 +48,7 @@ function formatFechaSimple(fecha: string) {
   })
 }
 
-function ServicioDetallePage({ params }: ServicioDetallePageProps) {
+export default function ServicioDetallePage({ params }: ServicioDetallePageProps) {
   const { profile } = useAuthStore()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [servicio, setServicio] = useState<Servicio | null>(null)
@@ -58,12 +56,13 @@ function ServicioDetallePage({ params }: ServicioDetallePageProps) {
   const [loading, setLoading] = useState(true)
   const [id, setId] = useState<string>('')
 
-  /** ✅ Resolución segura del parámetro dinámico */
+  // 🔹 Soluciona el problema de tipo Promise en params
   useEffect(() => {
-    ;(async () => {
-      const resolvedParams = await params
-      if (resolvedParams?.id) setId(resolvedParams.id)
-    })()
+    async function resolveParams() {
+      const p = await params
+      if (p?.id) setId(p.id)
+    }
+    resolveParams()
   }, [params])
 
   useEffect(() => {
@@ -137,9 +136,11 @@ function ServicioDetallePage({ params }: ServicioDetallePageProps) {
       } catch (err: unknown) {
         console.error('Error fetching servicio:', err)
         let message = 'Error desconocido al cargar el servicio.'
-        if (err instanceof Error) message = err.message
-        else if (err && typeof err === 'object' && 'message' in err)
+        if (err instanceof Error) {
+          message = err.message
+        } else if (err && typeof err === 'object' && 'message' in err) {
           message = String((err as { message: unknown }).message)
+        }
         setError({ message })
       } finally {
         setLoading(false)
