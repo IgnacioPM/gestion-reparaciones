@@ -6,7 +6,11 @@ import type { Servicio, Cliente } from "@/types/servicio";
 import { useAuthStore } from "@/stores/auth";
 import { ServicioPrintable } from "@/components/servicios/ServicioPrintable";
 
-function PrintServicioPage({ params }: { params: { id: string } }) {
+type PageProps = {
+    params: { id: string };
+};
+
+function PrintServicioPage({ params }: PageProps) {
     const { profile } = useAuthStore();
     const [servicio, setServicio] = useState<Servicio | null>(null);
     const [loading, setLoading] = useState(true);
@@ -15,7 +19,7 @@ function PrintServicioPage({ params }: { params: { id: string } }) {
 
     useEffect(() => {
         const fetchServicio = async () => {
-            const { id } = await params;
+            const { id } = params;
             if (!id) {
                 setError("ID de servicio no proporcionado.");
                 setLoading(false);

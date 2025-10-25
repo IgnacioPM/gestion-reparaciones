@@ -42,7 +42,6 @@ function formatFechaSimple(fecha: string) {
     });
 }
 
-// ------------------- Página -------------------
 function ServicioDetallePage({ params }: PageProps) {
     const { profile } = useAuthStore();
     const [isModalOpen, setIsModalOpen] = useState(false);
