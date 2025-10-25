@@ -1,4 +1,5 @@
 ﻿'use client'
+
 import { ServicioEditModal } from '@/components/servicios/ServicioEditModal'
 import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { InfoBlock } from '@/components/ui/InfoBlock'
@@ -14,9 +15,9 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 
-// 🔹 Tipado explícito que evita el conflicto con Next 15
+// 🔹 Tipado correcto para Next 15
 type ServicioDetallePageProps = {
-  params: Promise<{ id: string }> | { id: string }
+  params: { id: string }
 }
 
 function getBadgeColor(estado: string | null) {
@@ -56,13 +57,9 @@ export default function ServicioDetallePage({ params }: ServicioDetallePageProps
   const [loading, setLoading] = useState(true)
   const [id, setId] = useState<string>('')
 
-  // 🔹 Soluciona el problema de tipo Promise en params
+  // 🔹 Extraemos id directamente
   useEffect(() => {
-    async function resolveParams() {
-      const p = await params
-      if (p?.id) setId(p.id)
-    }
-    resolveParams()
+    if (params?.id) setId(params.id)
   }, [params])
 
   useEffect(() => {
