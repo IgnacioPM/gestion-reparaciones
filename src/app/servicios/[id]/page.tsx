@@ -268,7 +268,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                             className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors"
                             onClick={handlePrint}
                         >
-                            Imprimir
+                            Imprimir factura
                         </button>
                     </div>
                 </div>
