@@ -31,4 +31,5 @@ export interface Servicio {
   created_at?: string | null
   costo_final?: number | null
   equipo?: Equipo
+  tipo_impresion?: 'factura' | 'etiqueta'
 }

@@ -1,12 +1,13 @@
 import { Profile } from '@/stores/auth'
 import { Servicio } from '@/types/servicio'
-import Image from 'next/image'
+//import Image from 'next/image'
 import React from 'react'
 
 interface ServicioPrintableProps {
   servicio: Servicio
   profile: Profile | null
   logoSrc: string
+  tipo_impresion: 'factura' | 'etiqueta'
 }
 
 const formatFechaSimple = (fecha: string) => {
@@ -16,6 +17,7 @@ const formatFechaSimple = (fecha: string) => {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    hour12: true, // 👈 Esto activa el formato 12 horas con AM/PM
   })
 }
 
@@ -23,28 +25,38 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
   servicio,
   profile,
   logoSrc,
+  tipo_impresion,
 }) => {
+  const esEtiqueta = tipo_impresion === 'etiqueta'
+
   return (
     <div className='receipt-box'>
-      <div className='header'>
-        {/* <div className='logo'>
-          <Image
-            src={logoSrc}
-            alt={profile?.empresa?.nombre ?? 'Logo'}
-            width={60}
-            height={60}
-            style={{ objectFit: 'contain' }}
-          />
-        </div> */}
-        <h1>{profile?.empresa?.nombre ?? 'Control de Reparaciones'}</h1>
-        {/* {profile?.empresa?.slogan && <p>{profile.empresa.slogan}</p>} */}
-      </div>
+      {!esEtiqueta && (
+        <div className='header'>
+          {/* <div className='logo'>
+            <Image
+              src={logoSrc}
+              alt={profile?.empresa?.nombre ?? 'Logo'}
+              width={60}
+              height={60}
+              style={{ objectFit: 'contain' }}
+            />
+          </div> */}
+          <h1>{profile?.empresa?.nombre ?? 'Control de Reparaciones'}</h1>
+        </div>
+      )}
 
-      {/* <p>Orden: #{servicio.id_reparacion}</p> */}
-      <p>Dir: {profile?.empresa?.direccion ?? ''}</p>
-      {profile?.empresa?.telefono && <p>Tel: {profile.empresa.telefono}</p>}
+      {!esEtiqueta && (
+        <>
+          <p>Dir: {profile?.empresa?.direccion ?? ''}</p>
+          {profile?.empresa?.telefono && <p>Tel: {profile.empresa.telefono}</p>}
+        </>
+      )}
+
+      {/* Siempre mostrar fecha */}
       <p>Fecha: {formatFechaSimple(servicio.fecha_ingreso)}</p>
 
+      {/* Cliente y equipo siempre visibles, incluso en etiqueta */}
       <h2>----- Cliente -----</h2>
       <p>Nombre: {servicio.equipo?.cliente?.nombre ?? ''}</p>
       <p>Tel: {servicio.equipo?.cliente?.telefono ?? ''}</p>
@@ -55,34 +67,42 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
       <p>Modelo: {servicio.equipo?.modelo ?? ''}</p>
       <p>Serie: {servicio.equipo?.serie ?? ''}</p>
 
+      {/* Siempre mostrar detalles */}
       <h2>----- Detalle -----</h2>
       <p>Falla: {servicio.descripcion_falla ?? ''}</p>
       <p>Notas: {servicio.nota_trabajo ?? ''}</p>
 
-      <h2>----- Costos -----</h2>
-      <div className='totals'>
-        <p>
-          <span>Estimado:</span>{' '}
-          <span>
-            {servicio.costo_estimado ? `₡${Number(servicio.costo_estimado).toFixed(2)}` : '-'}
-          </span>
-        </p>
-        <p className='total'>
-          <span>Total:</span>{' '}
-          <span>{servicio.costo_final ? `₡${Number(servicio.costo_final).toFixed(2)}` : '-'}</span>
-        </p>
-      </div>
-
-      {servicio.fecha_entrega && (
+      {/* Costos solo si NO es etiqueta */}
+      {!esEtiqueta && (
         <>
-          <p>Fecha entrega: {formatFechaSimple(servicio.fecha_entrega)}</p>
+          <h2>----- Costos -----</h2>
+          <div className='totals'>
+            <p>
+              <span>Estimado:</span>{' '}
+              <span>
+                {servicio.costo_estimado ? `₡${Number(servicio.costo_estimado).toFixed(2)}` : '-'}
+              </span>
+            </p>
+            <p className='total'>
+              <span>Total:</span>{' '}
+              <span>
+                {servicio.costo_final ? `₡${Number(servicio.costo_final).toFixed(2)}` : '-'}
+              </span>
+            </p>
+          </div>
         </>
       )}
 
-      <div className='footer'>
-        <p>{profile?.empresa?.pie_pagina ?? 'Gracias por su preferencia'}</p>
-        <p>Comprobante sin valor fiscal</p>
-      </div>
+      {/* Fecha de entrega visible siempre */}
+      {servicio.fecha_entrega && <p>Fecha entrega: {formatFechaSimple(servicio.fecha_entrega)}</p>}
+
+      {/* Footer solo si no es etiqueta */}
+      {!esEtiqueta && (
+        <div className='footer'>
+          <p>{profile?.empresa?.pie_pagina ?? 'Gracias por su preferencia'}</p>
+          <p>Comprobante sin valor fiscal</p>
+        </div>
+      )}
     </div>
   )
 }

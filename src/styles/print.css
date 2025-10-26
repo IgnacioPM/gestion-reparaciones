@@ -21,32 +21,24 @@
     margin: 0; /* Sin margen lateral */
     padding: 0; /* Sin padding lateral */
     font-family: 'Courier New', Courier, monospace;
-    font-size: 10px;
-    line-height: 1.4;
+    font-size: 14px; /* Tamaño base */
+    line-height: 1.0;
     color: #000;
     text-align: left;
     word-wrap: break-word;
     font-weight: bold;
   }
 
-  .receipt-box .header .logo {
-    margin-bottom: 5px;
-  }
-
-  .receipt-box .header .logo img {
-    display: block;
-    margin: 0 auto; /* Centra logo */
-    max-width: 100%;
-  }
-
-  .receipt-box h1 {
-    font-size: 16px;
+  /* Nombre de la empresa: 2px más grande que base */
+  .receipt-box .header h1 {
+    font-size: 16px; /* 2px más grande que 10px */
     margin: 0;
     text-transform: uppercase;
+    text-align: center;
   }
 
   .receipt-box h2 {
-    font-size: 12px;
+    font-size: 14px;
     margin-top: 3px;
     margin-bottom: 3px;
     text-transform: uppercase;
@@ -62,12 +54,18 @@
     text-align: center;
   }
 
-  .receipt-box .header p {
-    text-align: center;
+  .receipt-box .header .logo {
+    margin-bottom: 4px;
+  }
+
+  .receipt-box .header .logo img {
+    display: block;
+    margin: 0 auto; /* Centra logo */
+    max-width: 100%;
   }
 
   .receipt-box .totals {
-    margin-top: 8px;
+    margin-top: 4px;
   }
 
   .receipt-box .totals p {
@@ -76,17 +74,17 @@
   }
 
   .receipt-box .totals p.total span {
-    font-size: 12px;
+    font-size: 14px;
   }
 
   .receipt-box .footer {
-    margin-top: 10px;
+    margin-top: 4px;
     border-top: 1px dashed #000;
-    padding-top: 5px;
+    padding-top: 4px;
   }
 
   .receipt-box .footer p {
-    font-size: 8px;
+    font-size: 10px;
     text-align: center;
   }
 }

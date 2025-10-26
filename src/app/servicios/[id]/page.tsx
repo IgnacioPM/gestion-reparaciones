@@ -1,21 +1,21 @@
 ﻿'use client';
 // app/servicios/[id]/page.tsx
-import { supabase } from "@/lib/supabaseClient";
-import Navbar from "@/components/ui/Navbar";
-import "@/styles/print.css";
-import { ArrowLeft, Edit } from "lucide-react";
-import Link from "next/link";
-import { FormattedAmount } from "@/components/ui/FormattedAmount";
-import SectionTitle from "@/components/ui/SectionTitle";
-import { InfoBlock } from "@/components/ui/InfoBlock";
-import { InfoRow } from "@/components/ui/InfoRow";
 import { ServicioEditModal } from "@/components/servicios/ServicioEditModal";
 import { ServicioPrintable } from "@/components/servicios/ServicioPrintable";
-import React, { useCallback, useEffect, useState } from "react";
-import { createPortal } from "react-dom";
-import Image from "next/image";
-import { Servicio, Cliente } from "@/types/servicio";
+import { FormattedAmount } from "@/components/ui/FormattedAmount";
+import { InfoBlock } from "@/components/ui/InfoBlock";
+import { InfoRow } from "@/components/ui/InfoRow";
+import Navbar from "@/components/ui/Navbar";
+import SectionTitle from "@/components/ui/SectionTitle";
+import { supabase } from "@/lib/supabaseClient";
 import { useAuthStore } from "@/stores/auth";
+import "@/styles/print.css";
+import { Cliente, Servicio } from "@/types/servicio";
+import { ArrowLeft, Edit } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useCallback, useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 
 // ------------------- Funciones auxiliares -------------------
 function getBadgeColor(estado: string | null) {
@@ -50,14 +50,14 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
     const [id, setId] = useState<string>("");
     const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined);
     const [isPrinting, setIsPrinting] = useState(false);
+    const [printType, setPrintType] = useState<'factura' | 'etiqueta'>('factura');
 
     const handlePrint = useCallback(() => {
         setIsPrinting(true);
-        // Use a timeout to ensure the component has rendered before printing
         setTimeout(() => {
             window.print();
             setIsPrinting(false);
-        }, 1000);
+        }, 500);
     }, []);
 
     useEffect(() => {
@@ -219,7 +219,6 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         </div>
                         <span
                             className={`px-3 py-1 rounded text-sm font-medium border ${getBadgeColor(servicio.estado ?? "Recibido")} border-opacity-40 shadow-sm select-none`}
-                            style={{ letterSpacing: "0.04em" }}
                         >
                             {servicio.estado ?? "Recibido"}
                         </span>
@@ -262,13 +261,19 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                         </div>
                     </div>
 
-                    {/* Botón de impresión */}
-                    <div className="flex justify-end mr-4 mb-4">
+                    {/* Botones de impresión */}
+                    <div className="flex justify-end mr-4 mb-4 gap-2">
                         <button
                             className="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors"
-                            onClick={handlePrint}
+                            onClick={() => { setPrintType('factura'); handlePrint(); }}
                         >
                             Imprimir factura
+                        </button>
+                        <button
+                            className="bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors"
+                            onClick={() => { setPrintType('etiqueta'); handlePrint(); }}
+                        >
+                            Imprimir etiqueta
                         </button>
                     </div>
                 </div>
@@ -290,6 +295,7 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                             servicio={servicio}
                             profile={profile}
                             logoSrc={logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg"}
+                            tipo_impresion={printType}
                         />
                     </div>,
                     document.body
