@@ -281,16 +281,19 @@ function ServicioDetallePageWrapper({ params }: { params: Promise<{ id: string }
                 onSave={handleSave}
             />
 
-            {isPrinting && servicio && document.body && (
+            {isPrinting &&
+                servicio &&
+                document.body &&
                 createPortal(
-                    <ServicioPrintable
-                        servicio={servicio}
-                        profile={profile}
-                        logoSrc={logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg"}
-                    />,
+                    <div className="printable-area">
+                        <ServicioPrintable
+                            servicio={servicio}
+                            profile={profile}
+                            logoSrc={logoDataUrl ?? profile?.empresa?.logo_url ?? "/icons/logo-CR.svg"}
+                        />
+                    </div>,
                     document.body
-                )
-            )}
+                )}
         </div>
     );
 }
