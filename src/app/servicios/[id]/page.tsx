@@ -58,16 +58,6 @@ export default function ServicioDetallePageWrapper({
   const [loading, setLoading] = useState(true)
   const [id, setId] = useState<string>('')
   const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined)
-  const [isPrinting, setIsPrinting] = useState(false)
-  const [printType, setPrintType] = useState<'factura' | 'etiqueta'>('factura')
-
-  const handlePrint = useCallback(() => {
-    setIsPrinting(true)
-    setTimeout(() => {
-      window.print()
-      setIsPrinting(false)
-    }, 400)
-  }, [])
 
   useEffect(() => {
     ;(async () => {
@@ -288,24 +278,24 @@ export default function ServicioDetallePageWrapper({
 
           {/* Botones de impresión */}
           <div className='flex justify-end mr-4 mb-4 gap-2'>
-            <button
-              className='bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors'
-              onClick={() => {
-                setPrintType('factura')
-                handlePrint()
-              }}
+            <Link
+              href={`/servicios/${id}/imprimir?tipo=factura`}
+              target='_blank'
+              rel='noopener noreferrer'
             >
-              Imprimir factura
-            </button>
-            <button
-              className='bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors'
-              onClick={() => {
-                setPrintType('etiqueta')
-                handlePrint()
-              }}
+              <button className='bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors'>
+                Imprimir factura
+              </button>
+            </Link>
+            <Link
+              href={`/servicios/${id}/imprimir?tipo=etiqueta`}
+              target='_blank'
+              rel='noopener noreferrer'
             >
-              Imprimir etiqueta
-            </button>
+              <button className='bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors'>
+                Imprimir etiqueta
+              </button>
+            </Link>
           </div>
         </div>
       </main>
@@ -316,22 +306,6 @@ export default function ServicioDetallePageWrapper({
         servicio={servicio}
         onSave={handleSave}
       />
-
-      {/* Renderizado de impresión (usa el tipo seleccionado) */}
-      {isPrinting &&
-        servicio &&
-        typeof document !== 'undefined' &&
-        createPortal(
-          <div className='printable-area'>
-            <ServicioPrintable
-              servicio={servicio}
-              profile={profile}
-              logoSrc={logoDataUrl ?? profile?.empresa?.logo_url ?? '/icons/logo-CR.svg'}
-              tipo_impresion={printType}
-            />
-          </div>,
-          document.body
-        )}
     </div>
   )
 }
