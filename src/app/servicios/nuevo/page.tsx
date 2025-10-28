@@ -142,7 +142,7 @@ export default function NuevoServicioPage() {
             }
             reset();
             router.push("/");
-        } catch (error: any) {
+        } catch (error: unknown) {
             const errorMessage = translateSupabaseError(error);
             setError("root", {
                 message: errorMessage

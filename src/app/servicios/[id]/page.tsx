@@ -1,6 +1,5 @@
 ﻿'use client'
 import { ServicioEditModal } from '@/components/servicios/ServicioEditModal'
-import { ServicioPrintable } from '@/components/servicios/ServicioPrintable'
 import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { InfoBlock } from '@/components/ui/InfoBlock'
 import { InfoRow } from '@/components/ui/InfoRow'
@@ -13,8 +12,7 @@ import { Cliente, Servicio } from '@/types/servicio'
 import { ArrowLeft, Edit } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
+import { useEffect, useState } from 'react'
 
 function getBadgeColor(estado: string | null) {
   switch (estado) {
@@ -57,7 +55,7 @@ export default function ServicioDetallePageWrapper({
   const [error, setError] = useState<{ message?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [id, setId] = useState<string>('')
-  const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined)
+  
 
   useEffect(() => {
     ;(async () => {
@@ -125,17 +123,7 @@ export default function ServicioDetallePageWrapper({
 
         setServicio(servicioNormalizado)
 
-        if (profile?.empresa?.logo_url) {
-          try {
-            const response = await fetch(profile.empresa.logo_url)
-            const blob = await response.blob()
-            const reader = new FileReader()
-            reader.onloadend = () => setLogoDataUrl(reader.result as string)
-            reader.readAsDataURL(blob)
-          } catch (err) {
-            console.error('Error al cargar logo:', err)
-          }
-        }
+
       } else {
         setServicio(null)
       }

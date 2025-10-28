@@ -6,7 +6,6 @@ import React from 'react'
 interface ServicioPrintableProps {
   servicio: Servicio
   profile: Profile | null
-  logoSrc: string
   tipo_impresion: 'factura' | 'etiqueta'
 }
 
@@ -24,7 +23,6 @@ const formatFechaSimple = (fecha: string) => {
 export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
   servicio,
   profile,
-  logoSrc,
   tipo_impresion,
 }) => {
   const esEtiqueta = tipo_impresion === 'etiqueta'

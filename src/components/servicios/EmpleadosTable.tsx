@@ -84,8 +84,8 @@ export default function EmpleadosTable() {
     const handleSaveEmpleado = async (data: EmpleadoFormData, id_usuario: string | null) => {
         setIsSubmitting(true);
         try {
-            // Exclude password from the data to be saved in the 'usuarios' table
-            const { password: _password, ...dataToSave } = data;
+            const dataToSave = { ...data };
+            delete (dataToSave as Partial<EmpleadoFormData>).password;
             const finalData = { ...dataToSave, rol: dataToSave.rol || 'Tecnico' };
 
             if (id_usuario) {

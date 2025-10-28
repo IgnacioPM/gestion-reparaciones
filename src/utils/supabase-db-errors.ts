@@ -6,14 +6,14 @@ export function translateSupabaseError(error: unknown): string {
 
     // 2. Crear un objeto simple para registrar y procesar
     const errorDetails: { message?: string; code?: string; details?: string } = {};
-    if ('message' in error && typeof (error as any).message === 'string') {
-        errorDetails.message = (error as any).message;
+    if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
+        errorDetails.message = (error as { message: string }).message;
     }
-    if ('code' in error && typeof (error as any).code === 'string') {
-        errorDetails.code = (error as any).code;
+    if ('code' in error && typeof (error as { code: unknown }).code === 'string') {
+        errorDetails.code = (error as { code: string }).code;
     }
-    if ('details' in error && typeof (error as any).details === 'string') {
-        errorDetails.details = (error as any).details;
+    if ('details' in error && typeof (error as { details: unknown }).details === 'string') {
+        errorDetails.details = (error as { details: string }).details;
     }
 
     // 3. Registrar los detalles extraídos. Esto no se mostrará como `{}`.
