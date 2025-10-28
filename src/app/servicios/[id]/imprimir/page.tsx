@@ -14,7 +14,6 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
   const searchParams = useSearchParams()
   const tipo_impresion = (searchParams.get('tipo') as 'factura' | 'etiqueta') ?? 'factura'
   const [servicio, setServicio] = useState<Servicio | null>(null)
-  const [logoDataUrl, setLogoDataUrl] = useState<string | undefined>(undefined)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,19 +81,7 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
     fetchData()
   }, [id])
 
-  // Cargar logo en base64 (opcional)
-  useEffect(() => {
-    if (profile?.empresa?.logo_url) {
-      fetch(profile.empresa.logo_url)
-        .then(res => res.blob())
-        .then(blob => {
-          const reader = new FileReader()
-          reader.onloadend = () => setLogoDataUrl(reader.result as string)
-          reader.readAsDataURL(blob)
-        })
-        .catch(console.error)
-    }
-  }, [profile])
+
 
   // Lanzar impresión automáticamente al cargar
   useEffect(() => {
@@ -110,7 +97,6 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
       <ServicioPrintable
         servicio={servicio}
         profile={profile}
-        logoSrc={logoDataUrl ?? profile?.empresa?.logo_url ?? '/icons/logo-CR.svg'}
         tipo_impresion={tipo_impresion}
       />
     </div>
