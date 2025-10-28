@@ -75,7 +75,7 @@ export default function ClienteForm({ onClienteChange }: ClienteFormProps) {
             }
             const { data } = await supabase
                 .from("clientes")
-                .select("id_cliente, nombre, telefono, correo")
+                .select("*")
                 .ilike("nombre", `%${nombre}%`)
                 .limit(5)
             setSugerencias(data || [])

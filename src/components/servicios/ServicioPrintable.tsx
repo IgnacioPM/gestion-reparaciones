@@ -55,6 +55,7 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
 
       {/* Siempre mostrar fecha */}
       <p>Fecha: {formatFechaSimple(servicio.fecha_ingreso)}</p>
+      <p>Nro. Servicio: {servicio.numero_servicio ?? '--'}</p>
 
       {/* Cliente y equipo siempre visibles, incluso en etiqueta */}
       <h2>----- Cliente -----</h2>

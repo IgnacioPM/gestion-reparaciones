@@ -22,6 +22,7 @@ import ClienteForm, { Cliente } from "@/components/forms/ClienteForm"
 import { servicioSchema, type ServicioFormData } from "@/schemas/servicio"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/stores/auth"; // <-- 1. IMPORTAR STORE
+import { translateSupabaseError } from "@/utils/supabase-db-errors";
 
 export default function NuevoServicioPage() {
     const handleClienteChange = (selectedCliente: Cliente | null) => {
@@ -64,7 +65,7 @@ export default function NuevoServicioPage() {
             if (clienteId === "nuevo") {
                 const { data: clienteExistente } = await supabase
                     .from("clientes")
-                    .select("id_cliente")
+                    .select("*")
                     .or(`telefono.eq.${cliente.telefono},correo.eq.${cliente.correo}`)
                     .maybeSingle();
                 if (clienteExistente) {
@@ -141,19 +142,8 @@ export default function NuevoServicioPage() {
             }
             reset();
             router.push("/");
-        } catch (error) {
-            console.error("Error al registrar servicio:", error);
-            let errorMessage = "Error al registrar el servicio";
-            if (error instanceof Error) {
-                errorMessage = error.message;
-            } else if (typeof error === 'object' && error !== null) {
-                if (typeof error === "object" && error !== null) {
-                    const errObj = error as { message?: string; details?: string };
-                    errorMessage = errObj.message || errObj.details || errorMessage;
-                } else {
-                    errorMessage = String(error) || errorMessage;
-                }
-            }
+        } catch (error: any) {
+            const errorMessage = translateSupabaseError(error);
             setError("root", {
                 message: errorMessage
             });

@@ -69,6 +69,7 @@ export default function ServicioDetallePageWrapper({
         .select(
           `
           id_reparacion,
+          numero_servicio,
           fecha_ingreso,
           descripcion_falla,
           estado,
@@ -102,6 +103,7 @@ export default function ServicioDetallePageWrapper({
 
         const servicioNormalizado: Servicio = {
           id_reparacion: data.id_reparacion ?? '',
+          numero_servicio: data.numero_servicio ?? null,
           equipo_id: equipoRaw?.serie ?? '',
           fecha_ingreso: data.fecha_ingreso ?? '',
           descripcion_falla: data.descripcion_falla ?? null,
@@ -249,6 +251,7 @@ export default function ServicioDetallePageWrapper({
 
             <div className='space-y-6'>
               <InfoBlock title={<SectionTitle>Servicio</SectionTitle>}>
+                <InfoRow label='Nro. Servicio' value={servicio.numero_servicio} />
                 <InfoRow label='Fecha ingreso' value={formatFechaSimple(servicio.fecha_ingreso)} />
                 {servicio.fecha_entrega && (
                   <InfoRow

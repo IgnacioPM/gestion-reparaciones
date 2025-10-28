@@ -22,6 +22,7 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
         .from('servicios')
         .select(`
           id_reparacion,
+          numero_servicio,
           fecha_ingreso,
           descripcion_falla,
           estado,
@@ -54,6 +55,7 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
 
         const servicioNormalizado: Servicio = {
           id_reparacion: data.id_reparacion ?? '',
+          numero_servicio: data.numero_servicio ?? null,
           equipo_id: equipoRaw?.serie ?? '',
           fecha_ingreso: data.fecha_ingreso ?? '',
           descripcion_falla: data.descripcion_falla ?? null,

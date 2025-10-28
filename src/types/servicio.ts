@@ -14,6 +14,7 @@ export interface Equipo {
 
 export interface Servicio {
   id_reparacion: string
+  numero_servicio?: string | null
   equipo_id: string
   fecha_ingreso: string
   descripcion_falla?: string | null

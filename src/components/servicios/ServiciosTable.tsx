@@ -7,6 +7,7 @@ import { supabase } from "@/lib/supabaseClient"
 
 interface Servicio {
     id_reparacion: string
+    numero_servicio: string | null
     equipo_id: string
     fecha_ingreso: string
     descripcion_falla: string | null
@@ -112,6 +113,7 @@ export default function ServiciosTable() {
                     .from('servicios')
                     .select(`
                         id_reparacion,
+                        numero_servicio,
                         equipo_id,
                         fecha_ingreso,
                         descripcion_falla,
@@ -159,6 +161,7 @@ export default function ServiciosTable() {
 
                         return {
                             id_reparacion: item.id_reparacion,
+                            numero_servicio: item.numero_servicio,
                             equipo_id: item.equipo_id,
                             fecha_ingreso: item.fecha_ingreso,
                             descripcion_falla: item.descripcion_falla,
@@ -277,6 +280,9 @@ export default function ServiciosTable() {
                     <thead className="bg-gray-50 dark:bg-gray-700">
                         <tr>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                                Nro. Servicio
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                                 Cliente
                             </th>
                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -304,6 +310,9 @@ export default function ServiciosTable() {
                                         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
+                                    </td>
+                                    <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
@@ -319,7 +328,7 @@ export default function ServiciosTable() {
                             ))
                         ) : servicios.length === 0 ? (
                             <tr>
-                                <td colSpan={5} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
+                                <td colSpan={7} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                                     No hay servicios registrados
                                 </td>
                             </tr>
@@ -330,6 +339,11 @@ export default function ServiciosTable() {
                                     className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
                                     onClick={() => handleViewServicio(servicio.id_reparacion)}
                                 >
+                                    <td className="px-6 py-4 whitespace-nowrap">
+                                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                                            {servicio.numero_servicio || '--'}
+                                        </div>
+                                    </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
                                         <div className="text-sm font-medium text-gray-900 dark:text-white">
                                             {servicio.equipo?.cliente?.nombre || 'Cliente no disponible'}
