@@ -173,11 +173,11 @@ export default function EditarEmpresaPage() {
                 <div className="flex justify-between items-center mb-4">
                     <SectionTitle>Datos de la Empresa</SectionTitle>
                     <button
-                        onClick={() => router.push('/')}
+                        onClick={() => router.push('/administrar')}
                         className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
                     >
                         <ArrowLeft className="w-5 h-5" />
-                        Regresar al inicio
+                        Regresar al panel
                     </button>
                 </div>
 

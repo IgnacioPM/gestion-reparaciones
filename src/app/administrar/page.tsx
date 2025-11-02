@@ -1,6 +1,10 @@
+'use client'
+
 import Link from 'next/link'
-import { Building, Users, MessageSquare, BarChart2 } from 'lucide-react'
+import { Building, Users, MessageSquare, BarChart2, ArrowLeft } from 'lucide-react'
 import SectionTitle from '@/components/ui/SectionTitle'
+import Navbar from '@/components/ui/Navbar'
+import { useRouter } from 'next/navigation'
 
 const adminActions = [
   {
@@ -30,26 +34,40 @@ const adminActions = [
 ]
 
 export default function AdminPage() {
+  const router = useRouter()
+
   return (
-    <div className="container mx-auto px-4 py-8">
-      <SectionTitle>Panel de Administración</SectionTitle>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-        {adminActions.map((action) => (
-          <Link href={action.href} key={action.title}>
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
-              <div className="p-3 mb-4 rounded-full bg-gray-100 dark:bg-gray-700">
-                {action.icon}
+    <>
+      <Navbar />
+      <main className="container mx-auto px-4 py-8">
+        <div className="flex justify-between items-center mb-6">
+          <SectionTitle>Panel de Administración</SectionTitle>
+          <button
+            onClick={() => router.push('/')}
+            className="flex items-center gap-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+            Regresar al inicio
+          </button>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {adminActions.map((action) => (
+            <Link href={action.href} key={action.title}>
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 flex flex-col items-center text-center hover:shadow-lg transition-shadow duration-300 cursor-pointer h-full">
+                <div className="p-3 mb-4 rounded-full bg-gray-100 dark:bg-gray-700">
+                  {action.icon}
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+                  {action.title}
+                </h3>
+                <p className="text-sm text-gray-600 dark:text-gray-300">
+                  {action.description}
+                </p>
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                {action.title}
-              </h3>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
-                {action.description}
-              </p>
-            </div>
-          </Link>
-        ))}
-      </div>
-    </div>
+            </Link>
+          ))}
+        </div>
+      </main>
+    </>
   )
 }
