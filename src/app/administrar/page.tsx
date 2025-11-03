@@ -10,13 +10,13 @@ const adminActions = [
   {
     title: 'Datos de la empresa',
     description: 'Edita la información de tu empresa.',
-    href: '/empresa',
+    href: '/administrar/empresa',
     icon: <Building className="w-8 h-8 text-blue-500" />,
   },
   {
     title: 'Personal de la empresa',
     description: 'Gestiona los usuarios y sus roles.',
-    href: '/empleados',
+    href: '/administrar/personal',
     icon: <Users className="w-8 h-8 text-green-500" />,
   },
   {
