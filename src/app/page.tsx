@@ -1,7 +1,7 @@
 'use client' // Necesario para usar el store
 
 import Navbar from "@/components/ui/Navbar"
-import ServiciosTable from "@/components/servicios/ServiciosTable"
+import ServiciosTable from "@/components/reparaciones/ServiciosTable"
 
 export default function HomePage() {
     return (

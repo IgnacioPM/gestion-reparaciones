@@ -4,7 +4,7 @@ import { useEffect, useState, use } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
-import { ServicioPrintable } from '@/components/servicios/ServicioPrintable'
+import { ServicioPrintable } from '@/components/reparaciones/ServicioPrintable'
 import '@/styles/print.css'
 import { Servicio, Cliente } from '@/types/servicio'
 

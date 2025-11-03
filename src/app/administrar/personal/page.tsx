@@ -4,7 +4,7 @@ import Navbar from "@/components/ui/Navbar";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
-import EmpleadosTable from "@/components/servicios/EmpleadosTable";
+import EmpleadosTable from "@/components/reparaciones/EmpleadosTable";
 
 export default function EmpleadosPage() {
   const router = useRouter();

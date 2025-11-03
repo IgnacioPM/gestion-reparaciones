@@ -1,5 +1,5 @@
 ﻿'use client'
-import { ServicioEditModal } from '@/components/servicios/ServicioEditModal'
+import { ServicioEditModal } from '@/components/reparaciones/ServicioEditModal'
 import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { InfoBlock } from '@/components/ui/InfoBlock'
 import { InfoRow } from '@/components/ui/InfoRow'

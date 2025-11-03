@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react"
 import { Plus, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { supabase } from "@/lib/supabaseClient"
-import EmpleadoEditModal from "@/components/servicios/EmpleadoEditModal";
+import EmpleadoEditModal from "@/components/reparaciones/EmpleadoEditModal";
 import { useAuthStore } from "@/stores/auth";
 import { toast } from "sonner";
 import { EmpleadoFormData } from "@/schemas/empleado";
