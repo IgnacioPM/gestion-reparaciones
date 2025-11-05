@@ -36,7 +36,7 @@ export default function Navbar() {
     return (
         <nav className="w-full bg-white dark:bg-gray-800 shadow-md px-3 py-2 flex justify-between items-center sticky top-0 z-50 transition-colors">
             {/* Logo + App Name */}
-            <div className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2">
                 <Image
                     src={profile?.empresa?.logo_url || "/icons/logo-CR.svg"}
                     alt={profile?.empresa?.nombre || "Logo Reparaciones"}
@@ -48,7 +48,7 @@ export default function Navbar() {
                     {/* Muestra el nombre de la empresa si existe */}
                     {profile?.empresa?.nombre || 'Control de reparaciones'}
                 </h1>
-            </div>
+            </Link>
 
             {/* Actions */}
             <div className="flex items-center gap-3">

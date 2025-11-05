@@ -125,21 +125,7 @@ export default function NuevoServicioPage() {
                 throw errorServicio;
             }
 
-            // Mensaje para WhatsApp
-            let mensaje = `🙋‍♂ Hola ${cliente.nombre},\n\n`;
-            mensaje += `✅ *Hemos recibido su equipo.*\n`;
-            mensaje += `\n💻 Dispositivo:\n${data.tipo_dispositivo || ""} ${data.marca || ""} ${data.modelo || ""}`;
-            mensaje += `\n❗ Problema reportado:\n${data.problema || ""}`;
-            mensaje += `\n💰 Costo estimado:\n${data.costo_estimado ? `₡${data.costo_estimado}` : "Pendiente"}`;
-            mensaje += `\n📅 Fecha de ingreso:\n${dayjs(fechaIngresoCR).tz("America/Costa_Rica").format("DD/MM/YYYY HH:mm")}`;
-            mensaje += `\n\nNos comunicaremos con usted cuando el diagnóstico esté listo.\n¡Gracias por confiar en nosotros!`;
 
-            if (cliente.telefono) {
-                const telefonoLimpio = cliente.telefono.replace(/\D/g, "");
-                const linkWhatsApp = `https://wa.me/506${telefonoLimpio}?text=${encodeURIComponent(mensaje)}`;
-                window.open(linkWhatsApp, "_blank");
-                console.log("Link WhatsApp:", linkWhatsApp);
-            }
             reset();
             router.push("/");
         } catch (error: unknown) {

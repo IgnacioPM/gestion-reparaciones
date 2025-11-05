@@ -1,18 +1,21 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Servicio } from "@/types/servicio";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 import { FormattedAmount } from "@/components/ui/FormattedAmount";
 import Input from "@/components/ui/Input";
-import Button from "@/components/ui/Button"; // Keep this line
-import { InfoBlock } from "@/components/ui/InfoBlock"; // Corrected import
+import Button from "@/components/ui/Button";
+import { InfoBlock } from "@/components/ui/InfoBlock";
 import SectionTitle from "@/components/ui/SectionTitle";
 import { InfoRow } from "@/components/ui/InfoRow";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
+import { useAuthStore } from "@/stores/auth";
+import { supabase } from "@/lib/supabaseClient";
+import { MensajeWhatsapp } from "@/types/mensaje_whatsapp";
 
 interface ServicioEditModalProps {
     isOpen: boolean;
@@ -34,16 +37,33 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                 : "")
     );
     const [notaTrabajo, setNotaTrabajo] = useState(servicio.nota_trabajo ?? "");
+    const [mensajes, setMensajes] = useState<MensajeWhatsapp[]>([]);
+    const { profile } = useAuthStore();
 
-    // Inicializar plugins solo una vez
-    // Extender dayjs con los plugins solo una vez
+    useEffect(() => {
+        if (isOpen && profile?.empresa_id) {
+            const fetchMensajes = async () => {
+                const { data, error } = await supabase
+                    .from("mensajes_whatsapp")
+                    .select("*")
+                    .eq("empresa_id", profile.empresa_id);
+
+                if (error) {
+                    console.error("Error fetching mensajes whatsapp:", error);
+                } else {
+                    setMensajes(data);
+                }
+            };
+            fetchMensajes();
+        }
+    }, [isOpen, profile?.empresa_id]);
+
     if (!(dayjs as unknown as { _hasTimezonePlugin?: boolean })._hasTimezonePlugin) {
         dayjs.extend(utc);
         dayjs.extend(timezone);
         (dayjs as unknown as { _hasTimezonePlugin?: boolean })._hasTimezonePlugin = true;
     }
 
-    // Si el estado cambia a "Entregado", la fecha_entrega se actualizará al guardar
     const handleSave = () => {
         const data: Partial<Servicio> = {
             estado,
@@ -51,13 +71,37 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
             nota_trabajo: notaTrabajo,
         };
         if (estado === "Entregado") {
-            // Guardar la fecha en zona horaria America/Costa_Rica, en formato ISO completo (con zona horaria)
             const crDate = dayjs().tz("America/Costa_Rica");
             data.fecha_entrega = crDate.toISOString();
         } else if (estado === "En revisión") {
             data.costo_estimado = costoEstimado === "" ? null : Number(costoEstimado);
         }
         onSave(data);
+    };
+
+    const handleNotify = (tipo: "recibido" | "revision" | "listo" | "entregado") => {
+        const mensaje = mensajes.find(m => m.tipo === tipo);
+        if (!mensaje) {
+            alert(`No se encontró plantilla de mensaje para el estado: ${tipo}`);
+            return;
+        }
+
+        const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, "") || "";
+        const clienteNombre = servicio.equipo?.cliente?.nombre || "Estimado cliente";
+        const equipoInfo = `${servicio.equipo?.tipo || ""} ${servicio.equipo?.marca || ""} ${servicio.equipo?.modelo || ""}`.trim();
+        const problema = servicio.descripcion_falla || "No especificado";
+        const costoEst = costoEstimado || servicio.costo_estimado || "-";
+        const costoFin = costoFinal || servicio.costo_final || "-";
+
+        const plantilla = mensaje.plantilla
+            .replace(/{cliente}/g, clienteNombre)
+            .replace(/{equipo}/g, equipoInfo)
+            .replace(/{problema}/g, problema)
+            .replace(/{costo_estimado}/g, `₡${costoEst}`)
+            .replace(/{costo_final}/g, `₡${costoFin}`);
+
+        const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(plantilla)}`;
+        window.open(link, "_blank");
     };
 
     if (!isOpen) return null;
@@ -146,20 +190,22 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                     />
                 </InfoBlock>
                 <div className="flex flex-col gap-2 mt-6">
+                    {estado === "Recibido" && servicio.equipo?.cliente?.telefono && (
+                        <Button
+                            type="button"
+                            color="primary"
+                            className="mb-2"
+                            onClick={() => handleNotify("recibido")}
+                        >
+                            Notificar recibido
+                        </Button>
+                    )}
                     {estado === "En revisión" && servicio.equipo?.cliente?.telefono && (
                         <Button
                             type="button"
                             color="primary"
                             className="mb-2"
-                            onClick={() => {
-                                const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, "") || "";
-                                const clienteNombre = servicio.equipo?.cliente?.nombre || "Estimado cliente";
-                                const equipoInfo = `${servicio.equipo?.tipo || ""} ${servicio.equipo?.marca || ""} ${servicio.equipo?.modelo || ""}`.trim();
-                                const notas = notaTrabajo?.trim() || "No se registraron observaciones adicionales.";
-                                const mensaje = `Hola ${clienteNombre},\n\nHemos revisado su equipo *${equipoInfo || "dispositivo"}*.\n\n📋 Estado: En revisión\n📝 Notas de diagnóstico: ${notas}\n💵 Costo estimado: ₡${costoEstimado || servicio.costo_estimado || "-"}\n\nNos confirma si desea que procedamos con la reparación.\n\nMuchas gracias por confiar en nuestro servicio.`;
-                                const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
-                                window.open(link, "_blank");
-                            }}
+                            onClick={() => handleNotify("revision")}
                         >
                             Notificar costo estimado
                         </Button>
@@ -170,15 +216,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                             type="button"
                             color="primary"
                             className="mb-2"
-                            onClick={() => {
-                                const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, "") || "";
-                                const clienteNombre = servicio.equipo?.cliente?.nombre || "Estimado cliente";
-                                const equipoInfo = `${servicio.equipo?.tipo || ""} ${servicio.equipo?.marca || ""} ${servicio.equipo?.modelo || ""}`.trim();
-                                const notas = notaTrabajo?.trim() || "No se registraron observaciones adicionales.";
-                                const mensaje = `Hola ${clienteNombre},\n\nSu equipo *${equipoInfo || "dispositivo"}* ya está listo para ser retirado.\n\n📋 Estado: Listo para entrega\n📝 Trabajo realizado: ${notas}\n💵 Costo final: ₡${costoFinal || servicio.costo_final || "-"}\n\nLe agradecemos mucho por confiar en nuestro servicio y quedamos atentos a cualquier consulta adicional.`;
-                                const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
-                                window.open(link, "_blank");
-                            }}
+                            onClick={() => handleNotify("listo")}
                         >
                             Notificar equipo listo por WhatsApp
                         </Button>
@@ -189,16 +227,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                             type="button"
                             color="primary"
                             className="mb-2"
-                            onClick={() => {
-                                const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, "") || "";
-                                const clienteNombre = servicio.equipo?.cliente?.nombre || "Estimado cliente";
-                                const equipoInfo = `${servicio.equipo?.tipo || ""} ${servicio.equipo?.marca || ""} ${servicio.equipo?.modelo || ""}`.trim();
-                                const notas = notaTrabajo?.trim() || "No se registraron observaciones adicionales.";
-                                const costo = costoFinal || servicio.costo_final || "-";
-                                const mensaje = `Hola ${clienteNombre},\n\nLe confirmamos que su equipo *${equipoInfo || "dispositivo"}* ha sido entregado exitosamente.\n\n📋 Estado final: Entregado\n📝 Trabajo realizado: ${notas}\n💵 Costo total cancelado: ₡${costo}\n\n✅ Muchas gracias por confiar en nuestro servicio.\n🤝 Su satisfacción es muy importante para nosotros.\n\n📲 Recuerde que puede contactarnos nuevamente para futuras reparaciones o mantenimientos. ¡Con gusto le atenderemos!`;
-                                const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(mensaje)}`;
-                                window.open(link, "_blank");
-                            }}
+                            onClick={() => handleNotify("entregado")}
                         >
                             Enviar confirmación de entrega
                         </Button>
