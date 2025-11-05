@@ -49,7 +49,7 @@ export default function MensajeWhatsappEditModal({ isOpen, onClose, mensaje, onS
                     />
                     <InfoRow
                         label="Asunto"
-                        value={<Input type="text" value={asunto} onChange={e => setAsunto(e.target.value)} className="w-full" />}
+                        value={<Input label="" type="text" value={asunto} onChange={e => setAsunto(e.target.value)} className="w-full" />}
                     />
                     <InfoRow
                         label="Plantilla"
