@@ -157,8 +157,12 @@ export default function ServiciosTable() {
                     setTotalServicios(count)
                     setTotalPages(Math.ceil(count / itemsPerPage))
                 }
-            } catch (error: any) {
-                console.error('Error al cargar servicios:', error.message)
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error('Error al cargar servicios:', error.message)
+                } else {
+                    console.error('Error al cargar servicios:', error)
+                }
             } finally {
                 setLoading(false)
             }
