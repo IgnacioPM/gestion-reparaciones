@@ -25,7 +25,7 @@ export default function MensajesWhatsappTable() {
                 return;
             }
 
-            let { data, error } = await supabase
+            const { data, error } = await supabase
                 .from('mensajes_whatsapp')
                 .select('*')
                 .eq('empresa_id', empresaId)
