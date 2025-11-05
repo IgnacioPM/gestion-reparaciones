@@ -45,7 +45,7 @@ export default function MensajeWhatsappEditModal({ isOpen, onClose, mensaje, onS
                 <div className="space-y-4">
                     <InfoRow
                         label="Tipo"
-                        value={<Input type="text" value={mensaje.tipo} disabled className="w-full bg-gray-100 dark:bg-gray-700" />}
+                        value={<Input label="" type="text" value={mensaje.tipo} disabled className="w-full bg-gray-100 dark:bg-gray-700" />}
                     />
                     <InfoRow
                         label="Asunto"
