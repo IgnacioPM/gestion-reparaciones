@@ -2,9 +2,10 @@
 
 import { useState, useEffect, useMemo } from "react"
 import { useRouter } from "next/navigation"
-import { Plus, Search, Filter, ChevronLeft, ChevronRight } from "lucide-react";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient"
 import { FormattedAmount } from "@/components/ui/FormattedAmount"
+import FiltrosServicios from "./FiltrosServicios";
 
 interface Servicio {
     id_reparacion: string
@@ -161,7 +162,7 @@ export default function ServiciosTable() {
                 if (error instanceof Error) {
                     console.error('Error al cargar servicios:', error.message)
                 } else {
-                    console.error('Error al cargar servicios:', error)
+                    console.error('Error al cargar servicios:', String(error))
                 }
             } finally {
                 setLoading(false)
@@ -179,6 +180,15 @@ export default function ServiciosTable() {
         }, { totalCostoEstimado: 0, totalCostoFinal: 0 })
     }, [servicios])
 
+    const handleClearFilters = () => {
+        setSearchQuery("");
+        setFiltroEstado("todos");
+        setFechaDesde("");
+        setFechaHasta("");
+    };
+
+
+
     return (
         <div className="w-full">
             <div className="flex flex-col sm:flex-row justify-end sm:justify-between items-start sm:items-center mb-6 gap-4">
@@ -192,69 +202,19 @@ export default function ServiciosTable() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                <div className="lg:col-span-2">
-                    <label htmlFor="search" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Buscar</label>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-5 w-5 text-gray-400" />
-                        </div>
-                        <input
-                            type="text"
-                            id="search"
-                            className="pl-10 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
-                            placeholder="Cliente, dispositivo, problema..."
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                </div>
-                <div>
-                    <label htmlFor="filtro-estado" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Estado</label>
-                    <div className="flex items-center gap-2">
-                        <Filter className="h-5 w-5 text-gray-400" />
-                        <select
-                            id="filtro-estado"
-                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
-                            value={filtroEstado}
-                            onChange={(e) => setFiltroEstado(e.target.value)}
-                            aria-label="Filtrar por estado"
-                        >
-                            {estados.map((estado) => (
-                                <option key={estado.value} value={estado.value}>{estado.label}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-end">
-                <div>
-                    <label htmlFor="fecha-desde" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Desde</label>
-                    <input
-                        type="date"
-                        id="fecha-desde"
-                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
-                        value={fechaDesde}
-                        onChange={(e) => setFechaDesde(e.target.value)}
-                    />
-                </div>
-                <div>
-                    <label htmlFor="fecha-hasta" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Hasta</label>
-                    <input
-                        type="date"
-                        id="fecha-hasta"
-                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
-                        value={fechaHasta}
-                        onChange={(e) => setFechaHasta(e.target.value)}
-                    />
-                </div>
-                <div className="flex gap-2">
-                    <button onClick={() => setDateFilter("day")} className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Día</button>
-                    <button onClick={() => setDateFilter("week")} className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Semana</button>
-                    <button onClick={() => setDateFilter("month")} className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Mes</button>
-                </div>
-            </div>
+            <FiltrosServicios 
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                filtroEstado={filtroEstado}
+                setFiltroEstado={setFiltroEstado}
+                fechaDesde={fechaDesde}
+                setFechaDesde={setFechaDesde}
+                fechaHasta={fechaHasta}
+                setFechaHasta={setFechaHasta}
+                setDateFilter={setDateFilter}
+                estados={estados}
+                onClearFilters={handleClearFilters}
+            />
 
             <div className="grid grid-cols-2 gap-4 mb-6">
                 <div className="p-4 bg-gray-100 dark:bg-gray-700 rounded-lg">

@@ -3,7 +3,7 @@ interface FormattedAmountProps {
     className?: string;
 }
 
-export function FormattedAmount({ amount, className = "" }: FormattedAmountProps) {
+export const FormattedAmount = ({ amount, className = "" }: FormattedAmountProps) => {
     if (amount === null || amount === undefined) return null;
 
     // Formatear el número usando Intl.NumberFormat
@@ -14,4 +14,4 @@ export function FormattedAmount({ amount, className = "" }: FormattedAmountProps
     }).format(amount);
 
     return <span className={className}>₡{formattedAmount}</span>;
-}
+};

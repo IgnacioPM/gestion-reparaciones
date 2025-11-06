@@ -4,6 +4,7 @@ import SectionTitle from '@/components/ui/SectionTitle'
 import Navbar from '@/components/ui/Navbar'
 import { useRouter } from 'next/navigation'
 import { ArrowLeft } from 'lucide-react'
+import Reportes from '@/components/reparaciones/Reportes'
 
 export default function ReportsPage() {
   const router = useRouter()
@@ -22,12 +23,7 @@ export default function ReportsPage() {
             Regresar al panel
           </button>
         </div>
-        <div className="mt-6 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-          <p className="text-gray-600 dark:text-gray-300">
-            Esta sección está en desarrollo. Próximamente podrás visualizar
-            reportes y estadísticas sobre el rendimiento de tu negocio.
-          </p>
-        </div>
+        <Reportes />
       </main>
     </>
   )

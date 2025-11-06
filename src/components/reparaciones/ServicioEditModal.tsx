@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Servicio } from "@/types/servicio";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
+import timezone from "dayjs/plugin/timezone"; 
 import { FormattedAmount } from "@/components/ui/FormattedAmount";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
