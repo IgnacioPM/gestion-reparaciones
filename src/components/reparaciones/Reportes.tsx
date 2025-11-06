@@ -196,22 +196,23 @@ export default function Reportes() {
                 onClearFilters={handleClearFilters}
             />
 
-            <div className="flex justify-start md:justify-end">
-                <button 
-                    onClick={() => setShowTable(!showTable)}
-                    className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors'
-                >
-                    {showTable ? <Eye className="w-5 h-5" /> : <Table className="w-5 h-5" />}
-                    <span>{showTable ? 'Ocultar Tabla' : 'Mostrar Tabla'}</span>
-                </button>
-            </div>
-
-            {showTable ? (
-                <ReportesTable servicios={servicios} loading={loading} />
-            ) : (
-                <>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                        <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
+                        <div className="flex justify-start md:justify-end">
+                            <button 
+                                onClick={() => setShowTable(!showTable)}
+                                className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors'
+                            >
+                                {showTable ? <Eye className="w-5 h-5" /> : <Table className="w-5 h-5" />}
+                                <span>{showTable ? 'Ocultar Tabla' : 'Mostrar Tabla'}</span>
+                            </button>
+                        </div>
+            
+                        {showTable && (
+                            <div className="mt-6">
+                                <ReportesTable servicios={servicios} loading={loading} />
+                            </div>
+                        )}
+            
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">                        <div className="lg:col-span-1 bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Fallas Más Comunes</h3>
                             {loading ? (
                                 <div className="space-y-2">
@@ -302,8 +303,7 @@ export default function Reportes() {
                             </ResponsiveContainer>
                         </div>
                     </div>
-                </>
-            )}
+
         </div>
     )
 }
