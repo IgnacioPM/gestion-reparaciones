@@ -1,6 +1,9 @@
 "use client"
 
-import { Search, Filter } from "lucide-react";
+
+import Input from "@/components/ui/Input";
+import Select from "@/components/ui/Select";
+import Button from "@/components/ui/Button";
 
 interface FiltrosServiciosProps {
     searchQuery: string;
@@ -33,18 +36,15 @@ export default function FiltrosServicios({
 }: FiltrosServiciosProps) {
     return (
         <div className="w-full">
-            <div className={`grid grid-cols-1 md:grid-cols-2 ${showSearch ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 mb-6 w-full`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${showSearch ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 mb-2 w-full`}>
                 {showSearch && (
                     <div className="lg:col-span-2">
-                        <label htmlFor="search" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Buscar</label>
                         <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search className="h-5 w-5 text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
+                            <Input
+                                label="Buscar"
                                 id="search"
-                                className="pl-10 block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
+                                type="text"
+                                className="pl-10"
                                 placeholder="Cliente, dispositivo, problema..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -53,52 +53,47 @@ export default function FiltrosServicios({
                     </div>
                 )}
                 <div>
-                    <label htmlFor="filtro-estado" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Estado</label>
-                    <div className="flex items-center gap-2">
-                        <Filter className="h-5 w-5 text-gray-400" />
-                        <select
-                            id="filtro-estado"
-                            className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
-                            value={filtroEstado}
-                            onChange={(e) => setFiltroEstado(e.target.value)}
-                            aria-label="Filtrar por estado"
-                        >
-                            {estados.map((estado) => (
-                                <option key={estado.value} value={estado.value}>{estado.label}</option>
-                            ))}
-                        </select>
-                    </div>
+                    <Select
+                        label="Estado"
+                        id="filtro-estado"
+                        value={filtroEstado}
+                        onChange={(e) => setFiltroEstado(e.target.value)}
+                    >
+                        {estados.map((estadoOption) => (
+                            <option key={estadoOption.value} value={estadoOption.value}>
+                                {estadoOption.label}
+                            </option>
+                        ))}
+                    </Select>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 items-end w-full">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 items-end w-full">
                 <div>
-                    <label htmlFor="fecha-desde" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Desde</label>
-                    <input
-                        type="date"
+                    <Input
+                        label="Desde"
                         id="fecha-desde"
-                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        type="date"
                         value={fechaDesde}
                         onChange={(e) => setFechaDesde(e.target.value)}
                     />
                 </div>
                 <div>
-                    <label htmlFor="fecha-hasta" className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1 block">Hasta</label>
-                    <input
-                        type="date"
+                    <Input
+                        label="Hasta"
                         id="fecha-hasta"
-                        className="block w-full rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400"
+                        type="date"
                         value={fechaHasta}
                         onChange={(e) => setFechaHasta(e.target.value)}
                     />
                 </div>
                 <div className="flex gap-2">
-                    <button onClick={() => setDateFilter("day")} className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Día</button>
-                    <button onClick={() => setDateFilter("week")} className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Semana</button>
-                    <button onClick={() => setDateFilter("month")} className="px-3 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700">Mes</button>
+                    <Button onClick={() => setDateFilter("day")} className="px-3 py-2 text-sm font-medium">Día</Button>
+                    <Button onClick={() => setDateFilter("week")} className="px-3 py-2 text-sm font-medium">Semana</Button>
+                    <Button onClick={() => setDateFilter("month")} className="px-3 py-2 text-sm font-medium">Mes</Button>
                 </div>
                 <div className="flex justify-end">
-                    <button onClick={onClearFilters} className="px-4 py-2 text-sm font-medium text-red-700 bg-red-100 border border-red-300 rounded-md hover:bg-red-200 dark:bg-red-800 dark:text-red-100 dark:border-red-600 dark:hover:bg-red-700">Borrar Filtros</button>
+                    <Button onClick={onClearFilters} className="px-4 py-2 text-sm font-medium bg-red-800 text-red-100 border border-red-600 rounded-md hover:bg-red-700">Borrar Filtros</Button>
                 </div>
             </div>
         </div>
