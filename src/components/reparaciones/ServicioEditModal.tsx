@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Servicio } from "@/types/servicio";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
@@ -13,7 +13,6 @@ import SectionTitle from "@/components/ui/SectionTitle";
 import { InfoRow } from "@/components/ui/InfoRow";
 import Select from "@/components/ui/Select";
 import Textarea from "@/components/ui/Textarea";
-import { useAuthStore } from "@/stores/auth";
 
 interface ServicioEditModalProps {
     isOpen: boolean;
@@ -35,7 +34,6 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                 : "")
     );
     const [notaTrabajo, setNotaTrabajo] = useState(servicio.nota_trabajo ?? "");
-    const { profile } = useAuthStore();
 
     if (!(dayjs as unknown as { _hasTimezonePlugin?: boolean })._hasTimezonePlugin) {
         dayjs.extend(utc);
