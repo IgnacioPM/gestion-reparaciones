@@ -9,9 +9,11 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
 import '@/styles/print.css'
 import { Cliente, Servicio } from '@/types/servicio'
-import { ArrowLeft, Edit } from 'lucide-react'
+import { MensajeWhatsapp } from '@/types/mensaje_whatsapp'
+import { ArrowLeft, Edit, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 
 function getBadgeColor(estado: string | null) {
@@ -50,12 +52,31 @@ export default function ServicioDetallePageWrapper({
   params: Promise<{ id: string }>
 }) {
   const { profile } = useAuthStore()
+  const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [servicio, setServicio] = useState<Servicio | null>(null)
   const [error, setError] = useState<{ message?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [id, setId] = useState<string>('')
-  
+  const [mensajes, setMensajes] = useState<MensajeWhatsapp[]>([])
+
+  useEffect(() => {
+    if (profile?.empresa_id) {
+      const fetchMensajes = async () => {
+        const { data, error } = await supabase
+          .from('mensajes_whatsapp')
+          .select('*')
+          .eq('empresa_id', profile.empresa_id)
+
+        if (error) {
+          console.error('Error fetching mensajes whatsapp:', error)
+        } else {
+          setMensajes(data)
+        }
+      }
+      fetchMensajes()
+    }
+  }, [profile?.empresa_id])
 
   useEffect(() => {
     ;(async () => {
@@ -122,8 +143,6 @@ export default function ServicioDetallePageWrapper({
         }
 
         setServicio(servicioNormalizado)
-
-
       } else {
         setServicio(null)
       }
@@ -135,8 +154,44 @@ export default function ServicioDetallePageWrapper({
 
   const handleSave = async (data: Partial<Servicio>) => {
     if (!id) return
-    await supabase.from('servicios').update(data).eq('id_reparacion', id)
-    setIsModalOpen(false)
+    const { error } = await supabase.from('servicios').update(data).eq('id_reparacion', id)
+
+    if (error) {
+      console.error('Error updating service:', error)
+      alert('Error al actualizar el servicio.')
+    } else {
+      router.refresh()
+      setIsModalOpen(false)
+    }
+  }
+
+  const handleNotify = (tipo: 'recibido' | 'revision' | 'listo' | 'entregado') => {
+    if (!servicio) return
+    const mensaje = mensajes.find(m => m.tipo === tipo)
+    if (!mensaje) {
+      alert(`No se encontró plantilla de mensaje para el estado: ${tipo}`)
+      return
+    }
+
+    const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, '') || ''
+    const clienteNombre = servicio.equipo?.cliente?.nombre || 'Estimado cliente'
+    const equipoInfo =
+      `${servicio.equipo?.tipo || ''} ${servicio.equipo?.marca || ''} ${
+        servicio.equipo?.modelo || ''
+      }`.trim()
+    const problema = servicio.descripcion_falla || 'No especificado'
+    const costoEst = servicio.costo_estimado || '-'
+    const costoFin = servicio.costo_final || '-'
+
+    const plantilla = mensaje.plantilla
+      .replace(/{cliente}/g, clienteNombre)
+      .replace(/{equipo}/g, equipoInfo)
+      .replace(/{problema}/g, problema)
+      .replace(/{costo_estimado}/g, `₡${costoEst}`)
+      .replace(/{costo_final}/g, `₡${costoFin}`)
+
+    const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(plantilla)}`
+    window.open(link, '_blank')
   }
 
   if (loading)
@@ -269,6 +324,15 @@ export default function ServicioDetallePageWrapper({
 
           {/* Botones de impresión */}
           <div className='flex justify-end mr-4 mb-4 gap-2'>
+            {servicio.estado === 'Recibido' && (
+              <button
+                onClick={() => handleNotify('recibido')}
+                className='bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-md transition-colors flex items-center gap-2'
+              >
+                <MessageCircle className='h-5 w-5' />
+                <span>Notificar Recibido</span>
+              </button>
+            )}
             <Link
               href={`/servicios/${id}/imprimir?tipo=factura`}
               target='_blank'

@@ -108,7 +108,7 @@ export default function NuevoServicioPage() {
             // Crear el servicio
             const fechaIngresoCR = dayjs().tz("America/Costa_Rica").toISOString();
             const fechaEntrega = null;
-            const { error: errorServicio } = await supabase
+            const { data: nuevoServicio, error: errorServicio } = await supabase
                 .from("servicios")
                 .insert({
                     equipo_id: nuevoEquipo.id_equipo,
@@ -120,14 +120,21 @@ export default function NuevoServicioPage() {
                     fecha_entrega: fechaEntrega,
                     empresa_id: empresaId,
                     creado_por: profile.id_usuario
-                });
+                })
+                .select('id_reparacion')
+                .single();
+
             if (errorServicio) {
                 throw errorServicio;
             }
 
+            if (!nuevoServicio) {
+                setError("root", { message: "Error: No se pudo obtener el ID del nuevo servicio." });
+                return;
+            }
 
             reset();
-            router.push("/");
+            router.push(`/servicios/${nuevoServicio.id_reparacion}`);
         } catch (error: unknown) {
             const errorMessage = translateSupabaseError(error);
             setError("root", {
