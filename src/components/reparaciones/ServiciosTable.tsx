@@ -34,15 +34,13 @@ interface Servicio {
 
 export default function ServiciosTable() {
     const router = useRouter()
-    const [servicios, setServicios] = useState<Servicio[]>([])
+    const [allServicios, setAllServicios] = useState<Servicio[]>([])
     const [loading, setLoading] = useState(true)
     const [searchQuery, setSearchQuery] = useState("")
     const [filtroEstado, setFiltroEstado] = useState<string>("todos")
     const [fechaDesde, setFechaDesde] = useState<string>("")
     const [fechaHasta, setFechaHasta] = useState<string>("")
     const [currentPage, setCurrentPage] = useState(1)
-    const [totalPages, setTotalPages] = useState(1)
-    const [totalServicios, setTotalServicios] = useState(0)
     const itemsPerPage = 10
 
     const estados = [
@@ -54,6 +52,95 @@ export default function ServiciosTable() {
         { value: "Entregado", label: "Entregado" },
         { value: "Anulado", label: "Anulado" },
     ]
+
+    useEffect(() => {
+        const fetchServicios = async () => {
+            setLoading(true)
+            try {
+                let query = supabase
+                    .from('servicios')
+                    .select(`
+                        id_reparacion, numero_servicio, equipo_id, fecha_ingreso, descripcion_falla, estado,
+                        costo_estimado, costo_final, nota_trabajo, fecha_entrega, creado_por,
+                        creador:creado_por(nombre),
+                        equipo:equipo_id(tipo, marca, modelo, serie, cliente:cliente_id(nombre, telefono))
+                    `)
+                    .order('fecha_ingreso', { ascending: false })
+
+                const { data, error } = await query
+
+                if (error) throw error
+
+                if (data) {
+                    let serviciosFormateados = data.map(item => {
+                        const equipo = Array.isArray(item.equipo) ? item.equipo[0] : item.equipo
+                        const cliente = equipo && (Array.isArray(equipo.cliente) ? equipo.cliente[0] : equipo.cliente)
+                        const creador = Array.isArray(item.creador) ? item.creador[0] : item.creador
+
+                        return {
+                            ...item,
+                            creador: creador ? creador.nombre : 'Desconocido',
+                            equipo: equipo ? { ...equipo, cliente } : undefined
+                        }
+                    })
+                    setAllServicios(serviciosFormateados)
+                }
+            } catch (error: unknown) {
+                if (error instanceof Error) {
+                    console.error('Error al cargar servicios:', error.message)
+                } else {
+                    console.error('Error al cargar servicios:', String(error))
+                }
+                setAllServicios([])
+            } finally {
+                setLoading(false)
+            }
+        }
+
+        fetchServicios()
+    }, [])
+
+    const filteredServicios = useMemo(() => {
+        setCurrentPage(1) // Reset page to 1 on any filter change
+        
+        return allServicios.filter(servicio => {
+            const searchLower = searchQuery.toLowerCase();
+            
+            const matchesSearch = searchQuery.trim() === "" ||
+                (servicio.numero_servicio && servicio.numero_servicio.toLowerCase().includes(searchLower)) ||
+                (servicio.equipo?.cliente?.nombre && servicio.equipo.cliente.nombre.toLowerCase().includes(searchLower)) ||
+                (servicio.equipo?.cliente?.telefono && servicio.equipo.cliente.telefono.toLowerCase().includes(searchLower)) ||
+                (servicio.equipo?.tipo && servicio.equipo.tipo.toLowerCase().includes(searchLower)) ||
+                (servicio.equipo?.marca && servicio.equipo.marca.toLowerCase().includes(searchLower)) ||
+                (servicio.equipo?.modelo && servicio.equipo.modelo.toLowerCase().includes(searchLower)) ||
+                (servicio.descripcion_falla && servicio.descripcion_falla.toLowerCase().includes(searchLower));
+
+            const matchesEstado = filtroEstado === "todos" || servicio.estado === filtroEstado;
+
+            const fechaIngreso = new Date(servicio.fecha_ingreso);
+            const matchesFecha = (!fechaDesde || fechaIngreso >= new Date(fechaDesde + 'T00:00:00')) &&
+                                 (!fechaHasta || fechaIngreso <= new Date(fechaHasta + 'T23:59:59'));
+
+            return matchesSearch && matchesEstado && matchesFecha;
+        });
+    }, [allServicios, searchQuery, filtroEstado, fechaDesde, fechaHasta]);
+
+    const paginatedServicios = useMemo(() => {
+        const from = (currentPage - 1) * itemsPerPage;
+        const to = from + itemsPerPage;
+        return filteredServicios.slice(from, to);
+    }, [filteredServicios, currentPage]);
+
+    const totalPages = Math.ceil(filteredServicios.length / itemsPerPage);
+    const totalServicios = filteredServicios.length;
+
+    const { totalCostoEstimado, totalCostoFinal } = useMemo(() => {
+        return filteredServicios.reduce((acc, servicio) => {
+            acc.totalCostoEstimado += servicio.costo_estimado || 0
+            acc.totalCostoFinal += servicio.costo_final || 0
+            return acc
+        }, { totalCostoEstimado: 0, totalCostoFinal: 0 })
+    }, [filteredServicios])
 
     const getBadgeColor = (estado: string) => {
         switch (estado) {
@@ -83,102 +170,27 @@ export default function ServiciosTable() {
     }
 
     const setDateFilter = (filterType: "day" | "week" | "month") => {
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        let fromDate: Date, toDate: Date;
 
         if (filterType === "day") {
-            setFechaDesde(today.toISOString().split('T')[0])
-            setFechaHasta(today.toISOString().split('T')[0])
+            fromDate = today;
+            toDate = today;
         } else if (filterType === "week") {
-            const firstDayOfWeek = new Date(today)
-            const day = today.getDay()
-            const diff = today.getDate() - day + (day === 0 ? -6 : 1) // adjust when day is sunday
-            firstDayOfWeek.setDate(diff)
-            setFechaDesde(firstDayOfWeek.toISOString().split('T')[0])
-            setFechaHasta(new Date(firstDayOfWeek.setDate(firstDayOfWeek.getDate() + 6)).toISOString().split('T')[0])
-        } else if (filterType === "month") {
-            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
-            const lastDayOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0)
-            setFechaDesde(firstDayOfMonth.toISOString().split('T')[0])
-            setFechaHasta(lastDayOfMonth.toISOString().split('T')[0])
+            const day = today.getDay();
+            const diff = today.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+            fromDate = new Date(today.setDate(diff));
+            toDate = new Date(new Date(fromDate).setDate(fromDate.getDate() + 6));
+        } else { // month
+            fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+            toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
         }
+        
+        setFechaDesde(fromDate.toISOString().split('T')[0]);
+        setFechaHasta(toDate.toISOString().split('T')[0]);
     }
-
-    useEffect(() => {
-        const fetchServicios = async () => {
-            setLoading(true)
-            try {
-                const from = (currentPage - 1) * itemsPerPage
-                const to = from + itemsPerPage - 1
-
-                let query = supabase
-                    .from('servicios')
-                    .select(`
-                        id_reparacion, numero_servicio, equipo_id, fecha_ingreso, descripcion_falla, estado,
-                        costo_estimado, costo_final, nota_trabajo, fecha_entrega, creado_por,
-                        creador:creado_por(nombre),
-                        equipo:equipo_id(tipo, marca, modelo, serie, cliente:cliente_id(nombre, telefono))
-                    `, { count: 'exact' })
-
-                if (filtroEstado !== "todos") query = query.eq('estado', filtroEstado)
-                if (fechaDesde) query = query.gte('fecha_ingreso', fechaDesde)
-                if (fechaHasta) query = query.lte('fecha_ingreso', `${fechaHasta}T23:59:59`)
-
-                const { data, error, count } = await query
-                    .order('fecha_ingreso', { ascending: false })
-                    .range(from, to)
-
-                if (error) throw error
-
-                if (data && count !== null) {
-                    let serviciosFormateados = data.map(item => {
-                        const equipo = Array.isArray(item.equipo) ? item.equipo[0] : item.equipo
-                        const cliente = equipo && (Array.isArray(equipo.cliente) ? equipo.cliente[0] : equipo.cliente)
-                        const creador = Array.isArray(item.creador) ? item.creador[0] : item.creador
-
-                        return {
-                            ...item,
-                            creador: creador ? creador.nombre : 'Desconocido',
-                            equipo: equipo ? { ...equipo, cliente } : undefined
-                        }
-                    })
-
-                    if (searchQuery.trim() !== "") {
-                        const q = searchQuery.trim().toLowerCase()
-                        serviciosFormateados = serviciosFormateados.filter(s =>
-                            s.descripcion_falla?.toLowerCase().includes(q) ||
-                            s.equipo?.tipo?.toLowerCase().includes(q) ||
-                            s.equipo?.marca?.toLowerCase().includes(q) ||
-                            s.equipo?.modelo?.toLowerCase().includes(q) ||
-                            s.equipo?.cliente?.nombre?.toLowerCase().includes(q)
-                        )
-                    }
-
-                    setServicios(serviciosFormateados)
-                    setTotalServicios(count)
-                    setTotalPages(Math.ceil(count / itemsPerPage))
-                }
-            } catch (error: unknown) {
-                if (error instanceof Error) {
-                    console.error('Error al cargar servicios:', error.message)
-                } else {
-                    console.error('Error al cargar servicios:', String(error))
-                }
-            } finally {
-                setLoading(false)
-            }
-        }
-
-        fetchServicios()
-    }, [currentPage, filtroEstado, searchQuery, fechaDesde, fechaHasta])
-
-    const { totalCostoEstimado, totalCostoFinal } = useMemo(() => {
-        return servicios.reduce((acc, servicio) => {
-            acc.totalCostoEstimado += servicio.costo_estimado || 0
-            acc.totalCostoFinal += servicio.costo_final || 0
-            return acc
-        }, { totalCostoEstimado: 0, totalCostoFinal: 0 })
-    }, [servicios])
 
     const handleClearFilters = () => {
         setSearchQuery("");
@@ -186,8 +198,6 @@ export default function ServiciosTable() {
         setFechaDesde("");
         setFechaHasta("");
     };
-
-
 
     return (
         <div className="w-full">
@@ -257,14 +267,14 @@ export default function ServiciosTable() {
                                     ))}
                                 </tr>
                             ))
-                        ) : servicios.length === 0 ? (
+                        ) : paginatedServicios.length === 0 ? (
                             <tr>
                                 <td colSpan={9} className="px-6 py-10 text-center text-gray-500 dark:text-gray-400">
                                     No hay servicios que coincidan con los filtros aplicados.
                                 </td>
                             </tr>
                         ) : (
-                            servicios.map((servicio) => (
+                            paginatedServicios.map((servicio) => (
                                 <tr
                                     key={servicio.id_reparacion}
                                     className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
@@ -317,7 +327,7 @@ export default function ServiciosTable() {
                     </button>
                     <button
                         className="inline-flex items-center px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={currentPage === totalPages}
+                        disabled={currentPage >= totalPages}
                         onClick={() => setCurrentPage(currentPage + 1)}
                         aria-label="Página siguiente"
                     >
