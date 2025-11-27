@@ -52,11 +52,11 @@ export default function ClienteForm({ onClienteChange }: ClienteFormProps) {
             const telefonoTrim = field === 'telefono' ? value.trim() : telefono.trim()
             const correoTrim = field === 'correo' ? value.trim() : correo.trim()
 
-            if (nombreTrim && telefonoTrim) {
+            if (nombreTrim) {
                 const nuevoCliente: Cliente = {
                     id_cliente: "nuevo",
                     nombre: nombreTrim,
-                    telefono: telefonoTrim,
+                    telefono: telefonoTrim || null,
                     correo: correoTrim || null
                 }
                 onClienteChange(nuevoCliente)
@@ -122,7 +122,6 @@ export default function ClienteForm({ onClienteChange }: ClienteFormProps) {
                 type="text"
                 value={telefono}
                 onChange={(e) => handleInputChange('telefono', e.target.value)}
-                required
             />
 
             <Input

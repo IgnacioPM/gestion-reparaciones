@@ -57,7 +57,7 @@ export default function ServiciosTable() {
         const fetchServicios = async () => {
             setLoading(true)
             try {
-                let query = supabase
+                const query = supabase
                     .from('servicios')
                     .select(`
                         id_reparacion, numero_servicio, equipo_id, fecha_ingreso, descripcion_falla, estado,
@@ -72,7 +72,7 @@ export default function ServiciosTable() {
                 if (error) throw error
 
                 if (data) {
-                    let serviciosFormateados = data.map(item => {
+                    const serviciosFormateados = data.map(item => {
                         const equipo = Array.isArray(item.equipo) ? item.equipo[0] : item.equipo
                         const cliente = equipo && (Array.isArray(equipo.cliente) ? equipo.cliente[0] : equipo.cliente)
                         const creador = Array.isArray(item.creador) ? item.creador[0] : item.creador

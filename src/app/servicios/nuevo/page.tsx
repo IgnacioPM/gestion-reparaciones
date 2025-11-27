@@ -61,31 +61,26 @@ export default function NuevoServicioPage() {
         setIsSubmitting(true);
         try {
             let clienteId = cliente.id_cliente;
-            // Si es un cliente nuevo, verificamos si ya existe
+            // Si es un cliente nuevo, lo creamos directamente
             if (clienteId === "nuevo") {
-                const { data: clienteExistente } = await supabase
+                const { data: nuevoCliente, error: errorCliente } = await supabase
                     .from("clientes")
-                    .select("*")
-                    .or(`telefono.eq.${cliente.telefono},correo.eq.${cliente.correo}`)
-                    .maybeSingle();
-                if (clienteExistente) {
-                    clienteId = clienteExistente.id_cliente;
-                } else {
-                    const { data: nuevoCliente, error: errorCliente } = await supabase
-                        .from("clientes")
-                        .insert({
-                            nombre: cliente.nombre,
-                            telefono: cliente.telefono,
-                            correo: cliente.correo,
-                            empresa_id: empresaId // <-- 4. AÑADIR EMPRESA_ID
-                        })
-                        .select('id_cliente')
-                        .single();
-                    if (errorCliente) {
-                        throw errorCliente;
-                    }
-                    clienteId = nuevoCliente.id_cliente;
+                    .insert({
+                        nombre: cliente.nombre,
+                        telefono: cliente.telefono,
+                        correo: cliente.correo,
+                        empresa_id: empresaId
+                    })
+                    .select('id_cliente')
+                    .single();
+
+                if (errorCliente) {
+                    throw errorCliente;
                 }
+                if (!nuevoCliente) {
+                    throw new Error("No se pudo crear el cliente.");
+                }
+                clienteId = nuevoCliente.id_cliente;
             }
 
             // Crear el equipo
