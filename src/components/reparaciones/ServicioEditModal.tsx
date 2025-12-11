@@ -87,14 +87,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
       return
     }
 
-    // Limpieza de teléfono
-    const telefono = (servicio.equipo?.cliente?.telefono || '').replace(/\D/g, '').trim()
-
-    if (!telefono) {
-      alert('El cliente no tiene un número válido.')
-      return
-    }
-
+    const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, '') || ''
     const clienteNombre = servicio.equipo?.cliente?.nombre || 'Estimado cliente'
     const equipoInfo = `${servicio.equipo?.tipo || ''} ${servicio.equipo?.marca || ''} ${
       servicio.equipo?.modelo || ''
@@ -103,22 +96,23 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
     const costoEst = costoEstimado || servicio.costo_estimado || '-'
     const costoFin = costoFinal || servicio.costo_final || '-'
 
-    // Procesar plantilla
-    let plantilla = mensaje.plantilla
+    const plantilla = mensaje.plantilla
       .replace(/{cliente}/g, clienteNombre)
       .replace(/{equipo}/g, equipoInfo)
       .replace(/{problema}/g, problema)
       .replace(/{costo_estimado}/g, `₡${costoEst}`)
       .replace(/{costo_final}/g, `₡${costoFin}`)
 
-    // Normalizar saltos de línea y eliminar caracteres invisibles
-    plantilla = plantilla
-      .replace(/\r\n/g, '\n')
-      .replace(/\r/g, '\n')
-      .replace(/\u00A0/g, ' ') // non-breaking spaces
-      .trim()
+    const text = encodeURIComponent(plantilla)
 
-    const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(plantilla)}`
+    // Detectar Windows (incluye Windows 11 y el navegador Edge/Chrome)
+    const isWindows = typeof navigator !== 'undefined' && /Win/i.test(navigator.platform || '')
+
+    // Si es Windows → forzar WhatsApp Web
+    // Sino → usar wa.me (mejor en móviles)
+    const link = isWindows
+      ? `https://web.whatsapp.com/send?phone=506${telefono}&text=${text}`
+      : `https://wa.me/506${telefono}?text=${text}`
 
     window.open(link, '_blank')
   }
