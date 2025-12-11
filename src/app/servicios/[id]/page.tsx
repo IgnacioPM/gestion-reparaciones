@@ -8,8 +8,8 @@ import SectionTitle from '@/components/ui/SectionTitle'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
 import '@/styles/print.css'
-import { Cliente, Servicio } from '@/types/servicio'
 import { MensajeWhatsapp } from '@/types/mensaje_whatsapp'
+import { Cliente, Servicio } from '@/types/servicio'
 import { ArrowLeft, Edit, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -167,28 +167,43 @@ export default function ServicioDetallePageWrapper({
 
   const handleNotify = (tipo: 'recibido' | 'revision' | 'listo' | 'entregado') => {
     if (!servicio) return
-    const mensaje = mensajes.find(m => m.tipo === tipo)
+
+    const mensaje = mensajes.find((m) => m.tipo === tipo)
     if (!mensaje) {
       alert(`No se encontró plantilla de mensaje para el estado: ${tipo}`)
       return
     }
 
-    const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, '') || ''
+    // Normalizar teléfono
+    const rawTel = servicio.equipo?.cliente?.telefono || ''
+    const telefono = rawTel.replace(/\D/g, '').trim()
+
+    if (!telefono) {
+      alert('El cliente no tiene un número válido.')
+      return
+    }
+
     const clienteNombre = servicio.equipo?.cliente?.nombre || 'Estimado cliente'
-    const equipoInfo =
-      `${servicio.equipo?.tipo || ''} ${servicio.equipo?.marca || ''} ${
-        servicio.equipo?.modelo || ''
-      }`.trim()
+    const equipoInfo = `${servicio.equipo?.tipo || ''} ${servicio.equipo?.marca || ''} ${
+      servicio.equipo?.modelo || ''
+    }`.trim()
     const problema = servicio.descripcion_falla || 'No especificado'
     const costoEst = servicio.costo_estimado || '-'
     const costoFin = servicio.costo_final || '-'
 
-    const plantilla = mensaje.plantilla
+    // Procesar plantilla y normalizar
+    let plantilla = mensaje.plantilla
       .replace(/{cliente}/g, clienteNombre)
       .replace(/{equipo}/g, equipoInfo)
       .replace(/{problema}/g, problema)
       .replace(/{costo_estimado}/g, `₡${costoEst}`)
       .replace(/{costo_final}/g, `₡${costoFin}`)
+
+    plantilla = plantilla
+      .replace(/\r\n/g, '\n')
+      .replace(/\r/g, '\n')
+      .replace(/\u00A0/g, ' ') // non-breaking spaces
+      .trim()
 
     const link = `https://wa.me/506${telefono}?text=${encodeURIComponent(plantilla)}`
     window.open(link, '_blank')
