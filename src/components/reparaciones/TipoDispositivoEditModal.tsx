@@ -49,13 +49,13 @@ export default function TipoDispositivoEditModal({
     resolver: zodResolver(tipoDispositivoSchema),
     defaultValues: {
         nombre: initialData?.nombre || '',
-        predeterminado: initialData?.predeterminado || false
+        predeterminado: initialData?.predeterminado !== undefined ? initialData.predeterminado : false
     }
   })
 
   useEffect(() => {
     if (isOpen) {
-      reset({ nombre: initialData?.nombre || '' });
+      reset({ nombre: initialData?.nombre || '', predeterminado: !!initialData?.predeterminado });
     }
   }, [isOpen, initialData, reset]);
 

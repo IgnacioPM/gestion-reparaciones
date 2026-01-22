@@ -72,6 +72,10 @@ export default function NuevoServicioPage() {
             console.error('Error fetching tipos de dispositivo:', error);
         } else {
             setTiposDispositivo(data);
+            const defaultTipo = data.find(tipo => tipo.predeterminado);
+            if (defaultTipo) {
+                setValue('tipo_dispositivo', defaultTipo.id_tipo, { shouldValidate: true });
+            }
         }
     };
 

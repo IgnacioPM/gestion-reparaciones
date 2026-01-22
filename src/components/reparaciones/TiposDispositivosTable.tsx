@@ -46,7 +46,7 @@ export default function TiposDispositivosTable() {
     }, [fetchTipos])
 
     const handleNew = () => {
-        setSelectedTipo({})
+        setSelectedTipo({ predeterminado: false })
         setModalError(null)
         setIsModalOpen(true)
     }
