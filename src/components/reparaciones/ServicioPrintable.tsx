@@ -1,10 +1,19 @@
 import { Profile } from '@/stores/auth'
-import { Servicio } from '@/types/servicio'
+import { Servicio, Equipo } from '@/types/servicio' // Added Equipo to import
 //import Image from 'next/image'
 import React from 'react'
 
+interface EquipoConNombres extends Equipo {
+  tipos_dispositivo?: { nombre: string } | null
+  marcas?: { nombre: string } | null
+}
+
+interface ServicioConNombres extends Servicio {
+  equipo?: EquipoConNombres
+}
+
 interface ServicioPrintableProps {
-  servicio: Servicio
+  servicio: ServicioConNombres // Changed to ServicioConNombres
   profile: Profile | null
   tipo_impresion: 'factura' | 'etiqueta'
 }
@@ -61,8 +70,8 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
       <p>Tel: {servicio.equipo?.cliente?.telefono ?? ''}</p>
 
       <h2>----- Equipo -----</h2>
-      <p>Tipo: {servicio.equipo?.tipo ?? ''}</p>
-      <p>Marca: {servicio.equipo?.marca ?? ''}</p>
+      <p>Tipo: {servicio.equipo?.tipos_dispositivo?.nombre ?? ''}</p>
+      <p>Marca: {servicio.equipo?.marcas?.nombre ?? ''}</p>
       <p>Modelo: {servicio.equipo?.modelo ?? ''}</p>
       <p>Serie: {servicio.equipo?.serie ?? ''}</p>
 

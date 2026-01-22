@@ -204,8 +204,8 @@ export default function NuevoServicioPage() {
                 .from("equipos")
                 .insert({
                     cliente_id: clienteId,
-                    tipo_id: data.tipo_dispositivo,
-                    marca_id: data.marca,
+                    tipo: data.tipo_dispositivo,
+                    marca: data.marca,
                     modelo: data.modelo,
                     serie: data.numero_serie || null,
                     empresa_id: empresaId

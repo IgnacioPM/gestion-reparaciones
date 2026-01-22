@@ -6,14 +6,23 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
 import { ServicioPrintable } from '@/components/reparaciones/ServicioPrintable'
 import '@/styles/print.css'
-import { Servicio, Cliente } from '@/types/servicio'
+import { Cliente, Servicio, Equipo } from '@/types/servicio'
+
+interface EquipoConNombres extends Equipo {
+  tipos_dispositivo?: { nombre: string } | null
+  marcas?: { nombre: string } | null
+}
+
+interface ServicioConNombres extends Servicio {
+  equipo?: EquipoConNombres
+}
 
 export default function ServicioImprimirPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params)
   const { profile } = useAuthStore()
   const searchParams = useSearchParams()
   const tipo_impresion = (searchParams.get('tipo') as 'factura' | 'etiqueta') ?? 'factura'
-  const [servicio, setServicio] = useState<Servicio | null>(null)
+  const [servicio, setServicio] = useState<ServicioConNombres | null>(null)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -46,13 +55,59 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
 
       if (data) {
         const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo
+
+        // Collect unique tipo_dispositivo_ids and marca_ids
+        const tipoDispositivoIds = new Set<string>();
+        const marcaIds = new Set<string>();
+
+        if (equipoRaw && equipoRaw.tipo) {
+            tipoDispositivoIds.add(equipoRaw.tipo);
+        }
+        if (equipoRaw && equipoRaw.marca) {
+            marcaIds.add(equipoRaw.marca);
+        }
+
+        // Fetch tipo_dispositivo names
+        let tipoDispositivoData = null;
+        if (tipoDispositivoIds.size > 0) {
+            const { data: fetchedTipoDispositivoData, error: tipoDispositivoError } = await supabase
+                .from('tipos_dispositivo')
+                .select('id_tipo, nombre')
+                .in('id_tipo', Array.from(tipoDispositivoIds));
+            
+            if (tipoDispositivoError) throw tipoDispositivoError;
+            tipoDispositivoData = fetchedTipoDispositivoData;
+        }
+
+        const tipoDispositivoMap = new Map<string, string>();
+        tipoDispositivoData?.forEach(td => tipoDispositivoMap.set(td.id_tipo, td.nombre));
+
+        // Fetch marca names
+        let marcaData = null;
+        if (marcaIds.size > 0) {
+            const { data: fetchedMarcaData, error: marcaError } = await supabase
+                .from('marcas')
+                .select('id_marca, nombre')
+                .in('id_marca', Array.from(marcaIds));
+
+            if (marcaError) throw marcaError;
+            marcaData = fetchedMarcaData;
+        }
+
+        const marcaMap = new Map<string, string>();
+        marcaData?.forEach(m => marcaMap.set(m.id_marca, m.nombre));
+
         const clienteRaw: Cliente | undefined = equipoRaw?.cliente
           ? Array.isArray(equipoRaw.cliente)
             ? equipoRaw.cliente[0]
             : equipoRaw.cliente
           : undefined
 
-        const servicioNormalizado: Servicio = {
+        const tipoDispositivoNombre = equipoRaw?.tipo ? tipoDispositivoMap.get(equipoRaw.tipo) : null;
+        const marcaNombre = equipoRaw?.marca ? marcaMap.get(equipoRaw.marca) : null;
+
+
+        const servicioNormalizado: ServicioConNombres = { // Changed to ServicioConNombres
           id_reparacion: data.id_reparacion ?? '',
           numero_servicio: data.numero_servicio ?? null,
           equipo_id: equipoRaw?.serie ?? '',
@@ -65,12 +120,11 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
           fecha_entrega: data.fecha_entrega ?? null,
           equipo: equipoRaw
             ? {
-                tipo: equipoRaw.tipo ?? '',
-                marca: equipoRaw.marca ?? '',
-                modelo: equipoRaw.modelo ?? '',
-                serie: equipoRaw.serie ?? '',
+                ...equipoRaw, // Include existing equipoRaw properties
                 cliente: clienteRaw ?? { nombre: '', telefono: '', correo: '' },
-              }
+                tipos_dispositivo: tipoDispositivoNombre ? { nombre: tipoDispositivoNombre } : null,
+                marcas: marcaNombre ? { nombre: marcaNombre } : null,
+            }
             : undefined,
         }
 

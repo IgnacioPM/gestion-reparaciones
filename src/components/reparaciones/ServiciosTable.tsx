@@ -21,8 +21,8 @@ interface Servicio {
     creado_por: string | null
     creador: string // Mapeado a string
     equipo?: {
-        tipo: string
-        marca: string
+        tipos_dispositivo: { nombre: string } | null
+        marcas: { nombre: string } | null
         modelo: string
         serie: string
         cliente?: {
@@ -63,7 +63,7 @@ export default function ServiciosTable() {
                         id_reparacion, numero_servicio, equipo_id, fecha_ingreso, descripcion_falla, estado,
                         costo_estimado, costo_final, nota_trabajo, fecha_entrega, creado_por,
                         creador:creado_por(nombre),
-                        equipo:equipo_id(tipo, marca, modelo, serie, cliente:cliente_id(nombre, telefono))
+                        equipo:equipo_id(modelo, serie, cliente:cliente_id(nombre, telefono), tipo, marca)
                     `)
                     .order('fecha_ingreso', { ascending: false })
 
@@ -72,15 +72,66 @@ export default function ServiciosTable() {
                 if (error) throw error
 
                 if (data) {
+                    // Collect unique tipo_dispositivo_ids and marca_ids
+                    const tipoDispositivoIds = new Set<string>();
+                    const marcaIds = new Set<string>();
+
+                    data.forEach(item => {
+                        const equipo = Array.isArray(item.equipo) ? item.equipo[0] : item.equipo;
+                        if (equipo && equipo.tipo) {
+                            tipoDispositivoIds.add(equipo.tipo);
+                        }
+                        if (equipo && equipo.marca) {
+                            marcaIds.add(equipo.marca);
+                        }
+                    });
+
+                    let tipoDispositivoData = null;
+                    if (tipoDispositivoIds.size > 0) {
+                        const { data: fetchedTipoDispositivoData, error: tipoDispositivoError } = await supabase
+                            .from('tipos_dispositivo')
+                            .select('id_tipo, nombre')
+                            .in('id_tipo', Array.from(tipoDispositivoIds));
+                        
+                        if (tipoDispositivoError) throw tipoDispositivoError;
+                        tipoDispositivoData = fetchedTipoDispositivoData;
+                    }
+
+                    const tipoDispositivoMap = new Map<string, string>();
+                    tipoDispositivoData?.forEach(td => tipoDispositivoMap.set(td.id_tipo, td.nombre));
+
+                    let marcaData = null;
+                    if (marcaIds.size > 0) {
+                        const { data: fetchedMarcaData, error: marcaError } = await supabase
+                            .from('marcas')
+                            .select('id_marca, nombre')
+                            .in('id_marca', Array.from(marcaIds));
+
+                        if (marcaError) throw marcaError;
+                        marcaData = fetchedMarcaData;
+                    }
+
+                    const marcaMap = new Map<string, string>();
+                    marcaData?.forEach(m => marcaMap.set(m.id_marca, m.nombre));
+
                     const serviciosFormateados = data.map(item => {
                         const equipo = Array.isArray(item.equipo) ? item.equipo[0] : item.equipo
                         const cliente = equipo && (Array.isArray(equipo.cliente) ? equipo.cliente[0] : equipo.cliente)
                         const creador = Array.isArray(item.creador) ? item.creador[0] : item.creador
+                        
+                        // Map the IDs to names
+                        const tipoDispositivoNombre = equipo?.tipo ? tipoDispositivoMap.get(equipo.tipo) : null;
+                        const marcaNombre = equipo?.marca ? marcaMap.get(equipo.marca) : null;
 
                         return {
                             ...item,
                             creador: creador ? creador.nombre : 'Desconocido',
-                            equipo: equipo ? { ...equipo, cliente } : undefined
+                            equipo: equipo ? {
+                                ...equipo,
+                                cliente,
+                                tipos_dispositivo: tipoDispositivoNombre ? { nombre: tipoDispositivoNombre } : null,
+                                marcas: marcaNombre ? { nombre: marcaNombre } : null,
+                            } : undefined
                         }
                     })
                     setAllServicios(serviciosFormateados)
@@ -88,8 +139,10 @@ export default function ServiciosTable() {
             } catch (error: unknown) {
                 if (error instanceof Error) {
                     console.error('Error al cargar servicios:', error.message)
+                } else if (typeof error === 'object' && error !== null && 'message' in error && typeof (error as { message: unknown }).message === 'string') {
+                    console.error('Error al cargar servicios:', (error as { message: string }).message)
                 } else {
-                    console.error('Error al cargar servicios:', String(error))
+                    console.error('Error al cargar servicios:', JSON.stringify(error, null, 2))
                 }
                 setAllServicios([])
             } finally {
@@ -110,8 +163,8 @@ export default function ServiciosTable() {
                 (servicio.numero_servicio && servicio.numero_servicio.toLowerCase().includes(searchLower)) ||
                 (servicio.equipo?.cliente?.nombre && servicio.equipo.cliente.nombre.toLowerCase().includes(searchLower)) ||
                 (servicio.equipo?.cliente?.telefono && servicio.equipo.cliente.telefono.toLowerCase().includes(searchLower)) ||
-                (servicio.equipo?.tipo && servicio.equipo.tipo.toLowerCase().includes(searchLower)) ||
-                (servicio.equipo?.marca && servicio.equipo.marca.toLowerCase().includes(searchLower)) ||
+                (servicio.equipo?.tipos_dispositivo?.nombre && servicio.equipo.tipos_dispositivo.nombre.toLowerCase().includes(searchLower)) ||
+                (servicio.equipo?.marcas?.nombre && servicio.equipo.marcas.nombre.toLowerCase().includes(searchLower)) ||
                 (servicio.equipo?.modelo && servicio.equipo.modelo.toLowerCase().includes(searchLower)) ||
                 (servicio.descripcion_falla && servicio.descripcion_falla.toLowerCase().includes(searchLower));
 
@@ -286,8 +339,8 @@ export default function ServiciosTable() {
                                         <div className="text-sm text-gray-500 dark:text-gray-400">{servicio.equipo?.cliente?.telefono || ''}</div>
                                     </td>
                                     <td className="px-6 py-4 whitespace-nowrap">
-                                        <div className="text-sm text-gray-900 dark:text-white">{servicio.equipo?.tipo || 'N/A'}</div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">{servicio.equipo?.marca || ''} {servicio.equipo?.modelo || ''}</div>
+                                        <div className="text-sm text-gray-900 dark:text-white">{servicio.equipo?.tipos_dispositivo?.nombre || 'N/A'}</div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400">{servicio.equipo?.marcas?.nombre || ''} {servicio.equipo?.modelo || ''}</div>
                                     </td>
                                     <td className="px-6 py-4"><div className="text-sm text-gray-900 dark:text-white line-clamp-2">{servicio.descripcion_falla || 'N/A'}</div></td>
                                     <td className="px-6 py-4 whitespace-nowrap">

@@ -9,12 +9,21 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
 import '@/styles/print.css'
 import { MensajeWhatsapp } from '@/types/mensaje_whatsapp'
-import { Cliente, Servicio } from '@/types/servicio'
+import { Cliente, Servicio, Equipo } from '@/types/servicio'
 import { ArrowLeft, Edit, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+
+interface EquipoConNombres extends Equipo {
+  tipos_dispositivo?: { nombre: string } | null
+  marcas?: { nombre: string } | null
+}
+
+interface ServicioConNombres extends Servicio {
+  equipo?: EquipoConNombres
+}
 
 function getBadgeColor(estado: string | null) {
   switch (estado) {
@@ -54,7 +63,7 @@ export default function ServicioDetallePageWrapper({
   const { profile } = useAuthStore()
   const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [servicio, setServicio] = useState<Servicio | null>(null)
+  const [servicio, setServicio] = useState<ServicioConNombres | null>(null)
   const [error, setError] = useState<{ message?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [id, setId] = useState<string>('')
@@ -114,13 +123,59 @@ export default function ServicioDetallePageWrapper({
 
       if (data) {
         const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo
+
+        // Collect unique tipo_dispositivo_ids and marca_ids
+        const tipoDispositivoIds = new Set<string>();
+        const marcaIds = new Set<string>();
+
+        if (equipoRaw && equipoRaw.tipo) {
+            tipoDispositivoIds.add(equipoRaw.tipo);
+        }
+        if (equipoRaw && equipoRaw.marca) {
+            marcaIds.add(equipoRaw.marca);
+        }
+
+        // Fetch tipo_dispositivo names
+        let tipoDispositivoData = null;
+        if (tipoDispositivoIds.size > 0) {
+            const { data: fetchedTipoDispositivoData, error: tipoDispositivoError } = await supabase
+                .from('tipos_dispositivo')
+                .select('id_tipo, nombre')
+                .in('id_tipo', Array.from(tipoDispositivoIds));
+            
+            if (tipoDispositivoError) throw tipoDispositivoError;
+            tipoDispositivoData = fetchedTipoDispositivoData;
+        }
+
+        const tipoDispositivoMap = new Map<string, string>();
+        tipoDispositivoData?.forEach(td => tipoDispositivoMap.set(td.id_tipo, td.nombre));
+
+        // Fetch marca names
+        let marcaData = null;
+        if (marcaIds.size > 0) {
+            const { data: fetchedMarcaData, error: marcaError } = await supabase
+                .from('marcas')
+                .select('id_marca, nombre')
+                .in('id_marca', Array.from(marcaIds));
+
+            if (marcaError) throw marcaError;
+            marcaData = fetchedMarcaData;
+        }
+
+        const marcaMap = new Map<string, string>();
+        marcaData?.forEach(m => marcaMap.set(m.id_marca, m.nombre));
+
         const clienteRaw: Cliente | undefined = equipoRaw?.cliente
           ? Array.isArray(equipoRaw.cliente)
             ? equipoRaw.cliente[0]
             : equipoRaw.cliente
           : undefined
 
-        const servicioNormalizado: Servicio = {
+        const tipoDispositivoNombre = equipoRaw?.tipo ? tipoDispositivoMap.get(equipoRaw.tipo) : null;
+        const marcaNombre = equipoRaw?.marca ? marcaMap.get(equipoRaw.marca) : null;
+
+
+        const servicioNormalizado: ServicioConNombres = { // Changed to ServicioConNombres
           id_reparacion: data.id_reparacion ?? '',
           numero_servicio: data.numero_servicio ?? null,
           equipo_id: equipoRaw?.serie ?? '',
@@ -133,12 +188,11 @@ export default function ServicioDetallePageWrapper({
           fecha_entrega: data.fecha_entrega ?? null,
           equipo: equipoRaw
             ? {
-                tipo: equipoRaw.tipo ?? '',
-                marca: equipoRaw.marca ?? '',
-                modelo: equipoRaw.modelo ?? '',
-                serie: equipoRaw.serie ?? '',
+                ...equipoRaw, // Include existing equipoRaw properties
                 cliente: clienteRaw ?? { nombre: '', telefono: '', correo: '' },
-              }
+                tipos_dispositivo: tipoDispositivoNombre ? { nombre: tipoDispositivoNombre } : null,
+                marcas: marcaNombre ? { nombre: marcaNombre } : null,
+            }
             : undefined,
         }
 
@@ -176,7 +230,7 @@ export default function ServicioDetallePageWrapper({
 
     const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, '') || ''
     const clienteNombre = servicio.equipo?.cliente?.nombre || 'Estimado cliente'
-    const equipoInfo = `${servicio.equipo?.tipo || ''} ${servicio.equipo?.marca || ''} ${
+    const equipoInfo = `${servicio.equipo?.tipos_dispositivo?.nombre || ''} ${servicio.equipo?.marcas?.nombre || ''} ${
       servicio.equipo?.modelo || ''
     }`.trim()
     const problema = servicio.descripcion_falla || 'No especificado'
@@ -275,7 +329,7 @@ export default function ServicioDetallePageWrapper({
           <div className='p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center'>
             <div>
               <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>
-                {servicio.equipo?.tipo ?? 'Dispositivo'}
+                {servicio.equipo?.tipos_dispositivo?.nombre ?? 'Dispositivo'}
               </h1>
             </div>
             <span
@@ -295,8 +349,8 @@ export default function ServicioDetallePageWrapper({
                 <InfoRow label='Correo' value={servicio.equipo?.cliente?.correo} />
               </InfoBlock>
               <InfoBlock title={<SectionTitle>Equipo</SectionTitle>}>
-                <InfoRow label='Tipo' value={servicio.equipo?.tipo} />
-                <InfoRow label='Marca' value={servicio.equipo?.marca} />
+                <InfoRow label='Tipo' value={servicio.equipo?.tipos_dispositivo?.nombre} />
+                <InfoRow label='Marca' value={servicio.equipo?.marcas?.nombre} />
                 <InfoRow label='Modelo' value={servicio.equipo?.modelo} />
                 <InfoRow label='Serie' value={servicio.equipo?.serie} />
               </InfoBlock>

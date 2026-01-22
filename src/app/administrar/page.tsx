@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Building, Users, MessageSquare, BarChart2, ArrowLeft } from 'lucide-react'
+import { Building, Users, MessageSquare, BarChart2, ArrowLeft, Cpu } from 'lucide-react'
 import SectionTitle from '@/components/ui/SectionTitle'
 import Navbar from '@/components/ui/Navbar'
 import { useRouter } from 'next/navigation'
@@ -30,6 +30,12 @@ const adminActions = [
     description: 'Visualiza el rendimiento y las métricas de tu negocio.',
     href: '/administrar/reportes',
     icon: <BarChart2 className="w-8 h-8 text-purple-500" />,
+  },
+  {
+    title: 'Dispositivos y Marcas',
+    description: 'Gestiona los tipos de dispositivos y las marcas de equipos.',
+    href: '/administrar/dispositivos',
+    icon: <Cpu className="w-8 h-8 text-orange-500" />,
   },
 ]
 
