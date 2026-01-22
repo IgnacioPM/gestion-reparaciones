@@ -71,8 +71,11 @@ export default function NuevoServicioPage() {
         if (error) {
             console.error('Error fetching tipos de dispositivo:', error);
         } else {
+            console.log('Fetching tipos de dispositivo for empresa_id:', profile?.empresa_id);
             setTiposDispositivo(data);
+            console.log('Fetched tipos de dispositivo:', data);
             const defaultTipo = data.find(tipo => tipo.predeterminado);
+            console.log('Default tipo de dispositivo found:', defaultTipo);
             if (defaultTipo) {
                 setValue('tipo_dispositivo', defaultTipo.id_tipo, { shouldValidate: true });
             }
