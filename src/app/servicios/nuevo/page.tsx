@@ -1,28 +1,33 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-// Inicializar plugins dayjs solo una vez
+// Plugins de dayjs
 const pluginsInitialized: boolean = (globalThis as unknown as { _dayjsPluginsInitialized?: boolean })._dayjsPluginsInitialized ?? false;
 if (!pluginsInitialized) {
     dayjs.extend(utc);
     dayjs.extend(timezone);
     (globalThis as unknown as { _dayjsPluginsInitialized?: boolean })._dayjsPluginsInitialized = true;
 }
-import { useForm } from "react-hook-form"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { supabase } from "@/lib/supabaseClient"
-import { ArrowLeft } from "lucide-react"
+import { ArrowLeft, Plus } from "lucide-react"
 import Input from "@/components/ui/Input"
 import Button from "@/components/ui/Button"
 import FormError from "@/components/ui/FormError"
 import ClienteForm, { Cliente } from "@/components/forms/ClienteForm"
 import { servicioSchema, type ServicioFormData } from "@/schemas/servicio"
 import { useRouter } from "next/navigation"
-import { useAuthStore } from "@/stores/auth"; // <-- 1. IMPORTAR STORE
+import { useAuthStore } from "@/stores/auth";
 import { translateSupabaseError } from "@/utils/supabase-db-errors";
+import Select from "@/components/ui/Select";
+import { TipoDispositivo } from "@/types/tipo_dispositivo";
+import { Marca } from "@/types/marca";
+import TipoDispositivoAddModal from "@/components/reparaciones/TipoDispositivoAddModal";
+import MarcaAddModal from "@/components/reparaciones/MarcaAddModal";
 
 export default function NuevoServicioPage() {
     const handleClienteChange = (selectedCliente: Cliente | null) => {
@@ -30,18 +35,136 @@ export default function NuevoServicioPage() {
     };
 
     const router = useRouter()
-    const { profile } = useAuthStore(); // <-- 2. OBTENER PERFIL
+    const { profile } = useAuthStore();
     const [cliente, setCliente] = useState<Cliente | null>(null)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    
+    const [tiposDispositivo, setTiposDispositivo] = useState<TipoDispositivo[]>([])
+    const [marcas, setMarcas] = useState<Marca[]>([])
+
+    const [isTipoModalOpen, setIsTipoModalOpen] = useState(false)
+    const [isMarcaModalOpen, setIsMarcaModalOpen] = useState(false)
+    const [modalError, setModalError] = useState<string | null>(null);
+    const [newlyCreatedTipoId, setNewlyCreatedTipoId] = useState<string | null>(null);
+    const [newlyCreatedMarcaId, setNewlyCreatedMarcaId] = useState<string | null>(null);
+
     const {
         register,
         handleSubmit,
         formState: { errors },
         setError,
-        reset
+        reset,
+        control,
+        setValue
     } = useForm<ServicioFormData>({
         resolver: zodResolver(servicioSchema)
     });
+    
+    const selectedTipoId = useWatch({ control, name: 'tipo_dispositivo' });
+
+    const fetchTiposDispositivo = async () => {
+        const { data, error } = await supabase
+            .from('tipos_dispositivo')
+            .select('*')
+            .eq('empresa_id', profile?.empresa_id)
+            .order('nombre', { ascending: true });
+        if (error) {
+            console.error('Error fetching tipos de dispositivo:', error);
+        } else {
+            setTiposDispositivo(data);
+        }
+    };
+
+    const fetchMarcas = async (tipoId: string) => {
+        if (!tipoId) {
+            setMarcas([]);
+            return;
+        }
+        const { data, error } = await supabase
+            .from('marcas')
+            .select('*')
+            .eq('empresa_id', profile?.empresa_id)
+            .eq('id_tipo', tipoId)
+            .order('nombre', { ascending: true });
+        if (error) {
+            console.error('Error fetching marcas:', error);
+        } else {
+            setMarcas(data);
+        }
+    };
+
+    useEffect(() => {
+        if (profile?.empresa_id) {
+            fetchTiposDispositivo();
+        }
+    }, [profile?.empresa_id]);
+
+    useEffect(() => {
+        if (selectedTipoId) {
+            fetchMarcas(selectedTipoId);
+        } else {
+            setMarcas([]);
+        }
+        setValue('marca', '');
+    }, [selectedTipoId, setValue]);
+
+    useEffect(() => {
+        if (newlyCreatedTipoId && tiposDispositivo.some(t => t.id_tipo === newlyCreatedTipoId)) {
+            setValue('tipo_dispositivo', newlyCreatedTipoId, { shouldValidate: true, shouldDirty: true });
+            setNewlyCreatedTipoId(null);
+        }
+    }, [newlyCreatedTipoId, tiposDispositivo, setValue]);
+
+    useEffect(() => {
+        if (newlyCreatedMarcaId && marcas.some(m => m.id_marca === newlyCreatedMarcaId)) {
+            setValue('marca', newlyCreatedMarcaId, { shouldValidate: true, shouldDirty: true });
+            setNewlyCreatedMarcaId(null);
+        }
+    }, [newlyCreatedMarcaId, marcas, setValue]);
+
+    const handleSaveTipoDispositivo = async (formData: { nombre: string }) => {
+        setModalError(null);
+        if (!profile?.empresa_id) {
+            setModalError("No se pudo identificar la empresa.");
+            return;
+        }
+        try {
+            const { data: newTipo, error } = await supabase
+                .from('tipos_dispositivo')
+                .insert({ nombre: formData.nombre, empresa_id: profile.empresa_id })
+                .select()
+                .single();
+            if (error) throw error;
+            
+            await fetchTiposDispositivo();
+        setNewlyCreatedTipoId(newTipo.id_tipo);
+            setIsTipoModalOpen(false);
+        } catch (error) {
+            setModalError(translateSupabaseError(error));
+        }
+    };
+
+    const handleSaveMarca = async (formData: { nombre: string; id_tipo: string }) => {
+        setModalError(null);
+        if (!profile?.empresa_id) {
+            setModalError("No se pudo identificar la empresa.");
+            return;
+        }
+        try {
+            const { data, error } = await supabase
+                .from('marcas')
+                .insert({ ...formData, empresa_id: profile.empresa_id })
+                .select()
+                .single();
+            if (error) throw error;
+
+            await fetchMarcas(data.id_tipo);
+            setNewlyCreatedMarcaId(data.id_marca);
+            setIsMarcaModalOpen(false);
+        } catch (error) {
+            setModalError(translateSupabaseError(error));
+        }
+    };
 
     const onSubmit = async (data: ServicioFormData) => {
         if (!cliente) {
@@ -51,7 +174,6 @@ export default function NuevoServicioPage() {
             return;
         }
 
-        // 3. VALIDAR Y OBTENER EMPRESA ID
         const empresaId = profile?.empresa_id;
         if (!empresaId) {
             setError("root", { message: "Error: No se pudo identificar la empresa del usuario." });
@@ -61,7 +183,6 @@ export default function NuevoServicioPage() {
         setIsSubmitting(true);
         try {
             let clienteId = cliente.id_cliente;
-            // Si es un cliente nuevo, lo creamos directamente
             if (clienteId === "nuevo") {
                 const { data: nuevoCliente, error: errorCliente } = await supabase
                     .from("clientes")
@@ -74,35 +195,26 @@ export default function NuevoServicioPage() {
                     .select('id_cliente')
                     .single();
 
-                if (errorCliente) {
-                    throw errorCliente;
-                }
-                if (!nuevoCliente) {
-                    throw new Error("No se pudo crear el cliente.");
-                }
+                if (errorCliente) throw errorCliente;
+                if (!nuevoCliente) throw new Error("No se pudo crear el cliente.");
                 clienteId = nuevoCliente.id_cliente;
             }
 
-            // Crear el equipo
             const { data: nuevoEquipo, error: errorEquipo } = await supabase
                 .from("equipos")
                 .insert({
                     cliente_id: clienteId,
-                    tipo: data.tipo_dispositivo,
-                    marca: data.marca,
+                    tipo_id: data.tipo_dispositivo,
+                    marca_id: data.marca,
                     modelo: data.modelo,
                     serie: data.numero_serie || null,
-                    empresa_id: empresaId // <-- 4. AÑADIR EMPRESA_ID
+                    empresa_id: empresaId
                 })
                 .select('id_equipo')
                 .single();
-            if (errorEquipo) {
-                throw errorEquipo;
-            }
+            if (errorEquipo) throw errorEquipo;
 
-            // Crear el servicio
             const fechaIngresoCR = dayjs().tz("America/Costa_Rica").toISOString();
-            const fechaEntrega = null;
             const { data: nuevoServicio, error: errorServicio } = await supabase
                 .from("servicios")
                 .insert({
@@ -112,16 +224,14 @@ export default function NuevoServicioPage() {
                     estado: "Recibido",
                     nota_trabajo: data.observaciones || null,
                     costo_estimado: data.costo_estimado ?? null,
-                    fecha_entrega: fechaEntrega,
+                    fecha_entrega: null,
                     empresa_id: empresaId,
                     creado_por: profile.id_usuario
                 })
                 .select('id_reparacion')
                 .single();
 
-            if (errorServicio) {
-                throw errorServicio;
-            }
+            if (errorServicio) throw errorServicio;
 
             if (!nuevoServicio) {
                 setError("root", { message: "Error: No se pudo obtener el ID del nuevo servicio." });
@@ -131,10 +241,7 @@ export default function NuevoServicioPage() {
             reset();
             router.push(`/servicios/${nuevoServicio.id_reparacion}`);
         } catch (error: unknown) {
-            const errorMessage = translateSupabaseError(error);
-            setError("root", {
-                message: errorMessage
-            });
+            setError("root", { message: translateSupabaseError(error) });
         } finally {
             setIsSubmitting(false);
         }
@@ -142,6 +249,22 @@ export default function NuevoServicioPage() {
 
     return (
         <div className="min-h-screen bg-gray-100 dark:bg-gray-900">
+            <TipoDispositivoAddModal
+                isOpen={isTipoModalOpen}
+                onClose={() => setIsTipoModalOpen(false)}
+                onSave={handleSaveTipoDispositivo}
+                isSubmitting={isSubmitting}
+                error={modalError}
+            />
+            <MarcaAddModal
+                isOpen={isMarcaModalOpen}
+                onClose={() => setIsMarcaModalOpen(false)}
+                onSave={handleSaveMarca}
+                isSubmitting={isSubmitting}
+                tiposDispositivo={tiposDispositivo}
+                selectedTipo={selectedTipoId}
+                error={modalError}
+            />
             <div className="container mx-auto px-4 py-8">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Nuevo Servicio</h1>
@@ -166,18 +289,41 @@ export default function NuevoServicioPage() {
                         <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-4">Información del Dispositivo</h2>
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <Input
-                                    label="Tipo de dispositivo"
-                                    type="text"
-                                    {...register("tipo_dispositivo")}
-                                    error={errors.tipo_dispositivo?.message}
-                                />
-                                <Input
-                                    label="Marca"
-                                    type="text"
-                                    {...register("marca")}
-                                    error={errors.marca?.message}
-                                />
+                                <div className="flex items-end gap-2">
+                                    <div className="flex-grow">
+                                        <Select
+                                            label="Tipo de dispositivo"
+                                            {...register("tipo_dispositivo")}
+                                            error={errors.tipo_dispositivo?.message}
+                                        >
+                                            <option value="">Seleccione un tipo</option>
+                                            {tiposDispositivo.map(tipo => (
+                                                <option key={tipo.id_tipo} value={tipo.id_tipo}>{tipo.nombre}</option>
+                                            ))}
+                                        </Select>
+                                    </div>
+                                    <Button type="button" onClick={() => { setModalError(null); setIsTipoModalOpen(true); }} className="p-2">
+                                        <Plus size={20} />
+                                    </Button>
+                                </div>
+                                <div className="flex items-end gap-2">
+                                    <div className="flex-grow">
+                                        <Select
+                                            label="Marca"
+                                            {...register("marca")}
+                                            error={errors.marca?.message}
+                                            disabled={!selectedTipoId || tiposDispositivo.length === 0}
+                                        >
+                                            <option value="">Seleccione una marca</option>
+                                            {marcas.map(marca => (
+                                                <option key={marca.id_marca} value={marca.id_marca}>{marca.nombre}</option>
+                                            ))}
+                                        </Select>
+                                    </div>
+                                    <Button type="button" onClick={() => { setModalError(null); setIsMarcaModalOpen(true); }} className="p-2" disabled={!selectedTipoId}>
+                                        <Plus size={20} />
+                                    </Button>
+                                </div>
                                 <Input
                                     label="Modelo"
                                     type="text"

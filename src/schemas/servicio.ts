@@ -1,8 +1,8 @@
 import { z } from 'zod'
 
 export const servicioSchema = z.object({
-  tipo_dispositivo: z.string().min(1, 'Tipo de dispositivo es requerido'),
-  marca: z.string().min(1, 'La marca es requerida'),
+  tipo_dispositivo: z.string().uuid('Tipo de dispositivo es requerido'),
+  marca: z.string().uuid('La marca es requerida'),
   modelo: z.string().min(1, 'El modelo es requerido'),
   numero_serie: z.string().trim().optional(),
   problema: z.string().min(5, 'Describa el problema (mínimo 5 caracteres)'),

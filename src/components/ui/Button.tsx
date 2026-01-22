@@ -11,7 +11,7 @@ export default function Button({ children, color = "primary", className = "", ..
     return (
         <button
             {...props}
-            className={`w-full ${base} ${colorClass} ${className}`.trim()}
+            className={`${base} ${colorClass} ${className}`.trim()}
         >
             {children}
         </button>
