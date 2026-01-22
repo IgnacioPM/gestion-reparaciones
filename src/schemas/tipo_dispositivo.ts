@@ -5,5 +5,6 @@ export const tipoDispositivoSchema = z.object({
     message: 'El nombre es requerido'
   }).max(50, {
     message: 'El nombre no puede tener más de 50 caracteres'
-  })
+  }),
+  predeterminado: z.boolean().default(false)
 })

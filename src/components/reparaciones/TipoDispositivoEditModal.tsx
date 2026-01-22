@@ -11,8 +11,9 @@ import { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
 import { TipoDispositivo } from '@/types/tipo_dispositivo'
 
-interface TipoDispositivoFormData {
+export interface TipoDispositivoFormData {
     nombre: string
+    predeterminado?: boolean
 }
 
 interface TipoDispositivoEditModalProps {
@@ -47,7 +48,8 @@ export default function TipoDispositivoEditModal({
   } = useForm<TipoDispositivoFormData>({
     resolver: zodResolver(tipoDispositivoSchema),
     defaultValues: {
-        nombre: initialData?.nombre || ''
+        nombre: initialData?.nombre || '',
+        predeterminado: initialData?.predeterminado || false
     }
   })
 
@@ -80,6 +82,17 @@ export default function TipoDispositivoEditModal({
             {...register('nombre')}
             error={errors.nombre?.message}
           />
+          <div className="flex items-center gap-2">
+            <input
+              id="predeterminado"
+              type="checkbox"
+              {...register('predeterminado')}
+              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600 dark:focus:ring-blue-600 dark:ring-offset-gray-800"
+            />
+            <label htmlFor="predeterminado" className="text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer">
+              Predeterminado
+            </label>
+          </div>
 
           {error && <FormError message={error} />}
 
