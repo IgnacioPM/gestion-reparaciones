@@ -20,7 +20,9 @@ import utc from 'dayjs/plugin/utc'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
+import ObservacionesRapidasSelector from '@/components/reparaciones/ObservacionesRapidasSelector'
 import { useForm, useWatch } from 'react-hook-form'
+
 // Plugins de dayjs
 const pluginsInitialized: boolean =
   (globalThis as unknown as { _dayjsPluginsInitialized?: boolean })._dayjsPluginsInitialized ??
@@ -58,9 +60,18 @@ export default function NuevoServicioPage() {
     reset,
     control,
     setValue,
+    getValues,
   } = useForm<ServicioFormData>({
     resolver: zodResolver(servicioSchema),
   })
+
+  const handleObservacionClick = (text: string) => {
+    const currentObservaciones = getValues('observaciones') || ''
+    const newObservaciones = currentObservaciones
+      ? `${currentObservaciones} - ${text}`
+      : `- ${text}`
+    setValue('observaciones', newObservaciones, { shouldValidate: true })
+  }
 
   const selectedTipoId = useWatch({ control, name: 'tipo_dispositivo' })
 
@@ -435,6 +446,10 @@ export default function NuevoServicioPage() {
                   <label className='block text-sm font-medium text-gray-700 dark:text-gray-200'>
                     Observaciones (opcional)
                   </label>
+                  <ObservacionesRapidasSelector
+                    onObservacionClick={handleObservacionClick}
+                    tipoDispositivoId={selectedTipoId}
+                  />
                   <textarea
                     {...register('observaciones')}
                     rows={2}

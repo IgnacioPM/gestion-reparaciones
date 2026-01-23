@@ -1,7 +1,7 @@
 'use client'
 
 import Link from 'next/link'
-import { Building, Users, MessageSquare, BarChart2, ArrowLeft, Cpu } from 'lucide-react'
+import { Building, Users, MessageSquare, BarChart2, ArrowLeft, Cpu, ClipboardList } from 'lucide-react'
 import SectionTitle from '@/components/ui/SectionTitle'
 import Navbar from '@/components/ui/Navbar'
 import { useRouter } from 'next/navigation'
@@ -36,6 +36,12 @@ const adminActions = [
     description: 'Gestiona los tipos de dispositivos y las marcas de equipos.',
     href: '/administrar/dispositivos',
     icon: <Cpu className="w-8 h-8 text-orange-500" />,
+  },
+  {
+    title: 'Observaciones Rápidas',
+    description: 'Gestiona las observaciones predefinidas para los servicios.',
+    href: '/administrar/observaciones-rapidas',
+    icon: <ClipboardList className="w-8 h-8 text-yellow-500" />,
   },
 ]
 
