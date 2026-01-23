@@ -2,6 +2,7 @@
 
 import Select from '@/components/ui/Select'
 import { supabase } from '@/lib/supabaseClient'
+import { useAuthStore } from '@/stores/auth' // 👈 SOLO ESTO NUEVO
 import type { ObservacionRapida } from '@/types/observacion_rapida'
 import type { TipoDispositivo } from '@/types/tipo_dispositivo'
 import { Edit, Plus, Trash2 } from 'lucide-react'
@@ -17,12 +18,11 @@ interface ObservacionRapidaConTipo extends ObservacionRapida {
 }
 
 interface Props {
-  tiposDispositivo?: TipoDispositivo[] // 👈 opcional a propósito
+  tiposDispositivo?: TipoDispositivo[]
 }
 
-export default function ObservacionesRapidasTable({
-  tiposDispositivo = [], // 👈 valor por defecto = nunca undefined
-}: Props) {
+export default function ObservacionesRapidasTable({ tiposDispositivo = [] }: Props) {
+  const { profile } = useAuthStore() // 👈 SOLO ESTO NUEVO
   const [observaciones, setObservaciones] = useState<ObservacionRapidaConTipo[]>([])
   const [loading, setLoading] = useState(true)
   const [isAddModalOpen, setAddModalOpen] = useState(false)
@@ -34,9 +34,15 @@ export default function ObservacionesRapidasTable({
 
   useEffect(() => {
     fetchObservaciones()
-  }, [tipoFilter])
+  }, [tipoFilter, profile?.empresa_id]) // 👈 dependencia correcta
 
   const fetchObservaciones = async () => {
+    if (!profile?.empresa_id) {
+      setObservaciones([])
+      setLoading(false)
+      return
+    }
+
     setLoading(true)
     const query = supabase
       .from('observaciones_rapidas')
@@ -46,6 +52,7 @@ export default function ObservacionesRapidasTable({
         tipos_dispositivo ( nombre )
       `
       )
+      .eq('empresa_id', profile.empresa_id) // 👈 FILTRO CLAVE
       .order('created_at', { ascending: false })
 
     if (tipoFilter) {
@@ -65,7 +72,11 @@ export default function ObservacionesRapidasTable({
   const handleDelete = async (id: string) => {
     if (!window.confirm('¿Eliminar esta observación?')) return
 
-    const { error } = await supabase.from('observaciones_rapidas').delete().eq('id_observacion', id)
+    const { error } = await supabase
+      .from('observaciones_rapidas')
+      .delete()
+      .eq('id_observacion', id)
+      .eq('empresa_id', profile?.empresa_id) // 👈 BLINDAJE
 
     if (error) {
       toast.error('Error al eliminar la observación')
@@ -97,7 +108,6 @@ export default function ObservacionesRapidasTable({
         </button>
       </div>
 
-      {/* Filtro */}
       <div className='mb-4 max-w-sm'>
         <Select
           label='Filtrar por tipo de dispositivo'
