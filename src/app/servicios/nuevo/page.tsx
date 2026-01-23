@@ -119,12 +119,13 @@ export default function NuevoServicioPage() {
 
       setTiposDispositivo(data)
 
-      const defaultTipo = data.find((tipo) => tipo.predeterminado)
+      const defaultTipo = data.find((tipo) => !!tipo.predeterminado)
+      console.log('Default tipo de dispositivo:', defaultTipo)
+
       if (defaultTipo) {
-        // Esperar un microtick para asegurar que el Select ya tenga los options renderizados
-        setTimeout(() => {
+        requestAnimationFrame(() => {
           setValue('tipo_dispositivo', defaultTipo.id_tipo, { shouldValidate: true })
-        }, 0)
+        })
       }
     }
 
