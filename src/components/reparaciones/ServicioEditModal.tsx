@@ -1,3 +1,5 @@
+'use client'
+
 import Button from '@/components/ui/Button'
 import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { InfoBlock } from '@/components/ui/InfoBlock'
@@ -9,7 +11,7 @@ import Textarea from '@/components/ui/Textarea'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
 import { MensajeWhatsapp } from '@/types/mensaje_whatsapp'
-import { Servicio } from '@/types/servicio'
+import { ServicioConNombres } from '@/types/servicio'
 import dayjs from 'dayjs'
 import timezone from 'dayjs/plugin/timezone'
 import utc from 'dayjs/plugin/utc'
@@ -18,26 +20,29 @@ import { useEffect, useState } from 'react'
 interface ServicioEditModalProps {
   isOpen: boolean
   onClose: () => void
-  servicio: Servicio
-  onSave: (data: Partial<Servicio>) => void
+  servicio: ServicioConNombres // 👈 AQUÍ está la corrección real
+  onSave: (data: Partial<ServicioConNombres>) => void
 }
 
 const estados = ['Recibido', 'En revisión', 'En reparacion', 'Listo', 'Entregado', 'Anulado']
 
 export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: ServicioEditModalProps) {
-  const [estado, setEstado] = useState<Servicio['estado']>(servicio.estado || 'Recibido')
+  const [estado, setEstado] = useState<ServicioConNombres['estado']>(servicio.estado || 'Recibido')
+
   const [costoEstimado, setCostoEstimado] = useState(
     servicio.costo_estimado !== undefined && servicio.costo_estimado !== null
       ? String(servicio.costo_estimado)
       : ''
   )
+
   const [costoFinal, setCostoFinal] = useState(
     servicio.costo_final !== undefined && servicio.costo_final !== null
       ? String(servicio.costo_final)
       : servicio.costo_estimado !== undefined && servicio.costo_estimado !== null
-      ? String(servicio.costo_estimado)
-      : ''
+        ? String(servicio.costo_estimado)
+        : ''
   )
+
   const [notaTrabajo, setNotaTrabajo] = useState(servicio.nota_trabajo ?? '')
   const [mensajes, setMensajes] = useState<MensajeWhatsapp[]>([])
   const { profile } = useAuthStore()
@@ -49,6 +54,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
           .from('mensajes_whatsapp')
           .select('*')
           .eq('empresa_id', profile.empresa_id)
+
         if (error) {
           console.error('Error fetching mensajes whatsapp:', error)
         } else {
@@ -66,17 +72,19 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
   }
 
   const handleSave = () => {
-    const data: Partial<Servicio> = {
+    const data: Partial<ServicioConNombres> = {
       estado,
       costo_final: costoFinal === '' ? null : Number(costoFinal),
       nota_trabajo: notaTrabajo,
     }
+
     if (estado === 'Entregado') {
       const crDate = dayjs().tz('America/Costa_Rica')
       data.fecha_entrega = crDate.toISOString()
     } else if (estado === 'En revisión') {
       data.costo_estimado = costoEstimado === '' ? null : Number(costoEstimado)
     }
+
     onSave(data)
   }
 
@@ -89,9 +97,11 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
 
     const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, '') || ''
     const clienteNombre = servicio.equipo?.cliente?.nombre || 'Estimado cliente'
-    const equipoInfo = `${servicio.equipo?.tipo || ''} ${servicio.equipo?.marca || ''} ${
-      servicio.equipo?.modelo || ''
-    }`.trim()
+    const equipoInfo =
+      `${servicio.equipo?.tipos_dispositivo?.nombre || ''} ` +
+      `${servicio.equipo?.marcas?.nombre || ''} ` +
+      `${servicio.equipo?.modelo || ''}`.trim()
+
     const problema = servicio.descripcion_falla || 'No especificado'
     const costoEst = costoEstimado || servicio.costo_estimado || '-'
     const costoFin = costoFinal || servicio.costo_final || '-'
@@ -105,11 +115,8 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
 
     const text = encodeURIComponent(plantilla)
 
-    // Detectar Windows (incluye Windows 11 y el navegador Edge/Chrome)
     const isWindows = typeof navigator !== 'undefined' && /Win/i.test(navigator.platform || '')
 
-    // Si es Windows → forzar WhatsApp Web
-    // Sino → usar wa.me (mejor en móviles)
     const link = isWindows
       ? `https://web.whatsapp.com/send?phone=506${telefono}&text=${text}`
       : `https://wa.me/506${telefono}?text=${text}`
@@ -129,15 +136,16 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
         >
           ×
         </button>
+
         <SectionTitle className='mb-4'>Editar Servicio</SectionTitle>
+
         <InfoBlock title={null} className='space-y-4'>
           <InfoRow
             label='Estado'
             value={
               <Select
                 value={estado ?? ''}
-                onChange={(e) => setEstado(e.target.value as Servicio['estado'])}
-                title='Seleccionar estado'
+                onChange={(e) => setEstado(e.target.value as ServicioConNombres['estado'])}
                 className='w-full'
               >
                 {estados.map((e) => (
@@ -148,6 +156,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
               </Select>
             }
           />
+
           {estado === 'En revisión' && (
             <InfoRow
               label='Costo estimado'
@@ -155,12 +164,10 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                 <>
                   <Input
                     label=''
-                    type='number'
                     value={costoEstimado}
                     onChange={(e) => setCostoEstimado(e.target.value)}
                     min={0}
                     step={0.01}
-                    placeholder='Ingrese el costo estimado'
                     className='w-full'
                   />
                   {costoEstimado !== '' && (
@@ -172,6 +179,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
               }
             />
           )}
+
           <InfoRow
             label='Costo final'
             value={
@@ -183,7 +191,6 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                   onChange={(e) => setCostoFinal(e.target.value)}
                   min={0}
                   step={0.01}
-                  placeholder='Ingrese el costo final'
                   className='w-full'
                 />
                 {costoFinal !== '' && (
@@ -194,6 +201,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
               </>
             }
           />
+
           <InfoRow
             label='Notas de trabajo'
             value={
@@ -201,51 +209,30 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                 value={notaTrabajo}
                 onChange={(e) => setNotaTrabajo(e.target.value)}
                 rows={3}
-                placeholder='Ingrese notas de trabajo'
-                title='Notas de trabajo'
                 className='w-full'
               />
             }
           />
         </InfoBlock>
+
         <div className='flex flex-col gap-2 mt-6'>
           {estado === 'En revisión' && servicio.equipo?.cliente?.telefono && (
-            <Button
-              type='button'
-              color='primary'
-              className='mb-2'
-              onClick={() => handleNotify('revision')}
-            >
-              Notificar costo estimado
-            </Button>
+            <Button onClick={() => handleNotify('revision')}>Notificar costo estimado</Button>
           )}
+
           {estado === 'Listo' && servicio.equipo?.cliente?.telefono && (
-            <Button
-              type='button'
-              color='primary'
-              className='mb-2'
-              onClick={() => handleNotify('listo')}
-            >
-              Notificar equipo listo por WhatsApp
-            </Button>
+            <Button onClick={() => handleNotify('listo')}>Notificar equipo listo</Button>
           )}
+
           {estado === 'Entregado' && servicio.equipo?.cliente?.telefono && (
-            <Button
-              type='button'
-              color='primary'
-              className='mb-2'
-              onClick={() => handleNotify('entregado')}
-            >
-              Enviar confirmación de entrega
-            </Button>
+            <Button onClick={() => handleNotify('entregado')}>Confirmar entrega</Button>
           )}
+
           <div className='flex justify-end gap-2'>
-            <Button type='button' color='secondary' onClick={onClose}>
+            <Button color='secondary' onClick={onClose}>
               Cancelar
             </Button>
-            <Button type='button' onClick={handleSave}>
-              Guardar
-            </Button>
+            <Button onClick={handleSave}>Guardar</Button>
           </div>
         </div>
       </div>

@@ -9,21 +9,12 @@ import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
 import '@/styles/print.css'
 import { MensajeWhatsapp } from '@/types/mensaje_whatsapp'
-import { Cliente, Servicio, Equipo } from '@/types/servicio'
+import { Cliente, ServicioConNombres } from '@/types/servicio'
 import { ArrowLeft, Edit, MessageCircle } from 'lucide-react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-
-interface EquipoConNombres extends Equipo {
-  tipos_dispositivo?: { nombre: string } | null
-  marcas?: { nombre: string } | null
-}
-
-interface ServicioConNombres extends Servicio {
-  equipo?: EquipoConNombres
-}
 
 function getBadgeColor(estado: string | null) {
   switch (estado) {
@@ -51,7 +42,7 @@ function formatFechaSimple(fecha: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true, // 👈 formato 12h con AM/PM
+    hour12: true,
   })
 }
 
@@ -69,6 +60,7 @@ export default function ServicioDetallePageWrapper({
   const [id, setId] = useState<string>('')
   const [mensajes, setMensajes] = useState<MensajeWhatsapp[]>([])
 
+  // Cargar mensajes de WhatsApp
   useEffect(() => {
     if (profile?.empresa_id) {
       const fetchMensajes = async () => {
@@ -76,17 +68,14 @@ export default function ServicioDetallePageWrapper({
           .from('mensajes_whatsapp')
           .select('*')
           .eq('empresa_id', profile.empresa_id)
-
-        if (error) {
-          console.error('Error fetching mensajes whatsapp:', error)
-        } else {
-          setMensajes(data)
-        }
+        if (error) console.error('Error fetching mensajes whatsapp:', error)
+        else setMensajes(data)
       }
       fetchMensajes()
     }
   }, [profile?.empresa_id])
 
+  // Cargar detalle del servicio
   useEffect(() => {
     ;(async () => {
       const { id } = await params
@@ -121,95 +110,87 @@ export default function ServicioDetallePageWrapper({
         .eq('id_reparacion', id)
         .single()
 
-      if (data) {
-        const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo
-
-        // Collect unique tipo_dispositivo_ids and marca_ids
-        const tipoDispositivoIds = new Set<string>();
-        const marcaIds = new Set<string>();
-
-        if (equipoRaw && equipoRaw.tipo) {
-            tipoDispositivoIds.add(equipoRaw.tipo);
-        }
-        if (equipoRaw && equipoRaw.marca) {
-            marcaIds.add(equipoRaw.marca);
-        }
-
-        // Fetch tipo_dispositivo names
-        let tipoDispositivoData = null;
-        if (tipoDispositivoIds.size > 0) {
-            const { data: fetchedTipoDispositivoData, error: tipoDispositivoError } = await supabase
-                .from('tipos_dispositivo')
-                .select('id_tipo, nombre')
-                .in('id_tipo', Array.from(tipoDispositivoIds));
-            
-            if (tipoDispositivoError) throw tipoDispositivoError;
-            tipoDispositivoData = fetchedTipoDispositivoData;
-        }
-
-        const tipoDispositivoMap = new Map<string, string>();
-        tipoDispositivoData?.forEach(td => tipoDispositivoMap.set(td.id_tipo, td.nombre));
-
-        // Fetch marca names
-        let marcaData = null;
-        if (marcaIds.size > 0) {
-            const { data: fetchedMarcaData, error: marcaError } = await supabase
-                .from('marcas')
-                .select('id_marca, nombre')
-                .in('id_marca', Array.from(marcaIds));
-
-            if (marcaError) throw marcaError;
-            marcaData = fetchedMarcaData;
-        }
-
-        const marcaMap = new Map<string, string>();
-        marcaData?.forEach(m => marcaMap.set(m.id_marca, m.nombre));
-
-        const clienteRaw: Cliente | undefined = equipoRaw?.cliente
-          ? Array.isArray(equipoRaw.cliente)
-            ? equipoRaw.cliente[0]
-            : equipoRaw.cliente
-          : undefined
-
-        const tipoDispositivoNombre = equipoRaw?.tipo ? tipoDispositivoMap.get(equipoRaw.tipo) : null;
-        const marcaNombre = equipoRaw?.marca ? marcaMap.get(equipoRaw.marca) : null;
-
-
-        const servicioNormalizado: ServicioConNombres = { // Changed to ServicioConNombres
-          id_reparacion: data.id_reparacion ?? '',
-          numero_servicio: data.numero_servicio ?? null,
-          equipo_id: equipoRaw?.serie ?? '',
-          fecha_ingreso: data.fecha_ingreso ?? '',
-          descripcion_falla: data.descripcion_falla ?? null,
-          estado: data.estado ?? 'Recibido',
-          costo_estimado: data.costo_estimado ?? null,
-          costo_final: data.costo_final ?? null,
-          nota_trabajo: data.nota_trabajo ?? null,
-          fecha_entrega: data.fecha_entrega ?? null,
-          equipo: equipoRaw
-            ? {
-                ...equipoRaw, // Include existing equipoRaw properties
-                cliente: clienteRaw ?? { nombre: '', telefono: '', correo: '' },
-                tipos_dispositivo: tipoDispositivoNombre ? { nombre: tipoDispositivoNombre } : null,
-                marcas: marcaNombre ? { nombre: marcaNombre } : null,
-            }
-            : undefined,
-        }
-
-        setServicio(servicioNormalizado)
-      } else {
+      if (!data) {
         setServicio(null)
+        setError(error)
+        setLoading(false)
+        return
       }
 
-      setError(error)
+      const equipoRaw = Array.isArray(data.equipo) ? data.equipo[0] : data.equipo
+
+      // IDs únicos
+      const tipoDispositivoIds = new Set<string>()
+      const marcaIds = new Set<string>()
+      if (equipoRaw?.tipo) tipoDispositivoIds.add(equipoRaw.tipo)
+      if (equipoRaw?.marca) marcaIds.add(equipoRaw.marca)
+
+      // Traer nombres tipo dispositivo
+      let tipoDispositivoData: { id_tipo: string; nombre: string }[] | null = null
+      if (tipoDispositivoIds.size > 0) {
+        const { data: fetched, error: e } = await supabase
+          .from('tipos_dispositivo')
+          .select('id_tipo, nombre')
+          .in('id_tipo', Array.from(tipoDispositivoIds))
+        if (e) throw e
+        tipoDispositivoData = fetched
+      }
+      const tipoDispositivoMap = new Map<string, string>()
+      tipoDispositivoData?.forEach((td) => tipoDispositivoMap.set(td.id_tipo, td.nombre))
+
+      // Traer nombres marcas
+      let marcaData: { id_marca: string; nombre: string }[] | null = null
+      if (marcaIds.size > 0) {
+        const { data: fetched, error: e } = await supabase
+          .from('marcas')
+          .select('id_marca, nombre')
+          .in('id_marca', Array.from(marcaIds))
+        if (e) throw e
+        marcaData = fetched
+      }
+      const marcaMap = new Map<string, string>()
+      marcaData?.forEach((m) => marcaMap.set(m.id_marca, m.nombre))
+
+      const clienteRaw: Cliente | undefined = equipoRaw?.cliente
+        ? Array.isArray(equipoRaw.cliente)
+          ? equipoRaw.cliente[0]
+          : equipoRaw.cliente
+        : undefined
+
+      const servicioNormalizado: ServicioConNombres = {
+        id_reparacion: data.id_reparacion ?? '',
+        numero_servicio: data.numero_servicio ?? null,
+        equipo_id: equipoRaw?.serie ?? '',
+        fecha_ingreso: data.fecha_ingreso ?? '',
+        descripcion_falla: data.descripcion_falla ?? null,
+        estado: data.estado ?? 'Recibido',
+        costo_estimado: data.costo_estimado ?? null,
+        costo_final: data.costo_final ?? null,
+        nota_trabajo: data.nota_trabajo ?? null,
+        fecha_entrega: data.fecha_entrega ?? null,
+        equipo: equipoRaw
+          ? {
+              ...equipoRaw,
+              cliente: clienteRaw ?? { nombre: '', telefono: '', correo: '' },
+              tipos_dispositivo: equipoRaw.tipo
+                ? { id_tipo: equipoRaw.tipo, nombre: tipoDispositivoMap.get(equipoRaw.tipo)! }
+                : null,
+              marcas: equipoRaw.marca
+                ? { id_marca: equipoRaw.marca, nombre: marcaMap.get(equipoRaw.marca)! }
+                : null,
+            }
+          : undefined,
+      }
+
+      setServicio(servicioNormalizado)
       setLoading(false)
+      setError(error)
     })()
   }, [params, profile])
 
-  const handleSave = async (data: Partial<Servicio>) => {
+  const handleSave = async (data: Partial<ServicioConNombres>) => {
     if (!id) return
     const { error } = await supabase.from('servicios').update(data).eq('id_reparacion', id)
-
     if (error) {
       console.error('Error updating service:', error)
       alert('Error al actualizar el servicio.')
@@ -221,7 +202,6 @@ export default function ServicioDetallePageWrapper({
 
   const handleNotify = (tipo: 'recibido' | 'revision' | 'listo' | 'entregado') => {
     if (!servicio) return
-
     const mensaje = mensajes.find((m) => m.tipo === tipo)
     if (!mensaje) {
       alert(`No se encontró plantilla de mensaje para el estado: ${tipo}`)
@@ -230,12 +210,11 @@ export default function ServicioDetallePageWrapper({
 
     const telefono = servicio.equipo?.cliente?.telefono?.replace(/\D/g, '') || ''
     const clienteNombre = servicio.equipo?.cliente?.nombre || 'Estimado cliente'
-    const equipoInfo = `${servicio.equipo?.tipos_dispositivo?.nombre || ''} ${servicio.equipo?.marcas?.nombre || ''} ${
-      servicio.equipo?.modelo || ''
-    }`.trim()
+    const equipoInfo =
+      `${servicio.equipo?.tipos_dispositivo?.nombre || ''} ${servicio.equipo?.marcas?.nombre || ''} ${servicio.equipo?.modelo || ''}`.trim()
     const problema = servicio.descripcion_falla || 'No especificado'
-    const costoEst = servicio.costo_estimado || '-'
-    const costoFin = servicio.costo_final || '-'
+    const costoEst = servicio.costo_estimado ?? '-'
+    const costoFin = servicio.costo_final ?? '-'
 
     const plantilla = mensaje.plantilla
       .replace(/{cliente}/g, clienteNombre)
@@ -245,12 +224,7 @@ export default function ServicioDetallePageWrapper({
       .replace(/{costo_final}/g, `₡${costoFin}`)
 
     const text = encodeURIComponent(plantilla)
-
-    // Detectar Windows (incluye Windows 10/11)
     const isWindows = typeof navigator !== 'undefined' && /Win/i.test(navigator.platform || '')
-
-    // Si es Windows → forzar WhatsApp Web
-    // Sino → usar wa.me (mejor para móvil)
     const link = isWindows
       ? `https://web.whatsapp.com/send?phone=506${telefono}&text=${text}`
       : `https://wa.me/506${telefono}?text=${text}`
@@ -386,7 +360,7 @@ export default function ServicioDetallePageWrapper({
             </div>
           </div>
 
-          {/* Botones de impresión */}
+          {/* Botones */}
           <div className='flex justify-end mr-4 mb-4 gap-2'>
             {servicio.estado === 'Recibido' && (
               <button

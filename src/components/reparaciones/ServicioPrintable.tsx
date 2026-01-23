@@ -1,19 +1,9 @@
 import { Profile } from '@/stores/auth'
-import { Servicio, Equipo } from '@/types/servicio' // Added Equipo to import
-//import Image from 'next/image'
+import { ServicioConNombres } from '@/types/servicio'
 import React from 'react'
 
-interface EquipoConNombres extends Equipo {
-  tipos_dispositivo?: { nombre: string } | null
-  marcas?: { nombre: string } | null
-}
-
-interface ServicioConNombres extends Servicio {
-  equipo?: EquipoConNombres
-}
-
 interface ServicioPrintableProps {
-  servicio: ServicioConNombres // Changed to ServicioConNombres
+  servicio: ServicioConNombres
   profile: Profile | null
   tipo_impresion: 'factura' | 'etiqueta'
 }
@@ -25,7 +15,7 @@ const formatFechaSimple = (fecha: string) => {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true, // 👈 Esto activa el formato 12 horas con AM/PM
+    hour12: true,
   })
 }
 
@@ -40,15 +30,6 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
     <div className='receipt-box'>
       {!esEtiqueta && (
         <div className='header'>
-          {/* <div className='logo'>
-            <Image
-              src={logoSrc}
-              alt={profile?.empresa?.nombre ?? 'Logo'}
-              width={60}
-              height={60}
-              style={{ objectFit: 'contain' }}
-            />
-          </div> */}
           <h1>{profile?.empresa?.nombre ?? 'Control de Reparaciones'}</h1>
         </div>
       )}
@@ -60,11 +41,9 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
         </>
       )}
 
-      {/* Siempre mostrar fecha */}
       <p>Fecha: {formatFechaSimple(servicio.fecha_ingreso)}</p>
       <p>Nro. Servicio: {servicio.numero_servicio ?? '--'}</p>
 
-      {/* Cliente y equipo siempre visibles, incluso en etiqueta */}
       <h2>----- Cliente -----</h2>
       <p>Nombre: {servicio.equipo?.cliente?.nombre ?? ''}</p>
       <p>Tel: {servicio.equipo?.cliente?.telefono ?? ''}</p>
@@ -75,12 +54,10 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
       <p>Modelo: {servicio.equipo?.modelo ?? ''}</p>
       <p>Serie: {servicio.equipo?.serie ?? ''}</p>
 
-      {/* Siempre mostrar detalles */}
       <h2>----- Detalle -----</h2>
       <p>Falla: {servicio.descripcion_falla ?? ''}</p>
       <p>Notas: {servicio.nota_trabajo ?? ''}</p>
 
-      {/* Costos solo si NO es etiqueta */}
       {!esEtiqueta && (
         <>
           <h2>----- Costos -----</h2>
@@ -88,23 +65,25 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
             <p>
               <span>Estimado:</span>{' '}
               <span>
-                {servicio.costo_estimado ? `₡${Number(servicio.costo_estimado).toFixed(2)}` : '-'}
+                {servicio.costo_estimado !== null
+                  ? `₡${Number(servicio.costo_estimado).toFixed(2)}`
+                  : '-'}
               </span>
             </p>
             <p className='total'>
               <span>Total:</span>{' '}
               <span>
-                {servicio.costo_final ? `₡${Number(servicio.costo_final).toFixed(2)}` : '-'}
+                {servicio.costo_final !== null
+                  ? `₡${Number(servicio.costo_final).toFixed(2)}`
+                  : '-'}
               </span>
             </p>
           </div>
         </>
       )}
 
-      {/* Fecha de entrega visible siempre */}
       {servicio.fecha_entrega && <p>Fecha entrega: {formatFechaSimple(servicio.fecha_entrega)}</p>}
 
-      {/* Footer solo si no es etiqueta */}
       {!esEtiqueta && (
         <div className='footer'>
           <p>{profile?.empresa?.pie_pagina ?? 'Gracias por su preferencia'}</p>

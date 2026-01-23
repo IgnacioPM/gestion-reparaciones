@@ -4,33 +4,26 @@ export interface Cliente {
   correo?: string
 }
 
-export interface Equipo {
+export interface EquipoConNombres {
   tipo?: string
   marca?: string
   modelo?: string
   serie?: string
   cliente?: Cliente
+  tipos_dispositivo?: { id_tipo: string; nombre: string } | null
+  marcas?: { id_marca: string; nombre: string } | null
 }
 
-export interface Servicio {
+export interface ServicioConNombres {
   id_reparacion: string
   numero_servicio?: string | null
   equipo_id: string
   fecha_ingreso: string
   descripcion_falla?: string | null
-  estado?:
-    | 'Recibido'
-    | 'En revisión'
-    | 'En reparacion'
-    | 'Listo'
-    | 'Entregado'
-    | 'Anulado'
-    | null
+  estado?: string | null
   costo_estimado?: number | null
+  costo_final?: number | null
   nota_trabajo?: string | null
   fecha_entrega?: string | null
-  created_at?: string | null
-  costo_final?: number | null
-  equipo?: Equipo
-  tipo_impresion?: 'factura' | 'etiqueta'
+  equipo?: EquipoConNombres
 }
