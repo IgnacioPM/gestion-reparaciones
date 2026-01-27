@@ -28,6 +28,7 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
           numero_servicio,
           fecha_ingreso,
           descripcion_falla,
+          observaciones,
           estado,
           costo_estimado,
           costo_final,

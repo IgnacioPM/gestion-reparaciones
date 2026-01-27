@@ -93,6 +93,7 @@ export default function ServicioDetallePageWrapper({
           costo_estimado,
           costo_final,
           nota_trabajo,
+          observaciones,
           fecha_entrega,
           equipo:equipo_id (
             tipo,
@@ -167,6 +168,7 @@ export default function ServicioDetallePageWrapper({
         costo_estimado: data.costo_estimado ?? null,
         costo_final: data.costo_final ?? null,
         nota_trabajo: data.nota_trabajo ?? null,
+        observaciones: data.observaciones ?? null,
         fecha_entrega: data.fecha_entrega ?? null,
         equipo: equipoRaw
           ? {
@@ -343,7 +345,12 @@ export default function ServicioDetallePageWrapper({
                 {servicio.descripcion_falla && (
                   <InfoRow label='Falla' value={servicio.descripcion_falla} />
                 )}
-                {servicio.nota_trabajo && <InfoRow label='Notas' value={servicio.nota_trabajo} />}
+                {servicio.observaciones && (
+                  <InfoRow label='Observación' value={servicio.observaciones} />
+                )}
+                {servicio.nota_trabajo && (
+                  <InfoRow label='Notas de trabajo' value={servicio.nota_trabajo} />
+                )}
                 {servicio.costo_estimado !== null && (
                   <InfoRow
                     label='Costo estimado'

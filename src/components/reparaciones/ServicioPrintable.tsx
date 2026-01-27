@@ -56,6 +56,7 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
 
       <h2>----- Detalle -----</h2>
       <p>Falla: {servicio.descripcion_falla ?? ''}</p>
+      <p>Observaciones: {servicio.observaciones ?? ''}</p>
       <p>Notas: {servicio.nota_trabajo ?? ''}</p>
 
       {!esEtiqueta && (
