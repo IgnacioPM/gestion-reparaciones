@@ -21,7 +21,7 @@ import { ArrowLeft, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import ObservacionesRapidasSelector from '@/components/reparaciones/ObservacionesRapidasSelector'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch, type SubmitHandler, type FieldValues } from 'react-hook-form'
 
 // Plugins de dayjs
 const pluginsInitialized: boolean =
@@ -210,7 +210,8 @@ export default function NuevoServicioPage() {
     }
   }
 
-  const onSubmit = async (data: ServicioFormData) => {
+  const onSubmit: SubmitHandler<FieldValues> = async (data) => {
+    const serviceData = data as ServicioFormData
     if (!cliente) {
       setError('root', {
         message: 'Debe seleccionar o ingresar los datos del cliente',
@@ -248,10 +249,10 @@ export default function NuevoServicioPage() {
         .from('equipos')
         .insert({
           cliente_id: clienteId,
-          tipo: data.tipo_dispositivo,
-          marca: data.marca,
-          modelo: data.modelo,
-          serie: data.numero_serie || null,
+          tipo: serviceData.tipo_dispositivo,
+          marca: serviceData.marca,
+          modelo: serviceData.modelo,
+          serie: serviceData.numero_serie || null,
           empresa_id: empresaId,
         })
         .select('id_equipo')
@@ -264,10 +265,10 @@ export default function NuevoServicioPage() {
         .insert({
           equipo_id: nuevoEquipo.id_equipo,
           fecha_ingreso: fechaIngresoCR,
-          descripcion_falla: data.problema,
+          descripcion_falla: serviceData.problema,
           estado: 'Recibido',
-          nota_trabajo: data.observaciones || null,
-          costo_estimado: data.costo_estimado ?? null,
+          observaciones: serviceData.observaciones || null,
+          costo_estimado: serviceData.costo_estimado ?? null,
           fecha_entrega: null,
           empresa_id: empresaId,
           creado_por: profile.id_usuario,
@@ -431,14 +432,12 @@ export default function NuevoServicioPage() {
                   <div>
                     <Input
                       label='Costo estimado'
-                      type='number'
-                      step='0.01'
-                      min='0'
-                      max='999999.99'
-                      {...register('costo_estimado', { valueAsNumber: true })}
-                      error={errors.costo_estimado?.message}
-                      placeholder='0.00'
-                    />
+                                            type='text'
+                                            inputMode='decimal'
+                                            {...register('costo_estimado')}
+                                            error={errors.costo_estimado?.message}
+                                            placeholder='0.00'
+                                          />
                   </div>
                 </div>
 

@@ -24,6 +24,10 @@ export interface ServicioConNombres {
   costo_estimado?: number | null
   costo_final?: number | null
   nota_trabajo?: string | null
+  observaciones?: string | null
   fecha_entrega?: string | null
+  created_at?: string | null
+  empresa_id?: string | null
+  creado_por?: string | null
   equipo?: EquipoConNombres
 }
