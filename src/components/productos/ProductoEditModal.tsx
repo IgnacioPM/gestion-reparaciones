@@ -63,32 +63,32 @@ export default function ProductoEditModal({
     },
   })
 
-  // Resetear formulario cuando se abre el modal
+  // Resetear formulario al abrir
   useEffect(() => {
-    if (isOpen) {
-      reset({
-        tipo: initialData?.tipo || 'venta',
-        stock_actual: initialData?.stock_actual ?? 0,
-        activo: initialData?.activo ?? true,
-        nombre: initialData?.nombre || '',
-        descripcion: initialData?.descripcion || '',
-        codigo_barras: initialData?.codigo_barras || '',
-        precio_venta: initialData?.precio_venta ?? 0,
-        costo: initialData?.costo ?? 0,
-        stock_minimo: initialData?.stock_minimo ?? 0,
-        id_fabricante: initialData?.id_fabricante || '',
-      })
-    }
+    if (!isOpen) return
+
+    reset({
+      tipo: initialData?.tipo || 'venta',
+      stock_actual: initialData?.stock_actual ?? 0,
+      activo: initialData?.activo ?? true,
+      nombre: initialData?.nombre || '',
+      descripcion: initialData?.descripcion || '',
+      codigo_barras: initialData?.codigo_barras || '',
+      precio_venta: initialData?.precio_venta ?? 0,
+      costo: initialData?.costo ?? 0,
+      stock_minimo: initialData?.stock_minimo ?? 0,
+      id_fabricante: initialData?.id_fabricante || '',
+    })
   }, [isOpen, initialData, reset])
 
-  // Cargar fabricantes al abrir
+  // Cargar fabricantes
   useEffect(() => {
     if (isOpen) {
       setFabricantes(fabricantesIniciales)
     }
   }, [isOpen, fabricantesIniciales])
 
-  // 🔥 CORRECCIÓN CLAVE: reaplicar id_fabricante cuando YA existen las opciones
+  // Reaplicar fabricante cuando ya existen opciones
   useEffect(() => {
     if (isOpen && fabricantes.length > 0 && initialData?.id_fabricante) {
       setValue('id_fabricante', initialData.id_fabricante, {
@@ -103,110 +103,115 @@ export default function ProductoEditModal({
   return ReactDOM.createPortal(
     <>
       <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40'>
-        <div className='bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 w-full max-w-lg relative'>
-          <button
-            className='absolute top-2 right-2 text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl'
-            onClick={onClose}
-            title='Cerrar'
-          >
-            &times;
-          </button>
+        <div className='bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] flex flex-col relative'>
+          {/* HEADER FIJO */}
+          <div className='flex items-center justify-between p-6 border-b dark:border-gray-700'>
+            <SectionTitle>Editar Producto</SectionTitle>
+            <button
+              className='text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl'
+              onClick={onClose}
+              title='Cerrar'
+            >
+              &times;
+            </button>
+          </div>
 
-          <SectionTitle className='mb-4'>Editar Producto</SectionTitle>
+          {/* CONTENIDO CON SCROLL */}
+          <div className='flex-1 overflow-y-auto p-6'>
+            <form onSubmit={handleSubmit(onSave)} className='space-y-4'>
+              {/* Marca */}
+              <div>
+                <label className='text-sm font-medium'>Marca</label>
+                <div className='flex gap-2'>
+                  <select
+                    {...register('id_fabricante')}
+                    className='flex-1 mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
+                  >
+                    <option value=''>Seleccionar marca</option>
+                    {fabricantes.map((f) => (
+                      <option key={f.id_fabricante} value={f.id_fabricante}>
+                        {f.nombre}
+                      </option>
+                    ))}
+                  </select>
 
-          <form onSubmit={handleSubmit(onSave)} className='space-y-4'>
-            {/* Marca */}
-            <div>
-              <label className='text-sm font-medium'>Marca</label>
-              <div className='flex gap-2'>
-                <select
-                  {...register('id_fabricante')}
-                  className='flex-1 mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
-                >
-                  <option value=''>Seleccionar marca</option>
-                  {fabricantes.map((f) => (
-                    <option key={f.id_fabricante} value={f.id_fabricante}>
-                      {f.nombre}
-                    </option>
-                  ))}
-                </select>
+                  <button
+                    type='button'
+                    title='Agregar marca'
+                    onClick={() => setOpenFabricanteModal(true)}
+                    className='px-3 border rounded-md'
+                  >
+                    +
+                  </button>
+                </div>
 
-                <button
-                  type='button'
-                  title='Agregar marca'
-                  onClick={() => setOpenFabricanteModal(true)}
-                  className='px-3 border rounded-md'
-                >
-                  +
-                </button>
+                {errors.id_fabricante && (
+                  <p className='text-red-500 text-sm'>{errors.id_fabricante.message}</p>
+                )}
               </div>
 
-              {errors.id_fabricante && (
-                <p className='text-red-500 text-sm'>{errors.id_fabricante.message}</p>
-              )}
-            </div>
+              <Input label='Nombre' {...register('nombre')} error={errors.nombre?.message} />
+              <Input label='Descripción' {...register('descripcion')} />
+              <Input label='Código de barras' {...register('codigo_barras')} />
 
-            <Input label='Nombre' {...register('nombre')} error={errors.nombre?.message} />
-            <Input label='Descripción' {...register('descripcion')} />
-            <Input label='Código de barras' {...register('codigo_barras')} />
+              <div>
+                <label className='text-sm font-medium'>Tipo</label>
+                <select
+                  {...register('tipo')}
+                  className='w-full mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
+                >
+                  <option value='venta'>Venta</option>
+                  <option value='repuesto'>Repuesto</option>
+                  <option value='ambos'>Ambos</option>
+                </select>
+              </div>
 
-            <div>
-              <label className='text-sm font-medium'>Tipo</label>
-              <select
-                {...register('tipo')}
-                className='w-full mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
-              >
-                <option value='venta'>Venta</option>
-                <option value='repuesto'>Repuesto</option>
-                <option value='ambos'>Ambos</option>
-              </select>
-            </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <Input
+                  label='Precio venta'
+                  type='number'
+                  step='0.01'
+                  {...register('precio_venta', { valueAsNumber: true })}
+                  error={errors.precio_venta?.message}
+                />
+                <Input
+                  label='Costo'
+                  type='number'
+                  step='0.01'
+                  {...register('costo', { valueAsNumber: true })}
+                />
+              </div>
 
-            <div className='grid grid-cols-2 gap-4'>
-              <Input
-                label='Precio venta'
-                type='number'
-                step='0.01'
-                {...register('precio_venta', { valueAsNumber: true })}
-                error={errors.precio_venta?.message}
-              />
-              <Input
-                label='Costo'
-                type='number'
-                step='0.01'
-                {...register('costo', { valueAsNumber: true })}
-              />
-            </div>
+              <div className='grid grid-cols-2 gap-4'>
+                <Input
+                  label='Stock actual'
+                  type='number'
+                  {...register('stock_actual', { valueAsNumber: true })}
+                />
+                <Input
+                  label='Stock mínimo'
+                  type='number'
+                  {...register('stock_minimo', { valueAsNumber: true })}
+                />
+              </div>
 
-            <div className='grid grid-cols-2 gap-4'>
-              <Input
-                label='Stock actual'
-                type='number'
-                {...register('stock_actual', { valueAsNumber: true })}
-              />
-              <Input
-                label='Stock mínimo'
-                type='number'
-                {...register('stock_minimo', { valueAsNumber: true })}
-              />
-            </div>
+              <div className='flex items-center gap-2'>
+                <input type='checkbox' {...register('activo')} />
+                <label className='text-sm'>Producto activo</label>
+              </div>
 
-            <div className='flex items-center gap-2'>
-              <input type='checkbox' {...register('activo')} />
-              <label className='text-sm'>Producto activo</label>
-            </div>
+              {error && <FormError message={error} />}
 
-            {error && <FormError message={error} />}
-
-            <div className='flex justify-end gap-2 mt-4'>
-              <Button type='button' color='secondary' onClick={onClose}>
-                Cancelar
-              </Button>
-              <Button type='submit' disabled={isSubmitting}>
-                {isSubmitting ? 'Guardando...' : 'Guardar'}
-              </Button>
-            </div>
-          </form>
+              <div className='flex justify-end gap-2 pt-4'>
+                <Button type='button' color='secondary' onClick={onClose}>
+                  Cancelar
+                </Button>
+                <Button type='submit' disabled={isSubmitting}>
+                  {isSubmitting ? 'Guardando...' : 'Guardar'}
+                </Button>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 
@@ -218,8 +223,10 @@ export default function ProductoEditModal({
             id_fabricante: nuevoFabricante.id_fabricante ?? nuevoFabricante.id,
             nombre: nuevoFabricante.nombre,
           }
+
           setFabricantes((prev) => [...prev, f])
           setValue('id_fabricante', f.id_fabricante)
+          setOpenFabricanteModal(false)
         }}
       />
     </>,

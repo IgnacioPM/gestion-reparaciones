@@ -36,7 +36,6 @@ export default function ProductoAddModal({
   const [isClient, setIsClient] = useState(false)
   const [fabricantes, setFabricantes] = useState<Fabricante[]>([])
   const [openFabricanteModal, setOpenFabricanteModal] = useState(false)
-  const [selectedFabricanteId, setSelectedFabricanteId] = useState<string>('')
 
   const {
     register,
@@ -45,7 +44,8 @@ export default function ProductoAddModal({
     reset,
   } = useForm<ProductoFormData>({
     resolver: zodResolver(productoSchema),
-    values: {
+    shouldUnregister: true,
+    defaultValues: {
       tipo: 'venta',
       stock_actual: 0,
       activo: true,
@@ -53,9 +53,9 @@ export default function ProductoAddModal({
       descripcion: '',
       codigo_barras: '',
       precio_venta: 0,
-      costo: 0,
-      stock_minimo: 0,
-      id_fabricante: selectedFabricanteId,
+      costo: undefined,
+      stock_minimo: undefined,
+      id_fabricante: undefined,
     },
   })
 
@@ -64,7 +64,6 @@ export default function ProductoAddModal({
   useEffect(() => {
     if (!isOpen) return
 
-    setSelectedFabricanteId('')
     reset({
       tipo: 'venta',
       stock_actual: 0,
@@ -73,9 +72,9 @@ export default function ProductoAddModal({
       descripcion: '',
       codigo_barras: '',
       precio_venta: 0,
-      costo: 0,
-      stock_minimo: 0,
-      id_fabricante: '',
+      costo: undefined,
+      stock_minimo: undefined,
+      id_fabricante: undefined,
     })
   }, [isOpen, reset])
 
@@ -87,11 +86,23 @@ export default function ProductoAddModal({
 
   if (!isOpen || !isClient) return null
 
+  const handleCreate = (data: ProductoFormData) => {
+    const normalizedData: ProductoFormData = {
+      ...data,
+      descripcion: data.descripcion || null,
+      codigo_barras: data.codigo_barras || null,
+      costo: data.costo ?? null,
+      stock_minimo: data.stock_minimo ?? null,
+      id_fabricante: data.id_fabricante || null,
+    }
+
+    onSave(normalizedData)
+  }
+
   return ReactDOM.createPortal(
     <>
       <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40'>
         <div className='bg-white dark:bg-gray-800 rounded-lg shadow-lg w-full max-w-lg max-h-[90vh] flex flex-col relative'>
-          {/* HEADER FIJO */}
           <div className='flex items-center justify-between p-6 border-b dark:border-gray-700'>
             <SectionTitle>Nuevo Producto</SectionTitle>
             <button
@@ -103,15 +114,15 @@ export default function ProductoAddModal({
             </button>
           </div>
 
-          {/* CONTENIDO CON SCROLL */}
           <div className='flex-1 overflow-y-auto p-6'>
-            <form onSubmit={handleSubmit(onSave)} className='space-y-4'>
+            <form onSubmit={handleSubmit(handleCreate)} className='space-y-4'>
               <div>
                 <label className='text-sm font-medium'>Marca</label>
                 <div className='flex gap-2'>
                   <select
                     {...register('id_fabricante')}
                     className='flex-1 mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
+                    defaultValue=''
                   >
                     <option value=''>Seleccionar marca</option>
                     {fabricantes.map((f) => (
@@ -160,11 +171,14 @@ export default function ProductoAddModal({
                   {...register('precio_venta', { valueAsNumber: true })}
                   error={errors.precio_venta?.message}
                 />
+
                 <Input
                   label='Costo'
                   type='number'
                   step='0.01'
-                  {...register('costo', { valueAsNumber: true })}
+                  {...register('costo', {
+                    setValueAs: (v) => (v === '' ? undefined : Number(v)),
+                  })}
                 />
               </div>
 
@@ -174,10 +188,13 @@ export default function ProductoAddModal({
                   type='number'
                   {...register('stock_actual', { valueAsNumber: true })}
                 />
+
                 <Input
                   label='Stock mínimo'
                   type='number'
-                  {...register('stock_minimo', { valueAsNumber: true })}
+                  {...register('stock_minimo', {
+                    setValueAs: (v) => (v === '' ? undefined : Number(v)),
+                  })}
                 />
               </div>
 
@@ -211,7 +228,6 @@ export default function ProductoAddModal({
           }
 
           setFabricantes((prev) => [...prev, f])
-          setSelectedFabricanteId(f.id_fabricante)
           setOpenFabricanteModal(false)
         }}
       />
