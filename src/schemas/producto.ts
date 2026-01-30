@@ -1,13 +1,28 @@
 import { z } from 'zod'
 
 export const productoSchema = z.object({
-  id_fabricante: z.string().uuid('Marca inválida').optional().nullable(),
+  id_fabricante: z
+    .string()
+    .uuid('Marca inválida')
+    .optional()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
 
   nombre: z.string().trim().min(2, 'Nombre requerido'),
 
-  descripcion: z.string().trim().optional().nullable(),
+  descripcion: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
 
-  codigo_barras: z.string().trim().optional().nullable(),
+  codigo_barras: z
+    .string()
+    .trim()
+    .optional()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
 
   tipo: z.enum(['venta', 'repuesto', 'ambos']),
 
@@ -23,13 +38,20 @@ export const productoSchema = z.object({
       message: 'El precio de venta debe ser mayor a 0',
     }),
 
-  costo: z
-    .number()
-    .optional()
-    .nullable()
-    .refine((v) => v == null || !Number.isNaN(v), {
-      message: 'Costo inválido',
-    }),
+  /** ✅ CORREGIDO */
+  costo: z.preprocess(
+    (v) => {
+      if (v === '' || v === null || Number.isNaN(v)) return null
+      return v
+    },
+    z
+      .number()
+      .optional()
+      .nullable()
+      .refine((v) => v == null || v >= 0, {
+        message: 'Costo inválido',
+      })
+  ),
 
   stock_actual: z
     .number({
@@ -37,16 +59,23 @@ export const productoSchema = z.object({
       invalid_type_error: 'El stock actual es obligatorio',
     })
     .int()
-    .min(1, 'El stock debe ser mayor a 0'),
+    .min(1, 'No se permite crear un producto con stock 0'),
 
-  stock_minimo: z
-    .number()
-    .int()
-    .optional()
-    .nullable()
-    .refine((v) => v == null || v >= 0, {
-      message: 'El stock mínimo no puede ser negativo',
-    }),
+  /** ✅ CORREGIDO */
+  stock_minimo: z.preprocess(
+    (v) => {
+      if (v === '' || v === null || Number.isNaN(v)) return null
+      return v
+    },
+    z
+      .number()
+      .int()
+      .optional()
+      .nullable()
+      .refine((v) => v == null || v >= 0, {
+        message: 'El stock mínimo no puede ser negativo',
+      })
+  ),
 
   activo: z.boolean().optional(),
 })
