@@ -263,7 +263,7 @@ export default function ProductosTable() {
                 </td>
                 <td className='px-6 py-4 text-right'>{p.stock_actual}</td>
                 <td className='px-6 py-4 text-right'>
-                  <button onClick={() => handleEditProducto(p)}>
+                  <button title='Editar' onClick={() => handleEditProducto(p)}>
                     <Edit className='w-4 h-4' />
                   </button>
                 </td>

@@ -8,7 +8,7 @@ import { ProductoFormData, productoSchema } from '@/schemas/producto'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
-import { useForm } from 'react-hook-form'
+import { Controller, useForm } from 'react-hook-form'
 import MarcaVentaAddModal from './FabricanteAddModal'
 
 interface Fabricante {
@@ -23,6 +23,7 @@ interface ProductoAddModalProps {
   isSubmitting?: boolean
   error?: string | null
   fabricantesIniciales?: Fabricante[]
+  onFabricanteAdded?: (fabricante: Fabricante) => void
 }
 
 export default function ProductoAddModal({
@@ -32,6 +33,7 @@ export default function ProductoAddModal({
   isSubmitting,
   error,
   fabricantesIniciales = [],
+  onFabricanteAdded,
 }: ProductoAddModalProps) {
   const [isClient, setIsClient] = useState(false)
   const [fabricantes, setFabricantes] = useState<Fabricante[]>([])
@@ -42,6 +44,8 @@ export default function ProductoAddModal({
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
+    control,
   } = useForm<ProductoFormData>({
     resolver: zodResolver(productoSchema),
     shouldUnregister: true,
@@ -61,6 +65,7 @@ export default function ProductoAddModal({
 
   useEffect(() => setIsClient(true), [])
 
+  /** 🔹 RESET TOTAL AL ABRIR */
   useEffect(() => {
     if (!isOpen) return
 
@@ -78,11 +83,11 @@ export default function ProductoAddModal({
     })
   }, [isOpen, reset])
 
+  /** 🔹 CARGA DE FABRICANTES */
+  /** 🔹 CARGA DE FABRICANTES (NO pisar estado al abrir modal) */
   useEffect(() => {
-    if (isOpen) {
-      setFabricantes(fabricantesIniciales)
-    }
-  }, [isOpen, fabricantesIniciales])
+    setFabricantes(fabricantesIniciales)
+  }, [fabricantesIniciales])
 
   if (!isOpen || !isClient) return null
 
@@ -119,18 +124,24 @@ export default function ProductoAddModal({
               <div>
                 <label className='text-sm font-medium'>Marca</label>
                 <div className='flex gap-2'>
-                  <select
-                    {...register('id_fabricante')}
-                    className='flex-1 mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
-                    defaultValue=''
-                  >
-                    <option value=''>Seleccionar marca</option>
-                    {fabricantes.map((f) => (
-                      <option key={f.id_fabricante} value={f.id_fabricante}>
-                        {f.nombre}
-                      </option>
-                    ))}
-                  </select>
+                  <Controller
+                    name='id_fabricante'
+                    control={control}
+                    render={({ field }) => (
+                      <select
+                        {...field}
+                        value={field.value ?? ''} // ⬅️ CLAVE
+                        className='flex-1 mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
+                      >
+                        <option value=''>Seleccionar marca</option>
+                        {fabricantes.map((f) => (
+                          <option key={f.id_fabricante} value={f.id_fabricante}>
+                            {f.nombre}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  />
 
                   <button
                     type='button'
@@ -228,6 +239,13 @@ export default function ProductoAddModal({
           }
 
           setFabricantes((prev) => [...prev, f])
+          onFabricanteAdded?.(f)
+
+          setValue('id_fabricante', f.id_fabricante, {
+            shouldValidate: true,
+            shouldDirty: true,
+          })
+
           setOpenFabricanteModal(false)
         }}
       />
