@@ -155,6 +155,7 @@ export default function VentasTable() {
 
   const handleNewVenta = () => router.push('/ventas/nueva')
   const handleViewVenta = (id: string) => router.push(`/ventas/${id}`)
+  const handleGoProductos = () => router.push('/administrar/productos')
 
   // ---------------------- RENDER ----------------------
   return (
@@ -164,6 +165,13 @@ export default function VentasTable() {
         <h1 className='text-2xl font-semibold text-gray-900 dark:text-gray-100'>Ventas</h1>
 
         <div className='flex items-center gap-3'>
+          <button
+            onClick={handleGoProductos}
+            className='inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 transition'
+          >
+            Administrar productos
+          </button>
+
           <button
             onClick={handleNewVenta}
             className='inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700 transition'
