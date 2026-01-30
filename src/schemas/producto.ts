@@ -31,7 +31,13 @@ export const productoSchema = z.object({
       message: 'Costo inválido',
     }),
 
-  stock_actual: z.number().int().min(0, 'El stock no puede ser negativo'),
+  stock_actual: z
+    .number({
+      required_error: 'El stock actual es obligatorio',
+      invalid_type_error: 'El stock actual es obligatorio',
+    })
+    .int()
+    .min(1, 'El stock debe ser mayor a 0'),
 
   stock_minimo: z
     .number()

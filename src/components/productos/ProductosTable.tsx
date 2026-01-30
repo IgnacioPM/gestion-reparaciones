@@ -6,7 +6,7 @@ import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { supabase } from '@/lib/supabaseClient'
 import { ProductoFormData } from '@/schemas/producto'
 import { useAuthStore } from '@/stores/auth'
-import { Edit, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Edit, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -46,29 +46,24 @@ export default function ProductosTable() {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFabricante, setSelectedFabricante] = useState<string>('')
+
   const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [editProducto, setEditProducto] = useState<Producto | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  const itemsPerPage = 10
-
   // =====================
-  // HANDLERS (ANTES DEL JSX)
+  // HANDLERS
   // =====================
 
-  const handleNewProducto = () => {
-    setShowAddModal(true)
-  }
-
-  const handleEditProducto = (producto: Producto) => {
-    setEditProducto(producto)
-  }
+  const handleNewProducto = () => setShowAddModal(true)
+  const handleEditProducto = (producto: Producto) => setEditProducto(producto)
 
   // =====================
-  // FETCH MULTI-EMPRESA
+  // FETCH
   // =====================
 
   const fetchInitialData = async (empresaId: string) => {
@@ -149,6 +144,7 @@ export default function ProductosTable() {
     return allProductos.filter((p) => {
       const nombreMatches = p.nombre.toLowerCase().includes(q)
       const codigoMatches = p.codigo_barras?.toLowerCase().includes(q) ?? false
+
       const fabricanteNombre =
         p.fabricante?.nombre ||
         fabricantes.find((f) => f.id_fabricante === p.id_fabricante)?.nombre ||
@@ -158,23 +154,31 @@ export default function ProductosTable() {
 
       const matchesQuery = q === '' || nombreMatches || codigoMatches || fabricanteMatches
 
-      const matchesFabricanteFilter =
+      const matchesFabricante =
         !selectedFabricante ||
         p.id_fabricante === selectedFabricante ||
         p.fabricante?.id_fabricante === selectedFabricante
 
-      return matchesQuery && matchesFabricanteFilter
+      return matchesQuery && matchesFabricante
     })
   }, [allProductos, searchQuery, selectedFabricante, fabricantes])
 
+  // =====================
+  // PAGINACIÓN
+  // =====================
+
   const paginatedProductos = useMemo(() => {
     const from = (currentPage - 1) * itemsPerPage
-    const to = from + itemsPerPage
-    return filteredProductos.slice(from, to)
-  }, [filteredProductos, currentPage])
+    return filteredProductos.slice(from, from + itemsPerPage)
+  }, [filteredProductos, currentPage, itemsPerPage])
 
-  const totalPages = Math.ceil(filteredProductos.length / itemsPerPage)
-  const totalProductos = filteredProductos.length
+  const totalPages = Math.max(1, Math.ceil(filteredProductos.length / itemsPerPage))
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages)
+    }
+  }, [currentPage, totalPages])
 
   // =====================
   // GUARDAR / ACTUALIZAR
@@ -229,8 +233,8 @@ export default function ProductosTable() {
   // =====================
 
   return (
-    <div className='w-full'>
-      <div className='flex justify-between items-center mb-6'>
+    <div className='w-full space-y-6'>
+      <div className='flex justify-between items-center'>
         <h1 className='text-2xl font-bold'>Productos</h1>
         <button
           onClick={handleNewProducto}
@@ -241,7 +245,6 @@ export default function ProductosTable() {
         </button>
       </div>
 
-      {/* TABLA */}
       <div className='overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow'>
         <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
           <thead className='bg-gray-50 dark:bg-gray-700'>
@@ -263,7 +266,7 @@ export default function ProductosTable() {
                 </td>
                 <td className='px-6 py-4 text-right'>{p.stock_actual}</td>
                 <td className='px-6 py-4 text-right'>
-                  <button title='Editar' onClick={() => handleEditProducto(p)}>
+                  <button onClick={() => handleEditProducto(p)}>
                     <Edit className='w-4 h-4' />
                   </button>
                 </td>
@@ -273,7 +276,28 @@ export default function ProductosTable() {
         </table>
       </div>
 
-      {/* MODALES */}
+      <div className='flex items-center justify-end gap-3'>
+        <button
+          disabled={currentPage === 1}
+          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+          className='rounded-md p-2 hover:bg-gray-200 disabled:opacity-40 dark:hover:bg-gray-700'
+        >
+          <ChevronLeft />
+        </button>
+
+        <span className='text-sm'>
+          {currentPage} / {totalPages}
+        </span>
+
+        <button
+          disabled={currentPage === totalPages}
+          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+          className='rounded-md p-2 hover:bg-gray-200 disabled:opacity-40 dark:hover:bg-gray-700'
+        >
+          <ChevronRight />
+        </button>
+      </div>
+
       <ProductoAddModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}

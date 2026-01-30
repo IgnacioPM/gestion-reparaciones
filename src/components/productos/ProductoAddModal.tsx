@@ -198,6 +198,7 @@ export default function ProductoAddModal({
                   label='Stock actual'
                   type='number'
                   {...register('stock_actual', { valueAsNumber: true })}
+                  error={errors.stock_actual?.message}
                 />
 
                 <Input
