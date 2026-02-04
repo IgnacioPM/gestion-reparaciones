@@ -1,45 +1,45 @@
 export function translateSupabaseError(error: unknown): string {
-    // 1. Asegurarse de que el error sea un objeto no nulo
-    if (typeof error !== 'object' || error === null) {
-        return "Ocurrió un error inesperado.";
-    }
+  // 1. Asegurarse de que el error sea un objeto no nulo
+  if (typeof error !== 'object' || error === null) {
+    return 'Ocurrió un error inesperado.'
+  }
 
-    // 2. Crear un objeto simple para registrar y procesar
-    const errorDetails: { message?: string; code?: string; details?: string } = {};
-    if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
-        errorDetails.message = (error as { message: string }).message;
-    }
-    if ('code' in error && typeof (error as { code: unknown }).code === 'string') {
-        errorDetails.code = (error as { code: string }).code;
-    }
-    if ('details' in error && typeof (error as { details: unknown }).details === 'string') {
-        errorDetails.details = (error as { details: string }).details;
-    }
+  // 2. Crear un objeto simple para registrar y procesar
+  const errorDetails: { message?: string; code?: string; details?: string } = {}
+  if ('message' in error && typeof (error as { message: unknown }).message === 'string') {
+    errorDetails.message = (error as { message: string }).message
+  }
+  if ('code' in error && typeof (error as { code: unknown }).code === 'string') {
+    errorDetails.code = (error as { code: string }).code
+  }
+  if ('details' in error && typeof (error as { details: unknown }).details === 'string') {
+    errorDetails.details = (error as { details: string }).details
+  }
 
-    // 3. Registrar los detalles extraídos. Esto no se mostrará como `{}`.
-    console.error("Supabase error details:", errorDetails);
+  // 3. Registrar los detalles extraídos. Esto no se mostrará como `{}`.
+  console.error('Supabase error details:', errorDetails)
 
-    // 4. Usar los detalles extraídos para la lógica
-    if (errorDetails.code === "23505") {
-        // Buscar en message y details combinados
-        const fullError = `${errorDetails.message} ${errorDetails.details}`.toLowerCase();
-        
-        if (fullError.includes("codigo_barras")) {
-            return "El código de barras ya existe!";
-        }
-        if (fullError.includes("telefono")) {
-            return "El número de teléfono ya está registrado para otro cliente.";
-        }
-        if (fullError.includes("correo") || fullError.includes("email")) {
-            return "La dirección de correo electrónico ya está registrada para otro cliente.";
-        }
-        return "Ya existe un registro con uno de los valores únicos (por ejemplo, email o teléfono).";
+  // 4. Usar los detalles extraídos para la lógica
+  if (errorDetails.code === '23505') {
+    // Buscar en message y details combinados
+    const fullError = `${errorDetails.message} ${errorDetails.details}`.toLowerCase()
+
+    if (fullError.includes('codigo_barras')) {
+      return 'El código de barras ya existe!'
     }
-
-    if (errorDetails.message?.includes("foreign key constraint")) {
-        return "No se puede realizar la operación debido a que hay registros relacionados.";
+    if (fullError.includes('telefono')) {
+      return 'El número de teléfono ya está registrado para otro cliente.'
     }
+    if (fullError.includes('correo') || fullError.includes('email')) {
+      return 'La dirección de correo electrónico ya está registrada para otro cliente.'
+    }
+    return 'Ya existe un registro con uno de los valores únicos (por ejemplo, email o teléfono).'
+  }
 
-    // 5. Devolver el mensaje
-    return errorDetails.message || "Error en la base de datos. Por favor, intente de nuevo.";
+  if (errorDetails.message?.includes('foreign key constraint')) {
+    return 'No se puede realizar la operación debido a que hay registros relacionados.'
+  }
+
+  // 5. Devolver el mensaje
+  return errorDetails.message || 'Error en la base de datos. Por favor, intente de nuevo.'
 }
