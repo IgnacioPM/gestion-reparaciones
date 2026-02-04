@@ -4,7 +4,9 @@ import Button from '@/components/ui/Button'
 import FormError from '@/components/ui/FormError'
 import Input from '@/components/ui/Input'
 import SectionTitle from '@/components/ui/SectionTitle'
+import { supabase } from '@/lib/supabaseClient'
 import { ProductoFormData, productoSchema } from '@/schemas/producto'
+import { useAuthStore } from '@/stores/auth'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
@@ -16,10 +18,15 @@ interface Fabricante {
   nombre: string
 }
 
+interface Proveedor {
+  id_proveedor: string
+  nombre: string
+}
+
 interface ProductoAddModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: ProductoFormData) => void
+  onSave: (data: ProductoFormData & { id_proveedor: string | null }) => void
   isSubmitting?: boolean
   error?: string | null
   fabricantesIniciales?: Fabricante[]
@@ -35,9 +42,13 @@ export default function ProductoAddModal({
   fabricantesIniciales = [],
   onFabricanteAdded,
 }: ProductoAddModalProps) {
+  const { profile } = useAuthStore()
+
   const [isClient, setIsClient] = useState(false)
   const [fabricantes, setFabricantes] = useState<Fabricante[]>([])
+  const [proveedores, setProveedores] = useState<Proveedor[]>([])
   const [openFabricanteModal, setOpenFabricanteModal] = useState(false)
+  const [idProveedor, setIdProveedor] = useState<string | null>(null)
 
   const {
     register,
@@ -65,7 +76,7 @@ export default function ProductoAddModal({
 
   useEffect(() => setIsClient(true), [])
 
-  /** 🔹 RESET TOTAL AL ABRIR */
+  /** 🔹 RESET */
   useEffect(() => {
     if (!isOpen) return
 
@@ -81,27 +92,47 @@ export default function ProductoAddModal({
       stock_minimo: undefined,
       id_fabricante: undefined,
     })
+
+    setIdProveedor(null)
   }, [isOpen, reset])
 
-  /** 🔹 CARGA DE FABRICANTES */
-  /** 🔹 CARGA DE FABRICANTES (NO pisar estado al abrir modal) */
+  /** 🔹 FABRICANTES */
   useEffect(() => {
     setFabricantes(fabricantesIniciales)
   }, [fabricantesIniciales])
 
+  /** 🔹 PROVEEDORES */
+  useEffect(() => {
+    if (!isOpen || !profile?.empresa_id) return
+
+    const fetchProveedores = async () => {
+      const { data, error } = await supabase
+        .from('proveedores')
+        .select('id_proveedor, nombre')
+        .eq('empresa_id', profile.empresa_id)
+        .order('nombre', { ascending: true })
+
+      if (!error) setProveedores(data ?? [])
+    }
+
+    fetchProveedores()
+  }, [isOpen, profile?.empresa_id])
+
   if (!isOpen || !isClient) return null
 
+  /** 🔴 AQUÍ ESTÁ EL DEBUG REAL */
   const handleCreate = (data: ProductoFormData) => {
-    const normalizedData: ProductoFormData = {
+    const base: any = {
       ...data,
       descripcion: data.descripcion || null,
       codigo_barras: data.codigo_barras || null,
       costo: data.costo ?? null,
       stock_minimo: data.stock_minimo ?? null,
-      id_fabricante: data.id_fabricante || null,
+      id_fabricante: data.id_fabricante ?? null,
+      id_proveedor: idProveedor ?? null,
     }
 
-    onSave(normalizedData)
+    onSave(base as ProductoFormData & { id_proveedor: string | null })
   }
 
   return ReactDOM.createPortal(
@@ -113,7 +144,6 @@ export default function ProductoAddModal({
             <button
               className='text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-white text-2xl'
               onClick={onClose}
-              title='Cerrar'
             >
               &times;
             </button>
@@ -121,6 +151,26 @@ export default function ProductoAddModal({
 
           <div className='flex-1 overflow-y-auto p-6'>
             <form onSubmit={handleSubmit(handleCreate)} className='space-y-4'>
+              {/* PROVEEDOR */}
+              <div>
+                <label className='text-sm font-medium'>Proveedor</label>
+                <div className='flex gap-2 items-center'>
+                  <select
+                    value={idProveedor ?? ''}
+                    onChange={(e) => setIdProveedor(e.target.value === '' ? null : e.target.value)}
+                    className='flex-1 mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
+                  >
+                    <option value=''>Sin proveedor</option>
+                    {proveedores.map((p) => (
+                      <option key={p.id_proveedor} value={p.id_proveedor}>
+                        {p.nombre}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* FABRICANTE */}
               <div>
                 <label className='text-sm font-medium'>Marca</label>
                 <div className='flex gap-2'>
@@ -130,7 +180,7 @@ export default function ProductoAddModal({
                     render={({ field }) => (
                       <select
                         {...field}
-                        value={field.value ?? ''} // ⬅️ CLAVE
+                        value={field.value ?? ''}
                         className='flex-1 mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
                       >
                         <option value=''>Seleccionar marca</option>
@@ -142,20 +192,14 @@ export default function ProductoAddModal({
                       </select>
                     )}
                   />
-
                   <button
                     type='button'
-                    title='Agregar marca'
                     onClick={() => setOpenFabricanteModal(true)}
                     className='px-3 border rounded-md'
                   >
                     +
                   </button>
                 </div>
-
-                {errors.id_fabricante && (
-                  <p className='text-red-500 text-sm'>{errors.id_fabricante.message}</p>
-                )}
               </div>
 
               <Input label='Nombre' {...register('nombre')} error={errors.nombre?.message} />
@@ -180,9 +224,7 @@ export default function ProductoAddModal({
                   type='number'
                   step='0.01'
                   {...register('precio_venta', { valueAsNumber: true })}
-                  error={errors.precio_venta?.message}
                 />
-
                 <Input
                   label='Costo'
                   type='number'
@@ -198,9 +240,7 @@ export default function ProductoAddModal({
                   label='Stock actual'
                   type='number'
                   {...register('stock_actual', { valueAsNumber: true })}
-                  error={errors.stock_actual?.message}
                 />
-
                 <Input
                   label='Stock mínimo'
                   type='number'

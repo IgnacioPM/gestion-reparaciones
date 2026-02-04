@@ -21,10 +21,16 @@ export function translateSupabaseError(error: unknown): string {
 
     // 4. Usar los detalles extraídos para la lógica
     if (errorDetails.code === "23505") {
-        if (errorDetails.details?.includes("clientes_telefono_key")) {
+        // Buscar en message y details combinados
+        const fullError = `${errorDetails.message} ${errorDetails.details}`.toLowerCase();
+        
+        if (fullError.includes("codigo_barras")) {
+            return "El código de barras ya existe!";
+        }
+        if (fullError.includes("telefono")) {
             return "El número de teléfono ya está registrado para otro cliente.";
         }
-        if (errorDetails.details?.includes("clientes_correo_key")) {
+        if (fullError.includes("correo") || fullError.includes("email")) {
             return "La dirección de correo electrónico ya está registrada para otro cliente.";
         }
         return "Ya existe un registro con uno de los valores únicos (por ejemplo, email o teléfono).";

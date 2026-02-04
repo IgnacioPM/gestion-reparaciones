@@ -263,7 +263,9 @@ export default function NuevaVentaPage() {
     setFabricantes((prev) => [...prev, nuevoFabricante])
   }
 
-  const handleSaveNewProduct = async (data: ProductoFormData) => {
+  const handleSaveNewProduct = async (
+    data: ProductoFormData & { id_proveedor?: string | null }
+  ) => {
     if (!profile?.empresa_id) {
       toast.error('No hay empresa asociada al usuario')
       return
@@ -273,10 +275,12 @@ export default function NuevaVentaPage() {
     setNewProductError(null)
 
     try {
+      const { id_proveedor, ...productPayload } = data as any
+
       const { data: newProduct, error } = await supabase
         .from('productos')
         .insert({
-          ...data,
+          ...productPayload,
           empresa_id: profile.empresa_id,
         })
         .select(
@@ -304,6 +308,16 @@ export default function NuevaVentaPage() {
 
       if (error) throw error
       if (!newProduct) throw new Error('No se pudo crear el producto')
+
+      // si hay proveedor seleccionado, crear relación
+      if (id_proveedor && newProduct.id_producto) {
+        const { error: relError } = await supabase.from('producto_proveedores').insert({
+          id_producto: newProduct.id_producto,
+          id_proveedor,
+        })
+
+        if (relError) throw relError
+      }
 
       const mapped = mapProductoConFabricante(newProduct)
 

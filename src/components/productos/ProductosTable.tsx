@@ -6,9 +6,10 @@ import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { supabase } from '@/lib/supabaseClient'
 import { ProductoFormData } from '@/schemas/producto'
 import { useAuthStore } from '@/stores/auth'
+import { translateSupabaseError } from '@/utils/supabase-db-errors'
 import { ChevronLeft, ChevronRight, Edit, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 // =====================
 // TIPOS
@@ -35,6 +36,10 @@ interface Producto {
     id_fabricante: string
     nombre: string
   } | null
+  proveedor?: {
+    id_proveedor: string
+    nombre: string
+  } | null
 }
 
 export default function ProductosTable() {
@@ -43,9 +48,11 @@ export default function ProductosTable() {
 
   const [allProductos, setAllProductos] = useState<Producto[]>([])
   const [fabricantes, setFabricantes] = useState<Fabricante[]>([])
+  const [proveedores, setProveedores] = useState<{ id_proveedor: string; nombre: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFabricante, setSelectedFabricante] = useState<string>('')
+  const [selectedProveedor, setSelectedProveedor] = useState<string>('')
 
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -61,6 +68,16 @@ export default function ProductosTable() {
 
   const handleNewProducto = () => setShowAddModal(true)
   const handleEditProducto = (producto: Producto) => setEditProducto(producto)
+  const searchInputRef = useRef<HTMLInputElement | null>(null)
+
+  const handleClearFilters = () => {
+    setSearchQuery('')
+    setSelectedFabricante('')
+    setSelectedProveedor('')
+    setCurrentPage(1)
+    // focus en buscador
+    setTimeout(() => searchInputRef.current?.focus(), 0)
+  }
 
   // =====================
   // FETCH
@@ -98,7 +115,35 @@ export default function ProductosTable() {
         activo: p.activo != null ? Boolean(p.activo) : null,
         id_fabricante: p.id_fabricante ?? p.fabricante?.id_fabricante ?? null,
         fabricante: p.fabricante ?? null,
+        proveedor: null,
       }))
+
+      // obtener relaciones producto_proveedores para mapear proveedores a productos (evita enviar id_proveedor al insertar productos)
+      const productIds = normalizedProductos.map((p) => p.id_producto)
+      if (productIds.length > 0) {
+        const { data: relacionesData, error: relacionesError } = await supabase
+          .from('producto_proveedores')
+          .select('id_producto, id_proveedor, proveedor:proveedores ( id_proveedor, nombre )')
+          .in('id_producto', productIds)
+
+        if (!relacionesError && relacionesData) {
+          const proveedorMap = new Map<string, { id_proveedor: string; nombre: string }>()
+          ;(relacionesData as any[]).forEach((r) => {
+            const prov = r.proveedor || r.proveedores || null
+            if (r.id_producto && (r.id_proveedor || prov)) {
+              proveedorMap.set(r.id_producto, {
+                id_proveedor: r.id_proveedor ?? prov?.id_proveedor,
+                nombre: prov?.nombre ?? prov?.nombre ?? r.nombre,
+              })
+            }
+          })
+
+          // asignar proveedor a cada producto (si existe)
+          for (const p of normalizedProductos) {
+            p.proveedor = proveedorMap.get(p.id_producto) ?? null
+          }
+        }
+      }
 
       setAllProductos(normalizedProductos)
 
@@ -111,6 +156,14 @@ export default function ProductosTable() {
       if (fabricantesError) throw fabricantesError
 
       setFabricantes((fabricantesData ?? []) as Fabricante[])
+      // cargar proveedores para el filtro
+      const { data: proveedoresData, error: proveedoresError } = await supabase
+        .from('proveedores')
+        .select('id_proveedor, nombre')
+        .eq('empresa_id', empresaId)
+        .order('nombre', { ascending: true })
+
+      if (!proveedoresError) setProveedores(proveedoresData ?? [])
     } catch (err) {
       console.error('Error cargando productos:', err)
       setAllProductos([])
@@ -132,7 +185,7 @@ export default function ProductosTable() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedFabricante])
+  }, [searchQuery, selectedFabricante, selectedProveedor])
 
   // =====================
   // FILTROS
@@ -149,19 +202,24 @@ export default function ProductosTable() {
         p.fabricante?.nombre ||
         fabricantes.find((f) => f.id_fabricante === p.id_fabricante)?.nombre ||
         ''
-
       const fabricanteMatches = fabricanteNombre.toLowerCase().includes(q)
 
-      const matchesQuery = q === '' || nombreMatches || codigoMatches || fabricanteMatches
+      const proveedorNombre = p.proveedor?.nombre ?? ''
+      const proveedorMatches = proveedorNombre.toLowerCase().includes(q)
+
+      const matchesQuery =
+        q === '' || nombreMatches || codigoMatches || fabricanteMatches || proveedorMatches
 
       const matchesFabricante =
         !selectedFabricante ||
         p.id_fabricante === selectedFabricante ||
         p.fabricante?.id_fabricante === selectedFabricante
 
-      return matchesQuery && matchesFabricante
+      const matchesProveedor = !selectedProveedor || p.proveedor?.id_proveedor === selectedProveedor
+
+      return matchesQuery && matchesFabricante && matchesProveedor
     })
-  }, [allProductos, searchQuery, selectedFabricante, fabricantes])
+  }, [allProductos, searchQuery, selectedFabricante, selectedProveedor, fabricantes])
 
   // =====================
   // PAGINACIÓN
@@ -184,45 +242,85 @@ export default function ProductosTable() {
   // GUARDAR / ACTUALIZAR
   // =====================
 
-  const handleSaveProducto = async (data: ProductoFormData) => {
+  const handleSaveProducto = async (data: ProductoFormData & { id_proveedor?: string | null }) => {
     if (!profile?.empresa_id) return
 
     setIsSubmitting(true)
     setError(null)
 
-    try {
-      const { error } = await supabase.from('productos').insert({
-        ...data,
-        empresa_id: profile.empresa_id,
-      })
+    const { id_proveedor, ...productPayload } = data as any
 
-      if (error) throw error
+    try {
+      const { data: newProduct, error: insertError } = await supabase
+        .from('productos')
+        .insert({
+          ...productPayload,
+          empresa_id: profile.empresa_id,
+        })
+        .select('id_producto')
+        .single()
+
+      if (insertError) throw insertError
+
+      // si viene proveedor, crear relación en producto_proveedores
+      if (id_proveedor && newProduct?.id_producto) {
+        const { error: relError } = await supabase.from('producto_proveedores').insert({
+          id_producto: newProduct.id_producto,
+          id_proveedor,
+        })
+
+        if (relError) throw relError
+      }
+
       setShowAddModal(false)
       fetchInitialData(profile.empresa_id)
-    } catch {
-      setError('Error al guardar el producto')
+    } catch (e: any) {
+      console.error('Error al guardar el producto:', e)
+      setError(translateSupabaseError(e))
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleUpdateProducto = async (data: ProductoFormData) => {
+  const handleUpdateProducto = async (
+    data: ProductoFormData & { id_proveedor?: string | null }
+  ) => {
     if (!editProducto || !profile?.empresa_id) return
 
     setIsSubmitting(true)
     setError(null)
 
     try {
-      const { error } = await supabase
+      const { id_proveedor, ...productPayload } = data as any
+
+      const { error: updateError } = await supabase
         .from('productos')
-        .update(data)
+        .update(productPayload)
         .eq('id_producto', editProducto.id_producto)
 
-      if (error) throw error
+      if (updateError) throw updateError
+
+      // sincronizar tabla producto_proveedores: eliminar relaciones previas y crear la nueva si aplica
+      const { error: delError } = await supabase
+        .from('producto_proveedores')
+        .delete()
+        .eq('id_producto', editProducto.id_producto)
+      if (delError) throw delError
+
+      if (id_proveedor) {
+        const { error: relError } = await supabase.from('producto_proveedores').insert({
+          id_producto: editProducto.id_producto,
+          id_proveedor,
+        })
+
+        if (relError) throw relError
+      }
+
       setEditProducto(null)
       fetchInitialData(profile.empresa_id)
-    } catch {
-      setError('Error al actualizar el producto')
+    } catch (e: any) {
+      console.error('Error al actualizar el producto:', e)
+      setError(translateSupabaseError(e))
     } finally {
       setIsSubmitting(false)
     }
@@ -245,10 +343,73 @@ export default function ProductosTable() {
         </button>
       </div>
 
+      <div className='mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end'>
+        <div className='lg:col-span-2'>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'>
+            Buscar
+          </label>
+          <input
+            ref={searchInputRef}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder='Buscar por producto, código, fabricante o proveedor'
+            className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800'
+          />
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'>
+            Proveedor
+          </label>
+          <select
+            value={selectedProveedor}
+            onChange={(e) => setSelectedProveedor(e.target.value)}
+            className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800'
+          >
+            <option value=''>Todos</option>
+            {proveedores.map((pr) => (
+              <option key={pr.id_proveedor} value={pr.id_proveedor}>
+                {pr.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'>
+            Marca
+          </label>
+          <select
+            value={selectedFabricante}
+            onChange={(e) => setSelectedFabricante(e.target.value)}
+            className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800'
+          >
+            <option value=''>Todos</option>
+            {fabricantes.map((f) => (
+              <option key={f.id_fabricante} value={f.id_fabricante}>
+                {f.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div>
+          <button
+            type='button'
+            onClick={handleClearFilters}
+            className='w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-yellow-400 text-black hover:bg-yellow-500'
+          >
+            Limpiar
+          </button>
+        </div>
+      </div>
+
       <div className='overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow'>
         <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
           <thead className='bg-gray-50 dark:bg-gray-700'>
             <tr>
+              <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Código</th>
+              <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Proveedor</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Producto</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Fabricante</th>
               <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Precio</th>
@@ -259,6 +420,10 @@ export default function ProductosTable() {
           <tbody>
             {paginatedProductos.map((p) => (
               <tr key={p.id_producto}>
+                <td className='px-6 py-4 text-sm text-gray-600 dark:text-gray-400'>
+                  {p.codigo_barras || '—'}
+                </td>
+                <td className='px-6 py-4'>{p.proveedor?.nombre || '—'}</td>
                 <td className='px-6 py-4'>{p.nombre}</td>
                 <td className='px-6 py-4'>{p.fabricante?.nombre || '—'}</td>
                 <td className='px-6 py-4 text-right'>

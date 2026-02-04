@@ -4,7 +4,9 @@ import Button from '@/components/ui/Button'
 import FormError from '@/components/ui/FormError'
 import Input from '@/components/ui/Input'
 import SectionTitle from '@/components/ui/SectionTitle'
+import { supabase } from '@/lib/supabaseClient'
 import { ProductoFormData, productoSchema } from '@/schemas/producto'
+import { useAuthStore } from '@/stores/auth'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
@@ -19,11 +21,11 @@ interface Fabricante {
 interface ProductoEditModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: ProductoFormData) => void
+  onSave: (data: ProductoFormData & { id_proveedor?: string | null }) => void
   isSubmitting?: boolean
   error?: string | null
   fabricantesIniciales?: Fabricante[]
-  initialData?: Partial<ProductoFormData>
+  initialData?: Partial<ProductoFormData & { id_producto?: string }>
 }
 
 export default function ProductoEditModal({
@@ -38,6 +40,9 @@ export default function ProductoEditModal({
   const [isClient, setIsClient] = useState(false)
   const [fabricantes, setFabricantes] = useState<Fabricante[]>([])
   const [openFabricanteModal, setOpenFabricanteModal] = useState(false)
+  const { profile } = useAuthStore()
+  const [proveedores, setProveedores] = useState<{ id_proveedor: string; nombre: string }[]>([])
+  const [idProveedor, setIdProveedor] = useState<string | null>(null)
 
   useEffect(() => setIsClient(true), [])
 
@@ -88,6 +93,38 @@ export default function ProductoEditModal({
     }
   }, [isOpen, fabricantesIniciales])
 
+  // Cargar proveedores de la empresa y proveedor asociado al producto
+  useEffect(() => {
+    if (!isOpen || !profile?.empresa_id) return
+
+    const fetch = async () => {
+      const { data: provs } = await supabase
+        .from('proveedores')
+        .select('id_proveedor, nombre')
+        .eq('empresa_id', profile.empresa_id)
+        .order('nombre', { ascending: true })
+
+      setProveedores((provs ?? []) as any)
+
+      // Si tenemos producto inicial, obtener su proveedor principal (si existe)
+      if (initialData?.id_producto) {
+        const { data: rel } = await supabase
+          .from('producto_proveedores')
+          .select('id_proveedor')
+          .eq('id_producto', initialData.id_producto)
+          .limit(1)
+
+        if (rel && rel.length > 0) {
+          setIdProveedor(rel[0].id_proveedor)
+        } else {
+          setIdProveedor(null)
+        }
+      }
+    }
+
+    fetch()
+  }, [isOpen, profile?.empresa_id, initialData?.id_producto])
+
   // Reaplicar fabricante cuando ya existen opciones
   useEffect(() => {
     if (isOpen && fabricantes.length > 0 && initialData?.id_fabricante) {
@@ -95,6 +132,10 @@ export default function ProductoEditModal({
         shouldDirty: false,
         shouldValidate: false,
       })
+    }
+    // reaplicar proveedor seleccionado
+    if (isOpen) {
+      setValue('id_fabricante', initialData?.id_fabricante || '')
     }
   }, [isOpen, fabricantes, initialData?.id_fabricante, setValue])
 
@@ -118,7 +159,10 @@ export default function ProductoEditModal({
 
           {/* CONTENIDO CON SCROLL */}
           <div className='flex-1 overflow-y-auto p-6'>
-            <form onSubmit={handleSubmit(onSave)} className='space-y-4'>
+            <form
+              onSubmit={handleSubmit((data) => onSave({ ...data, id_proveedor: idProveedor }))}
+              className='space-y-4'
+            >
               {/* Marca */}
               <div>
                 <label className='text-sm font-medium'>Marca</label>
@@ -148,6 +192,23 @@ export default function ProductoEditModal({
                 {errors.id_fabricante && (
                   <p className='text-red-500 text-sm'>{errors.id_fabricante.message}</p>
                 )}
+              </div>
+
+              {/* PROVEEDOR */}
+              <div>
+                <label className='text-sm font-medium'>Proveedor</label>
+                <select
+                  value={idProveedor ?? ''}
+                  onChange={(e) => setIdProveedor(e.target.value === '' ? null : e.target.value)}
+                  className='w-full mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
+                >
+                  <option value=''>Sin proveedor</option>
+                  {proveedores.map((p) => (
+                    <option key={p.id_proveedor} value={p.id_proveedor}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <Input label='Nombre' {...register('nombre')} error={errors.nombre?.message} />

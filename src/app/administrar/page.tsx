@@ -5,6 +5,7 @@ import SectionTitle from '@/components/ui/SectionTitle'
 import {
   ArrowLeft,
   BarChart2,
+  BookUser,
   Building,
   ClipboardList,
   Cpu,
@@ -57,6 +58,12 @@ const adminActions = [
     description: 'Administra los productos de venta y repuestos.',
     href: '/administrar/productos',
     icon: <Package className='w-8 h-8 text-indigo-500' />,
+  },
+  {
+    title: 'Proveedores',
+    description: 'Gestiona los proveedores de productos.',
+    href: '/administrar/proveedores',
+    icon: <BookUser className='w-8 h-8 text-cyan-500' />,
   },
 ]
 

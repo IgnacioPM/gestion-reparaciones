@@ -97,6 +97,67 @@ export interface Database {
           created_at?: string | null
         }
       }
+      proveedores: {
+        Row: {
+          id_proveedor: string
+          empresa_id: string
+          nombre: string
+          telefono: string | null
+          email: string | null
+          direccion: string | null
+          activo: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id_proveedor?: string
+          empresa_id: string
+          nombre: string
+          telefono?: string | null
+          email?: string | null
+          direccion?: string | null
+          activo?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id_proveedor?: string
+          empresa_id?: string
+          nombre?: string
+          telefono?: string | null
+          email?: string | null
+          direccion?: string | null
+          activo?: boolean | null
+          created_at?: string | null
+        }
+      }
+      producto_proveedores: {
+        Row: {
+          id: string
+          id_producto: string
+          id_proveedor: string
+          costo: number | null
+          proveedor_principal: boolean | null
+          activo: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id?: string
+          id_producto: string
+          id_proveedor: string
+          costo?: number | null
+          proveedor_principal?: boolean | null
+          activo?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          id?: string
+          id_producto?: string
+          id_proveedor?: string
+          costo?: number | null
+          proveedor_principal?: boolean | null
+          activo?: boolean | null
+          created_at?: string | null
+        }
+      }
     }
     Views: object
     Functions: object
