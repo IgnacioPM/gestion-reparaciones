@@ -163,6 +163,23 @@ export default function ProductoEditModal({
               onSubmit={handleSubmit((data) => onSave({ ...data, id_proveedor: idProveedor }))}
               className='space-y-4'
             >
+              {/* PROVEEDOR */}
+              <div>
+                <label className='text-sm font-medium'>Proveedor</label>
+                <select
+                  value={idProveedor ?? ''}
+                  onChange={(e) => setIdProveedor(e.target.value === '' ? null : e.target.value)}
+                  className='w-full mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
+                >
+                  <option value=''>Sin proveedor</option>
+                  {proveedores.map((p) => (
+                    <option key={p.id_proveedor} value={p.id_proveedor}>
+                      {p.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Marca */}
               <div>
                 <label className='text-sm font-medium'>Marca</label>
@@ -192,23 +209,6 @@ export default function ProductoEditModal({
                 {errors.id_fabricante && (
                   <p className='text-red-500 text-sm'>{errors.id_fabricante.message}</p>
                 )}
-              </div>
-
-              {/* PROVEEDOR */}
-              <div>
-                <label className='text-sm font-medium'>Proveedor</label>
-                <select
-                  value={idProveedor ?? ''}
-                  onChange={(e) => setIdProveedor(e.target.value === '' ? null : e.target.value)}
-                  className='w-full mt-1 px-3 py-2 border rounded-md dark:bg-gray-800'
-                >
-                  <option value=''>Sin proveedor</option>
-                  {proveedores.map((p) => (
-                    <option key={p.id_proveedor} value={p.id_proveedor}>
-                      {p.nombre}
-                    </option>
-                  ))}
-                </select>
               </div>
 
               <Input label='Nombre' {...register('nombre')} error={errors.nombre?.message} />
