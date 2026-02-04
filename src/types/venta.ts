@@ -5,6 +5,7 @@ export interface Venta {
   total: number
   metodo_pago: string | null
   created_at: string | null
+  total_descuento: number
   detalle: VentaDetalle[]
 }
 
@@ -15,4 +16,6 @@ export interface VentaDetalle {
   cantidad: number
   precio_unitario: number
   subtotal: number
+  descuento_monto: number
+  descuento_porcentaje: number | null
 }

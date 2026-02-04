@@ -14,6 +14,8 @@ interface VentaDetalleItem {
   cantidad: number
   precio_unitario: number
   subtotal: number
+  descuento_monto: number
+  descuento_porcentaje: number | null
 }
 
 interface VentaConDetalles {
@@ -21,6 +23,7 @@ interface VentaConDetalles {
   fecha: string
   total: number
   metodo_pago: string
+  total_descuento: number
   cliente: {
     nombre: string
     telefono: string | null
@@ -82,12 +85,21 @@ export const VentaPrintable: React.FC<VentaPrintableProps> = ({ venta, profile }
             {item.cantidad} x {item.producto.fabricante.nombre} {item.producto.nombre}
           </p>
           <ReceiptRow left={`    (₡ ${item.precio_unitario})`} right={`₡ ${item.subtotal.toFixed(2)}`} />
+          {item.descuento_monto > 0 && (
+            <ReceiptRow left={'     Descuento'} right={`- ₡ ${item.descuento_monto.toFixed(2)}`} />
+          )}
         </div>
       ))}
       
       <div style={{marginTop: '5px'}}></div>
 
       <div className='totals'>
+        {venta.total_descuento > 0 && (
+          <p className='total'>
+            <span>Total Descuento:</span>
+            <span>- ₡{venta.total_descuento.toFixed(2)}</span>
+          </p>
+        )}
         <p className='total' style={{ borderTop: '1px solid black', paddingTop: '5px' }}>
           <span>Total:</span>
           <span>₡{venta.total.toFixed(2)}</span>

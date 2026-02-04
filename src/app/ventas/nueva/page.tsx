@@ -19,6 +19,8 @@ import { toast } from 'sonner'
 interface VentaItem {
   producto: Producto
   cantidad: number
+  descuento_monto: number
+  descuento_porcentaje: number | null
 }
 
 export default function NuevaVentaPage() {
@@ -171,7 +173,7 @@ export default function NuevaVentaPage() {
         )
       }
 
-      return [...prev, { producto, cantidad: 1 }]
+      return [...prev, { producto, cantidad: 1, descuento_monto: 0, descuento_porcentaje: null }]
     })
 
     setQuery('')
@@ -191,7 +193,64 @@ export default function NuevaVentaPage() {
     )
   }
 
-  const total = items.reduce((acc, item) => acc + item.cantidad * item.producto.precio_venta, 0)
+  const updateDescuento = (id: string, descuento: number) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.producto.id_producto !== id) return item
+
+        const parsed = Number.isFinite(descuento) ? descuento : 0
+        const max = Number(item.producto.precio_venta ?? 0)
+        const capped = Math.min(Math.max(0, parsed), max)
+
+        const porcentaje = max > 0 ? Number(((capped / max) * 100).toFixed(2)) : null
+
+        return {
+          ...item,
+          descuento_monto: capped,
+          descuento_porcentaje: porcentaje,
+        }
+      })
+    )
+  }
+
+  const updateDescuentoPercent = (id: string, porcentaje: number) => {
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.producto.id_producto !== id) return item
+
+        const parsedPct = Number.isFinite(porcentaje) ? porcentaje : 0
+        const cappedPct = Math.min(Math.max(0, parsedPct), 100)
+        const max = Number(item.producto.precio_venta ?? 0)
+        const computed = Number(((cappedPct / 100) * max).toFixed(2))
+
+        return {
+          ...item,
+          descuento_monto: computed,
+          descuento_porcentaje: cappedPct,
+        }
+      })
+    )
+  }
+
+  /* =========================
+     LIMPIAR DESCUENTOS AL SELECCIONAR TARJETA
+     ========================= */
+  useEffect(() => {
+    if (metodoPago === 'tarjeta') {
+      setItems((prev) =>
+        prev.map((item) => ({
+          ...item,
+          descuento_monto: 0,
+          descuento_porcentaje: null,
+        }))
+      )
+    }
+  }, [metodoPago])
+
+  const totalDescuento = items.reduce((acc, item) => acc + item.descuento_monto * item.cantidad, 0)
+  const total =
+    items.reduce((acc, item) => acc + item.cantidad * item.producto.precio_venta, 0) -
+    totalDescuento
 
   /* =========================
      SUBMIT
@@ -230,6 +289,7 @@ export default function NuevaVentaPage() {
           cliente_id: clienteId,
           total,
           metodo_pago: metodoPago,
+          total_descuento: totalDescuento,
         })
         .select()
         .single()
@@ -237,12 +297,16 @@ export default function NuevaVentaPage() {
       if (error) throw error
 
       for (const item of items) {
+        const subtotal =
+          item.cantidad * item.producto.precio_venta - item.descuento_monto * item.cantidad
         await supabase.from('ventas_detalle').insert({
           venta_id: venta.id_venta,
           producto_id: item.producto.id_producto,
           cantidad: item.cantidad,
           precio_unitario: item.producto.precio_venta,
-          subtotal: item.cantidad * item.producto.precio_venta,
+          subtotal,
+          descuento_monto: item.descuento_monto,
+          descuento_porcentaje: item.descuento_porcentaje,
         })
 
         await supabase.rpc('descontar_stock', {
@@ -397,79 +461,163 @@ export default function NuevaVentaPage() {
             </div>
 
             {/* ITEMS AGREGADOS */}
-            <div className='space-y-2'>
-              {/* HEADER VISUAL ITEMS */}
-              {items.length > 0 && (
-                <div className='grid grid-cols-6 gap-2 px-2 py-1 text-xs font-semibold text-gray-600 dark:text-gray-300'>
-                  <div className='col-span-2'>Producto</div>
-                  <div>Cantidad</div>
-                  <div className='text-right'>Subtotal</div>
-                  <div />
-                </div>
-              )}
+            {items.length > 0 && (
+              <div className='overflow-x-auto'>
+                <table className='w-full text-sm border-collapse'>
+                  <thead>
+                    <tr className='text-xs font-semibold text-gray-600 dark:text-gray-300 border-b dark:border-gray-600'>
+                      <th className='text-left py-2 px-2'>Producto</th>
+                      <th className='text-left py-2 px-2'>Cantidad</th>
+                      <th className='text-right py-2 px-2'>Precio</th>
+                      <th className='text-left py-2 px-2'>Descuento</th>
+                      <th className='text-left py-2 px-2'>%</th>
+                      <th className='text-right py-2 px-2'>Subtotal</th>
+                      <th className='text-center py-2 px-2'>Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.map((item) => (
+                      <tr
+                        key={item.producto.id_producto}
+                        className='bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                      >
+                        {/* PRODUCTO */}
+                        <td className='py-2 px-2 text-left'>
+                          <div className='text-sm font-semibold truncate'>
+                            {item.producto.fabricante.nombre}
+                          </div>
+                          <div className='text-xs truncate text-gray-700 dark:text-gray-300'>
+                            {item.producto.nombre}
+                          </div>
+                        </td>
 
-              {items.map((item) => (
-                <div
-                  key={item.producto.id_producto}
-                  className='grid grid-cols-6 items-center bg-gray-100 dark:bg-gray-700 p-2 rounded gap-2'
-                >
-                  {/* PRODUCTO */}
-                  <div className='col-span-2'>
-                    <div className='text-sm font-semibold'>{item.producto.fabricante.nombre}</div>
-                    <div>{item.producto.nombre}</div>
-                  </div>
+                        {/* CANTIDAD */}
+                        <td className='py-2 px-2 text-left'>
+                          <div className='flex items-center gap-1'>
+                            <Minus
+                              className='w-4 h-4 cursor-pointer hover:text-blue-500'
+                              onClick={() =>
+                                updateCantidad(item.producto.id_producto, item.cantidad - 1)
+                              }
+                            />
+                            <input
+                              type='number'
+                              min={1}
+                              max={item.producto.stock_actual}
+                              value={item.cantidad}
+                              onChange={(e) =>
+                                updateCantidad(item.producto.id_producto, Number(e.target.value))
+                              }
+                              className='w-12 text-center border rounded dark:bg-gray-800 py-1'
+                            />
+                            <Plus
+                              className='w-4 h-4 cursor-pointer hover:text-blue-500'
+                              onClick={() =>
+                                updateCantidad(item.producto.id_producto, item.cantidad + 1)
+                              }
+                            />
+                          </div>
+                        </td>
 
-                  {/* CANTIDAD */}
-                  <div className='flex items-center gap-2'>
-                    <Minus
-                      className='w-4 h-4 cursor-pointer'
-                      onClick={() => updateCantidad(item.producto.id_producto, item.cantidad - 1)}
-                    />
-                    <input
-                      title='sumar'
-                      type='number'
-                      min={1}
-                      max={item.producto.stock_actual}
-                      value={item.cantidad}
-                      onChange={(e) =>
-                        updateCantidad(item.producto.id_producto, Number(e.target.value))
-                      }
-                      className='w-16 text-center border rounded dark:bg-gray-800'
-                    />
-                    <Plus
-                      className='w-4 h-4 cursor-pointer'
-                      onClick={() => updateCantidad(item.producto.id_producto, item.cantidad + 1)}
-                    />
-                  </div>
+                        {/* PRECIO UNITARIO */}
+                        <td className='py-2 px-2 text-right'>
+                          ₡{Number(item.producto.precio_venta).toLocaleString('es-CR')}
+                        </td>
 
-                  {/* SUBTOTAL */}
-                  <div className='text-right'>
-                    ₡{(item.cantidad * item.producto.precio_venta).toLocaleString('es-CR')}
-                  </div>
+                        {/* DESCUENTO monto */}
+                        <td className='py-2 px-2 text-left'>
+                          <input
+                            type='number'
+                            min={0}
+                            max={item.producto.precio_venta}
+                            step='0.01'
+                            value={item.descuento_monto}
+                            onChange={(e) =>
+                              updateDescuento(item.producto.id_producto, Number(e.target.value))
+                            }
+                            disabled={metodoPago === 'tarjeta'}
+                            className='w-20 text-center border rounded dark:bg-gray-800 py-1 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-gray-600'
+                          />
+                        </td>
 
-                  {/* ELIMINAR */}
-                  <Trash
-                    className='w-4 h-4 cursor-pointer text-red-500 justify-self-end'
-                    onClick={() => setItems(items.filter((i) => i !== item))}
-                  />
-                </div>
-              ))}
-            </div>
+                        {/* DESCUENTO porcentaje */}
+                        <td className='py-2 px-2 text-left'>
+                          <div className='flex items-center gap-1'>
+                            <input
+                              type='number'
+                              min={0}
+                              max={100}
+                              step='0.01'
+                              value={item.descuento_porcentaje ?? 0}
+                              onChange={(e) =>
+                                updateDescuentoPercent(
+                                  item.producto.id_producto,
+                                  Number(e.target.value)
+                                )
+                              }
+                              disabled={metodoPago === 'tarjeta'}
+                              className='w-14 text-center border rounded dark:bg-gray-800 py-1 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-gray-600'
+                              title='Descuento %'
+                            />
+                            <span className='text-xs'>%</span>
+                          </div>
+                        </td>
+
+                        {/* SUBTOTAL */}
+                        <td className='py-2 px-2 text-right font-semibold'>
+                          ₡
+                          {(
+                            item.cantidad * item.producto.precio_venta -
+                            item.descuento_monto * item.cantidad
+                          ).toLocaleString('es-CR')}
+                        </td>
+
+                        {/* ELIMINAR */}
+                        <td className='py-2 px-2 text-center'>
+                          <button
+                            type='button'
+                            onClick={() => setItems(items.filter((i) => i !== item))}
+                            className='inline-flex items-center justify-center w-8 h-8 rounded hover:bg-red-100 dark:hover:bg-red-600'
+                            aria-label='Eliminar producto'
+                          >
+                            <Trash className='w-4 h-4 text-red-500' />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {/* PAGO + TOTAL */}
             <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
-              <Select
-                label='Método de pago'
-                value={metodoPago}
-                onChange={(e) => setMetodoPago(e.target.value as 'efectivo' | 'tarjeta' | 'sinpe')}
-              >
-                <option value='efectivo'>Efectivo</option>
-                <option value='tarjeta'>Tarjeta</option>
-                <option value='sinpe'>SINPE</option>
-              </Select>
+              <div>
+                <Select
+                  label='Método de pago'
+                  value={metodoPago}
+                  onChange={(e) =>
+                    setMetodoPago(e.target.value as 'efectivo' | 'tarjeta' | 'sinpe')
+                  }
+                >
+                  <option value='efectivo'>Efectivo</option>
+                  <option value='tarjeta'>Tarjeta</option>
+                  <option value='sinpe'>SINPE</option>
+                </Select>
+                {metodoPago === 'tarjeta' && (
+                  <p className='text-sm text-orange-600 dark:text-orange-400 mt-2'>
+                    ⚠️ Los descuentos no están disponibles para pagos con tarjeta
+                  </p>
+                )}
+              </div>
 
-              <div className='text-right text-xl font-bold dark:text-white'>
-                Total: ₡{total.toLocaleString('es-CR')}
+              <div className='text-right'>
+                <div className='text-gray-500'>
+                  Descuento: ₡{totalDescuento.toLocaleString('es-CR')}
+                </div>
+                <div className='text-xl font-bold dark:text-white'>
+                  Total: ₡{total.toLocaleString('es-CR')}
+                </div>
               </div>
             </div>
 

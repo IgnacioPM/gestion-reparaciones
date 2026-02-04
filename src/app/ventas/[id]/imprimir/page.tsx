@@ -17,6 +17,8 @@ interface VentaDetalleItem {
   cantidad: number
   precio_unitario: number
   subtotal: number
+  descuento_monto: number
+  descuento_porcentaje: number | null
 }
 
 interface VentaConDetalles {
@@ -24,12 +26,27 @@ interface VentaConDetalles {
   fecha: string
   total: number
   metodo_pago: string
+  total_descuento: number
   cliente: {
     nombre: string
     telefono: string | null
     correo: string | null
   } | null
   items: VentaDetalleItem[]
+}
+
+interface VentaDetalleRow {
+  cantidad: number
+  precio_unitario: number
+  subtotal: number
+  descuento_monto: number
+  descuento_porcentaje: number | null
+  producto: {
+    nombre: string
+    fabricante: {
+      nombre: string
+    }
+  }
 }
 
 export default function VentaImprimirPage({ params }: { params: Promise<{ id: string }> }) {
@@ -55,6 +72,7 @@ export default function VentaImprimirPage({ params }: { params: Promise<{ id: st
             created_at,
             total,
             metodo_pago,
+            total_descuento,
             cliente:clientes (
               nombre,
               telefono,
@@ -77,6 +95,8 @@ export default function VentaImprimirPage({ params }: { params: Promise<{ id: st
             cantidad,
             precio_unitario,
             subtotal,
+            descuento_monto,
+            descuento_porcentaje,
             producto:productos (
               nombre,
               fabricante:fabricantes (
@@ -94,8 +114,9 @@ export default function VentaImprimirPage({ params }: { params: Promise<{ id: st
           fecha: ventaData.created_at,
           total: ventaData.total,
           metodo_pago: ventaData.metodo_pago,
+          total_descuento: ventaData.total_descuento,
           cliente: Array.isArray(ventaData.cliente) ? ventaData.cliente[0] : ventaData.cliente,
-          items: (itemsData ?? []).map((item: any) => {
+          items: ((itemsData as any[]) ?? []).map((item) => {
             const producto = Array.isArray(item.producto) ? item.producto[0] : item.producto
             const fabricante =
               producto && Array.isArray(producto.fabricante)
@@ -106,6 +127,8 @@ export default function VentaImprimirPage({ params }: { params: Promise<{ id: st
               cantidad: item.cantidad,
               precio_unitario: item.precio_unitario,
               subtotal: item.subtotal,
+              descuento_monto: item.descuento_monto,
+              descuento_porcentaje: item.descuento_porcentaje,
               producto: {
                 nombre: producto?.nombre ?? '',
                 fabricante: {

@@ -21,6 +21,8 @@ interface VentaDetalleItem {
   cantidad: number
   precio_unitario: number
   subtotal: number
+  descuento_monto: number
+  descuento_porcentaje: number | null
 }
 
 interface VentaConDetalles {
@@ -28,6 +30,7 @@ interface VentaConDetalles {
   fecha: string
   total: number
   metodo_pago: string
+  total_descuento: number
   cliente: {
     nombre: string
     telefono: string | null
@@ -43,7 +46,7 @@ function formatFechaSimple(fecha: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true,
+    hour12: true
   })
 }
 
@@ -71,6 +74,7 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
             created_at,
             total,
             metodo_pago,
+            total_descuento,
             cliente:clientes (
               nombre,
               telefono,
@@ -92,6 +96,8 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
             cantidad,
             precio_unitario,
             subtotal,
+            descuento_monto,
+            descuento_porcentaje,
             producto:productos (
               nombre,
               fabricante:fabricantes (
@@ -110,6 +116,7 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
           fecha: ventaData.created_at,
           total: ventaData.total,
           metodo_pago: ventaData.metodo_pago,
+          total_descuento: ventaData.total_descuento,
           cliente: Array.isArray(ventaData.cliente) ? ventaData.cliente[0] : ventaData.cliente,
           items: (itemsData ?? []).map((item: any) => {
             const producto = Array.isArray(item.producto) ? item.producto[0] : item.producto
@@ -123,14 +130,16 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
               cantidad: item.cantidad,
               precio_unitario: item.precio_unitario,
               subtotal: item.subtotal,
+              descuento_monto: item.descuento_monto,
+              descuento_porcentaje: item.descuento_porcentaje,
               producto: {
                 nombre: producto?.nombre ?? '',
                 fabricante: {
                   nombre: fabricante?.nombre ?? '',
-                },
-              },
+                }
+              }
             }
-          }),
+          })
         }
 
         setVenta(ventaProcesada)
@@ -206,6 +215,7 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
             <InfoBlock title={<SectionTitle>Venta</SectionTitle>}>
               <InfoRow label='Fecha' value={formatFechaSimple(venta.fecha)} />
               <InfoRow label='Método de Pago' value={venta.metodo_pago} />
+              <InfoRow label='Total Descuento' value={<FormattedAmount amount={venta.total_descuento} />} />
               <InfoRow label='Total' value={<FormattedAmount amount={venta.total} />} />
             </InfoBlock>
           </div>
@@ -225,6 +235,9 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
                     </th>
                     <th scope='col' className='px-6 py-3 text-right'>
                       Precio Unit.
+                    </th>
+                    <th scope='col' className='px-6 py-3 text-right'>
+                      Descuento
                     </th>
                     <th scope='col' className='px-6 py-3 text-right'>
                       Subtotal
@@ -248,6 +261,9 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
                         <FormattedAmount amount={item.precio_unitario} />
                       </td>
                       <td className='px-6 py-4 text-right'>
+                        <FormattedAmount amount={item.descuento_monto} />
+                      </td>
+                      <td className='px-6 py-4 text-right'>
                         <FormattedAmount amount={item.subtotal} />
                       </td>
                     </tr>
@@ -256,9 +272,18 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
                 <tfoot>
                   <tr className='font-semibold text-gray-900 dark:text-white'>
                     <th scope='row' className='px-6 py-3 text-base'>
+                      Total Descuento
+                    </th>
+                    <td colSpan={3}></td>
+                    <td className='px-6 py-3 text-base text-right'>
+                      <FormattedAmount amount={venta.total_descuento} />
+                    </td>
+                  </tr>
+                  <tr className='font-semibold text-gray-900 dark:text-white'>
+                    <th scope='row' className='px-6 py-3 text-base'>
                       Total
                     </th>
-                    <td colSpan={2}></td>
+                    <td colSpan={3}></td>
                     <td className='px-6 py-3 text-base text-right'>
                       <FormattedAmount amount={venta.total} />
                     </td>
