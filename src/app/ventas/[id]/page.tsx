@@ -46,7 +46,7 @@ function formatFechaSimple(fecha: string) {
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: true
+    hour12: true,
   })
 }
 
@@ -136,10 +136,10 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
                 nombre: producto?.nombre ?? '',
                 fabricante: {
                   nombre: fabricante?.nombre ?? '',
-                }
-              }
+                },
+              },
             }
-          })
+          }),
         }
 
         setVenta(ventaProcesada)
@@ -215,7 +215,10 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
             <InfoBlock title={<SectionTitle>Venta</SectionTitle>}>
               <InfoRow label='Fecha' value={formatFechaSimple(venta.fecha)} />
               <InfoRow label='Método de Pago' value={venta.metodo_pago} />
-              <InfoRow label='Total Descuento' value={<FormattedAmount amount={venta.total_descuento} />} />
+              <InfoRow
+                label='Total Descuento'
+                value={<FormattedAmount amount={venta.total_descuento} />}
+              />
               <InfoRow label='Total' value={<FormattedAmount amount={venta.total} />} />
             </InfoBlock>
           </div>
@@ -272,13 +275,24 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
                 <tfoot>
                   <tr className='font-semibold text-gray-900 dark:text-white'>
                     <th scope='row' className='px-6 py-3 text-base'>
-                      Total Descuento
+                      Subtotal
                     </th>
                     <td colSpan={3}></td>
                     <td className='px-6 py-3 text-base text-right'>
-                      <FormattedAmount amount={venta.total_descuento} />
+                      <FormattedAmount amount={venta.total + venta.total_descuento} />
                     </td>
                   </tr>
+                  {venta.total_descuento > 0 && (
+                    <tr className='font-semibold text-gray-900 dark:text-white'>
+                      <th scope='row' className='px-6 py-3 text-base'>
+                        Total Descuento
+                      </th>
+                      <td colSpan={3}></td>
+                      <td className='px-6 py-3 text-base text-right'>
+                        <FormattedAmount amount={venta.total_descuento} />
+                      </td>
+                    </tr>
+                  )}
                   <tr className='font-semibold text-gray-900 dark:text-white'>
                     <th scope='row' className='px-6 py-3 text-base'>
                       Total

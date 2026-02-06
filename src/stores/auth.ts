@@ -1,6 +1,6 @@
-import { create } from 'zustand'
 import { supabase } from '@/lib/supabaseClient' // Asegúrate que la ruta a tu cliente supabase sea correcta
 import { Session } from '@supabase/supabase-js'
+import { create } from 'zustand'
 
 // 1. Definimos los tipos basados en tu esquema
 // Deberías generar estos tipos con la CLI de Supabase para que sean exactos
@@ -10,6 +10,7 @@ export type Profile = {
   email: string
   rol: string
   empresa_id: string
+  descuento_maximo: number
   empresa: {
     id: string
     nombre: string
@@ -41,8 +42,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ loading: true, error: null }) // <-- reseteamos error al iniciar
     try {
       // 1. Autenticar al usuario
-      const { data: authData, error: authError } =
-        await supabase.auth.signInWithPassword({ email, password })
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
       if (authError) throw authError
       if (!authData.user) throw new Error('No se encontró el usuario')
 
@@ -54,10 +57,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         .maybeSingle()
 
       if (profileError) throw profileError
-      if (!profileData)
-        throw new Error(
-          'No se encontró el perfil del usuario' + authData.user.id
-        )
+      if (!profileData) throw new Error('No se encontró el perfil del usuario' + authData.user.id)
 
       // 3. Actualizar el estado global con toda la información
       set({
@@ -84,9 +84,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         errorMessage =
           e.message ||
           e.details ||
-          (e.error && e.description
-            ? `${e.error}: ${e.description}`
-            : undefined) ||
+          (e.error && e.description ? `${e.error}: ${e.description}` : undefined) ||
           errorMessage
       }
 
@@ -115,7 +113,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         .maybeSingle()
 
       if (profileError) {
-        console.error("Error fetching profile in checkSession:", profileError.message)
+        console.error('Error fetching profile in checkSession:', profileError.message)
       } else if (profileData) {
         set({ session: authData.session, profile: profileData })
       }

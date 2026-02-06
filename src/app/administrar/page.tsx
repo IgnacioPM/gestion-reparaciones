@@ -9,8 +9,10 @@ import {
   Building,
   ClipboardList,
   Cpu,
+  CreditCard,
   MessageSquare,
   Package,
+  ShoppingCart,
   Users,
 } from 'lucide-react'
 import Link from 'next/link'
@@ -64,6 +66,18 @@ const adminActions = [
     description: 'Gestiona los proveedores de productos.',
     href: '/administrar/proveedores',
     icon: <BookUser className='w-8 h-8 text-cyan-500' />,
+  },
+  {
+    title: 'Compras',
+    description: 'Accede al módulo de compras y órdenes de compra.',
+    href: '/administrar/compras',
+    icon: <ShoppingCart className='w-8 h-8 text-rose-500' />,
+  },
+  {
+    title: 'Crédito Proveedor',
+    description: 'Gestiona el crédito y movimientos con proveedores.',
+    href: '/administrar/proveedores-credito',
+    icon: <CreditCard className='w-8 h-8 text-amber-500' />,
   },
 ]
 

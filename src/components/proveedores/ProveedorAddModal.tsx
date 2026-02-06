@@ -14,7 +14,7 @@ import { useForm } from 'react-hook-form'
 interface ProveedorAddModalProps {
   isOpen: boolean
   onClose: () => void
-  onSave: (data: ProveedorFormData) => void
+  onSave: (data: ProveedorFormData & { credito_inicial?: number | null }) => void
   isSubmitting?: boolean
   error?: string | null
 }
@@ -28,18 +28,21 @@ export default function ProveedorAddModal({
 }: ProveedorAddModalProps) {
   const [isClient, setIsClient] = useState(false)
 
+  type FormValues = ProveedorFormData & { credito_inicial?: number | null }
+
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
-  } = useForm<ProveedorFormData>({
+  } = useForm<FormValues>({
     resolver: zodResolver(proveedorSchema),
     defaultValues: {
       nombre: '',
       telefono: '',
       email: '',
       direccion: '',
+      credito_inicial: 0,
       activo: true,
     },
   })
@@ -55,13 +58,14 @@ export default function ProveedorAddModal({
       telefono: '',
       email: '',
       direccion: '',
+      credito_inicial: 0,
       activo: true,
     })
   }, [isOpen, reset])
 
   if (!isOpen || !isClient) return null
 
-  const handleCreate = (data: ProveedorFormData) => {
+  const handleCreate = (data: FormValues) => {
     const normalizedData: ProveedorFormData = {
       ...data,
       telefono: data.telefono || null,
@@ -69,7 +73,11 @@ export default function ProveedorAddModal({
       direccion: data.direccion || null,
     }
 
-    onSave(normalizedData)
+    // pass credito_inicial separately if present in form values
+    const payload: any = { ...normalizedData }
+    if (data.credito_inicial != null) payload.credito_inicial = Number(data.credito_inicial) || 0
+
+    onSave(payload)
   }
 
   return ReactDOM.createPortal(
@@ -93,28 +101,23 @@ export default function ProveedorAddModal({
           {/* BODY SCROLL */}
           <div className='flex-1 overflow-y-auto p-6'>
             <form onSubmit={handleSubmit(handleCreate)} className='space-y-4'>
-              <Input
-                label='Nombre'
-                {...register('nombre')}
-                error={errors.nombre?.message}
-              />
+              <Input label='Nombre' {...register('nombre')} error={errors.nombre?.message} />
 
-              <Input
-                label='Teléfono'
-                {...register('telefono')}
-                error={errors.telefono?.message}
-              />
+              <Input label='Teléfono' {...register('telefono')} error={errors.telefono?.message} />
 
-              <Input
-                label='Email'
-                {...register('email')}
-                error={errors.email?.message}
-              />
+              <Input label='Email' {...register('email')} error={errors.email?.message} />
 
               <Textarea
                 label='Dirección'
                 {...register('direccion')}
                 error={errors.direccion?.message}
+              />
+
+              <Input
+                label='Saldo inicial (crédito)'
+                type='number'
+                {...register('credito_inicial')}
+                error={errors?.credito_inicial as any}
               />
 
               <div className='flex items-center gap-2'>

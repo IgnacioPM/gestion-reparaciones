@@ -6,6 +6,7 @@ export const EmpleadoSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6).optional(),
   rol: z.enum(['Admin', 'Tecnico']).optional(),
+  descuento_maximo: z.number().min(0).max(100).optional().default(0),
 })
 
 export type EmpleadoFormData = z.infer<typeof EmpleadoSchema>

@@ -1,6 +1,5 @@
 import { Profile } from '@/stores/auth'
 import React from 'react'
-import { FormattedAmount } from '../ui/FormattedAmount'
 
 // Duplicating types here to make the component self-contained.
 // In a real app, these would be imported from a central types file.
@@ -75,7 +74,14 @@ export const VentaPrintable: React.FC<VentaPrintableProps> = ({ venta, profile }
 
       <h2>----- Productos -----</h2>
       {/* Header for items */}
-      <div style={{ borderTop: '1px dashed black', borderBottom: '1px dashed black', padding: '2px 0', marginBottom: '2px' }}>
+      <div
+        style={{
+          borderTop: '1px dashed black',
+          borderBottom: '1px dashed black',
+          padding: '2px 0',
+          marginBottom: '2px',
+        }}
+      >
         <ReceiptRow left='Cant.  Producto' right='Total' />
       </div>
 
@@ -84,19 +90,26 @@ export const VentaPrintable: React.FC<VentaPrintableProps> = ({ venta, profile }
           <p style={{ margin: 0 }}>
             {item.cantidad} x {item.producto.fabricante.nombre} {item.producto.nombre}
           </p>
-          <ReceiptRow left={`    (₡ ${item.precio_unitario})`} right={`₡ ${item.subtotal.toFixed(2)}`} />
+          <ReceiptRow
+            left={`    (₡ ${item.precio_unitario})`}
+            right={`₡ ${item.subtotal.toFixed(2)}`}
+          />
           {item.descuento_monto > 0 && (
             <ReceiptRow left={'     Descuento'} right={`- ₡ ${item.descuento_monto.toFixed(2)}`} />
           )}
         </div>
       ))}
-      
-      <div style={{marginTop: '5px'}}></div>
+
+      <div style={{ marginTop: '5px' }}></div>
 
       <div className='totals'>
+        <p className='total'>
+          <span>Subtotal:</span>
+          <span>₡{(venta.total + venta.total_descuento).toFixed(2)}</span>
+        </p>
         {venta.total_descuento > 0 && (
           <p className='total'>
-            <span>Total Descuento:</span>
+            <span>Descuento:</span>
             <span>- ₡{venta.total_descuento.toFixed(2)}</span>
           </p>
         )}

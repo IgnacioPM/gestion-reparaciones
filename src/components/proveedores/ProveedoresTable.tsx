@@ -5,9 +5,9 @@ import ProveedorEditModal from '@/components/proveedores/ProveedorEditModal'
 import { supabase } from '@/lib/supabaseClient'
 import { ProveedorFormData } from '@/schemas/proveedor'
 import { useAuthStore } from '@/stores/auth'
+import type { Proveedor } from '@/types/proveedor'
 import { ChevronLeft, ChevronRight, Edit, Plus } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
-import type { Proveedor } from '@/types/proveedor'
 
 export default function ProveedoresTable() {
   const { profile } = useAuthStore()
@@ -21,6 +21,7 @@ export default function ProveedoresTable() {
 
   const [showAddModal, setShowAddModal] = useState(false)
   const [editProveedor, setEditProveedor] = useState<Proveedor | null>(null)
+  const [editProveedorCredito, setEditProveedorCredito] = useState<number | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -30,6 +31,28 @@ export default function ProveedoresTable() {
 
   const handleNewProveedor = () => setShowAddModal(true)
   const handleEditProveedor = (proveedor: Proveedor) => setEditProveedor(proveedor)
+
+  const handleEditProveedorWithCredito = async (proveedor: Proveedor) => {
+    if (!profile?.empresa_id) {
+      setEditProveedor(proveedor)
+      return
+    }
+    try {
+      const { data, error } = await supabase
+        .from('proveedores_credito')
+        .select('credito_inicial')
+        .eq('empresa_id', profile.empresa_id)
+        .eq('proveedor_id', proveedor.id_proveedor)
+        .maybeSingle()
+
+      if (!error && data) setEditProveedorCredito(data.credito_inicial ?? null)
+      else setEditProveedorCredito(null)
+    } catch (err) {
+      setEditProveedorCredito(null)
+    }
+
+    setEditProveedor(proveedor)
+  }
 
   // =====================
   // FETCH
@@ -102,42 +125,111 @@ export default function ProveedoresTable() {
   // GUARDAR / ACTUALIZAR
   // =====================
 
-  const handleSaveProveedor = async (data: ProveedorFormData) => {
+  const handleSaveProveedor = async (
+    data: ProveedorFormData & { credito_inicial?: number | null }
+  ) => {
     if (!profile?.empresa_id) return
 
     setIsSubmitting(true)
     setError(null)
 
     try {
-      const { error } = await supabase.from('proveedores').insert({
-        ...data,
-        empresa_id: profile.empresa_id,
-      })
+      // separate credito_inicial from the proveedor payload so we don't send it
+      // to the `proveedores` table (it belongs to `proveedores_credito`)
+      const { credito_inicial, ...provPayload } = data as any
 
-      if (error) throw error
+      const { data: newProv, error: provError } = await supabase
+        .from('proveedores')
+        .insert({
+          ...provPayload,
+          empresa_id: profile.empresa_id,
+        })
+        .select('id_proveedor')
+        .single()
+
+      if (provError) throw provError
+
+      const proveedorId = newProv?.id_proveedor
+
+      // if credito_inicial provided, insert proveedores_credito
+      if (data.credito_inicial != null && proveedorId) {
+        const creditoVal = Number(data.credito_inicial) || 0
+        const { data: creditoResult, error: creditoErr } = await supabase
+          .from('proveedores_credito')
+          .insert({
+            empresa_id: profile.empresa_id,
+            proveedor_id: proveedorId,
+            credito_inicial: creditoVal,
+            saldo_actual: creditoVal,
+          })
+          .select()
+          .maybeSingle()
+
+        if (creditoErr) throw creditoErr
+      }
+
       setShowAddModal(false)
       fetchInitialData(profile.empresa_id)
     } catch (err: any) {
-      setError(err.message ?? 'Error al guardar proveedor')
+      const message = err?.message ?? (typeof err === 'string' ? err : JSON.stringify(err))
+      setError(message || 'Error al guardar proveedor')
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleUpdateProveedor = async (data: ProveedorFormData) => {
+  const handleUpdateProveedor = async (
+    data: ProveedorFormData & { credito_inicial?: number | null }
+  ) => {
     if (!editProveedor || !profile?.empresa_id) return
 
     setIsSubmitting(true)
     setError(null)
 
     try {
+      // separate credito_inicial from update payload so it isn't sent to `proveedores`
+      const { credito_inicial, ...provUpdate } = data as any
+
       const { error } = await supabase
         .from('proveedores')
-        .update(data)
+        .update(provUpdate)
         .eq('id_proveedor', editProveedor.id_proveedor)
 
       if (error) throw error
+
+      // update or create proveedores_credito
+      if (credito_inicial != null) {
+        const creditoVal = Number(credito_inicial) || 0
+        const { data: existing, error: existErr } = await supabase
+          .from('proveedores_credito')
+          .select('*')
+          .eq('empresa_id', profile.empresa_id)
+          .eq('proveedor_id', editProveedor.id_proveedor)
+          .maybeSingle()
+
+        if (existErr) throw existErr
+
+        if (existing) {
+          const { error: updErr } = await supabase
+            .from('proveedores_credito')
+            .update({ credito_inicial: creditoVal })
+            .eq('empresa_id', profile.empresa_id)
+            .eq('proveedor_id', editProveedor.id_proveedor)
+
+          if (updErr) throw updErr
+        } else {
+          const { error: insErr } = await supabase.from('proveedores_credito').insert({
+            empresa_id: profile.empresa_id,
+            proveedor_id: editProveedor.id_proveedor,
+            credito_inicial: creditoVal,
+            saldo_actual: creditoVal,
+          })
+          if (insErr) throw insErr
+        }
+      }
+
       setEditProveedor(null)
+      setEditProveedorCredito(null)
       fetchInitialData(profile.empresa_id)
     } catch (err: any) {
       setError(err.message ?? 'Error al actualizar proveedor')
@@ -190,7 +282,7 @@ export default function ProveedoresTable() {
                   <td className='px-6 py-4'>{p.email || '—'}</td>
                   <td className='px-6 py-4'>{p.direccion || '—'}</td>
                   <td className='px-6 py-4 text-right'>
-                    <button onClick={() => handleEditProveedor(p)}>
+                    <button onClick={() => handleEditProveedorWithCredito(p)}>
                       <Edit className='w-4 h-4' />
                     </button>
                   </td>
@@ -237,6 +329,7 @@ export default function ProveedoresTable() {
           initialData={editProveedor}
           onClose={() => setEditProveedor(null)}
           onSave={handleUpdateProveedor}
+          initialCredito={editProveedorCredito}
           isSubmitting={isSubmitting}
           error={error}
         />

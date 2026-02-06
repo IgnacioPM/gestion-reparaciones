@@ -159,9 +159,9 @@ export default function VentasTable() {
 
   // ---------------------- RENDER ----------------------
   return (
-    <div className='w-full space-y-6'>
+    <div className='w-full py-4 space-y-4'>
       {/* Header */}
-      <div className='flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4'>
+      <div className='flex flex-col sm:flex-row justify-end sm:justify-between items-start sm:items-center mb-4 gap-4'>
         <h1 className='text-2xl font-semibold text-gray-900 dark:text-gray-100'>Ventas</h1>
 
         <div className='flex items-center gap-3'>
@@ -314,38 +314,46 @@ export default function VentasTable() {
       </div>
 
       {/* Tabla */}
-      <div className='overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700'>
-        <table className='min-w-full text-sm'>
-          <thead className='bg-gray-50 dark:bg-gray-900'>
+      <div className='overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow'>
+        <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
+          <thead className='bg-gray-50 dark:bg-gray-700'>
             <tr>
-              <th className='px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300'>
+              <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
                 Cliente
               </th>
-              <th className='px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300'>
+              <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
                 Productos
               </th>
-              <th className='px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300'>
+              <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
                 Método
               </th>
-              <th className='px-4 py-3 text-left font-medium text-gray-600 dark:text-gray-300'>
+              <th className='px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
                 Fecha
               </th>
-              <th className='px-4 py-3 text-right font-medium text-gray-600 dark:text-gray-300'>
+              <th className='px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider'>
                 Total
               </th>
             </tr>
           </thead>
 
-          <tbody className='divide-y dark:divide-gray-700'>
+          <tbody className='bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700'>
             {loading ? (
-              <tr>
-                <td colSpan={5} className='py-6 text-center'>
-                  Cargando…
-                </td>
-              </tr>
+              Array(itemsPerPage)
+                .fill(0)
+                .map((_, index) => (
+                  <tr key={index} className='animate-pulse'>
+                    {Array(5)
+                      .fill(0)
+                      .map((_, cellIndex) => (
+                        <td key={cellIndex} className='px-6 py-4 whitespace-nowrap'>
+                          <div className='h-4 bg-gray-200 dark:bg-gray-700 rounded w-full'></div>
+                        </td>
+                      ))}
+                  </tr>
+                ))
             ) : paginatedVentas.length === 0 ? (
               <tr>
-                <td colSpan={5} className='py-6 text-center'>
+                <td colSpan={5} className='px-6 py-10 text-center text-gray-500 dark:text-gray-400'>
                   Sin resultados
                 </td>
               </tr>
@@ -354,16 +362,20 @@ export default function VentasTable() {
                 <tr
                   key={venta.id_venta}
                   onClick={() => handleViewVenta(venta.id_venta)}
-                  className='cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800'
+                  className='hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors'
                 >
-                  <td className='px-4 py-3'>
-                    <div className='font-medium'>{venta.cliente?.nombre || 'Consumidor final'}</div>
-                    <div className='text-xs text-gray-500'>{venta.cliente?.telefono || ''}</div>
+                  <td className='px-6 py-4 whitespace-nowrap'>
+                    <div className='font-medium text-gray-900 dark:text-white'>
+                      {venta.cliente?.nombre || 'Consumidor final'}
+                    </div>
+                    <div className='text-xs text-gray-500 dark:text-gray-400'>
+                      {venta.cliente?.telefono || ''}
+                    </div>
                   </td>
-                  <td className='px-4 py-3'>{venta.productos_preview}</td>
-                  <td className='px-4 py-3'>{venta.metodo_pago || '—'}</td>
-                  <td className='px-4 py-3'>{venta.created_at && formatDate(venta.created_at)}</td>
-                  <td className='px-4 py-3 text-right font-semibold'>
+                  <td className='px-6 py-4'>{venta.productos_preview}</td>
+                  <td className='px-6 py-4'>{venta.metodo_pago || '—'}</td>
+                  <td className='px-6 py-4'>{venta.created_at && formatDate(venta.created_at)}</td>
+                  <td className='px-6 py-4 text-right font-semibold text-gray-900 dark:text-white'>
                     <FormattedAmount amount={venta.total} />
                   </td>
                 </tr>
@@ -375,21 +387,21 @@ export default function VentasTable() {
 
       {/* Paginación */}
       {totalPages > 1 && (
-        <div className='flex items-center justify-end gap-3'>
+        <div className='flex justify-end items-center gap-2 mt-4'>
           <button
             disabled={currentPage === 1}
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            className='rounded-md p-2 hover:bg-gray-200 disabled:opacity-40 dark:hover:bg-gray-700'
+            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            className='p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50'
           >
             <ChevronLeft />
           </button>
-          <span className='text-sm'>
+          <span>
             {currentPage} / {totalPages}
           </span>
           <button
             disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            className='rounded-md p-2 hover:bg-gray-200 disabled:opacity-40 dark:hover:bg-gray-700'
+            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            className='p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50'
           >
             <ChevronRight />
           </button>

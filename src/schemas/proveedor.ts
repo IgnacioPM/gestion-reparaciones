@@ -26,6 +26,10 @@ export const proveedorSchema = z.object({
     .transform((v) => (v === '' ? null : v)),
 
   activo: z.boolean().optional(),
+  credito_inicial: z.preprocess((v) => {
+    if (v === '' || v === null || v === undefined) return undefined
+    return Number(v)
+  }, z.number().min(0).optional()),
 })
 
 export const proveedorWithIdSchema = proveedorSchema.extend({

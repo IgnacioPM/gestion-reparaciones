@@ -25,7 +25,7 @@ interface ProductoEditModalProps {
   isSubmitting?: boolean
   error?: string | null
   fabricantesIniciales?: Fabricante[]
-  initialData?: Partial<ProductoFormData & { id_producto?: string }>
+  initialData?: Partial<ProductoFormData & { id_producto?: string; id_proveedor?: string | null }>
 }
 
 export default function ProductoEditModal({
@@ -106,8 +106,10 @@ export default function ProductoEditModal({
 
       setProveedores((provs ?? []) as any)
 
-      // Si tenemos producto inicial, obtener su proveedor principal (si existe)
-      if (initialData?.id_producto) {
+      // Preferir proveedor pasado en initialData; si no, obtener el proveedor principal desde la relación
+      if (initialData?.id_proveedor) {
+        setIdProveedor(initialData.id_proveedor)
+      } else if (initialData?.id_producto) {
         const { data: rel } = await supabase
           .from('producto_proveedores')
           .select('id_proveedor')

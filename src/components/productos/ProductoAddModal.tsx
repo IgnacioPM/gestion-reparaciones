@@ -31,6 +31,7 @@ interface ProductoAddModalProps {
   error?: string | null
   fabricantesIniciales?: Fabricante[]
   onFabricanteAdded?: (fabricante: Fabricante) => void
+  initialProveedorId?: string | null
 }
 
 export default function ProductoAddModal({
@@ -41,6 +42,7 @@ export default function ProductoAddModal({
   error,
   fabricantesIniciales = [],
   onFabricanteAdded,
+  initialProveedorId,
 }: ProductoAddModalProps) {
   const { profile } = useAuthStore()
 
@@ -93,8 +95,9 @@ export default function ProductoAddModal({
       id_fabricante: undefined,
     })
 
-    setIdProveedor(null)
-  }, [isOpen, reset])
+    // prefill proveedor if provided (useful when opening from Compra form)
+    setIdProveedor(initialProveedorId ?? null)
+  }, [isOpen, reset, initialProveedorId])
 
   /** 🔹 FABRICANTES */
   useEffect(() => {

@@ -59,7 +59,7 @@ export const productoSchema = z.object({
       invalid_type_error: 'El stock actual es obligatorio',
     })
     .int()
-    .min(1, 'No se permite crear un producto con stock 0'),
+    .min(0, 'El stock no puede ser negativo'),
 
   /** ✅ CORREGIDO */
   stock_minimo: z.preprocess(

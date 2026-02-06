@@ -2,6 +2,7 @@
 
 import ClienteForm, { Cliente } from '@/components/forms/ClienteForm'
 import MarcaAddModal from '@/components/reparaciones/MarcaAddModal'
+import ObservacionesRapidasSelector from '@/components/reparaciones/ObservacionesRapidasSelector'
 import TipoDispositivoAddModal from '@/components/reparaciones/TipoDispositivoAddModal'
 import Button from '@/components/ui/Button'
 import FormError from '@/components/ui/FormError'
@@ -20,8 +21,7 @@ import utc from 'dayjs/plugin/utc'
 import { ArrowLeft, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useState } from 'react'
-import ObservacionesRapidasSelector from '@/components/reparaciones/ObservacionesRapidasSelector'
-import { useForm, useWatch, type SubmitHandler, type FieldValues } from 'react-hook-form'
+import { useForm, useWatch, type FieldValues, type SubmitHandler } from 'react-hook-form'
 
 // Plugins de dayjs
 const pluginsInitialized: boolean =
@@ -84,11 +84,8 @@ export default function NuevoServicioPage() {
     if (error) {
       console.error('Error fetching tipos de dispositivo:', error)
     } else {
-      console.log('Fetching tipos de dispositivo for empresa_id:', profile?.empresa_id)
       setTiposDispositivo(data)
-      console.log('Fetched tipos de dispositivo:', data)
       const defaultTipo = data.find((tipo) => tipo.predeterminado)
-      console.log('Default tipo de dispositivo found:', defaultTipo)
       if (defaultTipo) {
         setValue('tipo_dispositivo', defaultTipo.id_tipo, { shouldValidate: true })
       }
@@ -131,7 +128,6 @@ export default function NuevoServicioPage() {
       setTiposDispositivo(data)
 
       const defaultTipo = data.find((tipo) => !!tipo.predeterminado)
-      console.log('Default tipo de dispositivo:', defaultTipo)
 
       if (defaultTipo) {
         requestAnimationFrame(() => {
@@ -432,12 +428,12 @@ export default function NuevoServicioPage() {
                   <div>
                     <Input
                       label='Costo estimado'
-                                            type='text'
-                                            inputMode='decimal'
-                                            {...register('costo_estimado')}
-                                            error={errors.costo_estimado?.message}
-                                            placeholder='0.00'
-                                          />
+                      type='text'
+                      inputMode='decimal'
+                      {...register('costo_estimado')}
+                      error={errors.costo_estimado?.message}
+                      placeholder='0.00'
+                    />
                   </div>
                 </div>
 

@@ -13,7 +13,7 @@ import { useAuthStore } from '@/stores/auth'
 import { ProductoConFabricanteRow } from '@/types/producto_con_fabricante'
 import { ArrowLeft, Minus, Plus, Trash } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
 interface VentaItem {
@@ -41,6 +41,8 @@ export default function NuevaVentaPage() {
   const [fabricantes, setFabricantes] = useState<{ id_fabricante: string; nombre: string }[]>([])
   const [isSubmittingNewProduct, setIsSubmittingNewProduct] = useState(false)
   const [newProductError, setNewProductError] = useState<string | null>(null)
+  const [attemptedOverDiscount, setAttemptedOverDiscount] = useState(false)
+  const overDiscountTimerRef = useRef<number | null>(null)
 
   /* =========================
      CLIENTE GENÉRICO
@@ -148,9 +150,10 @@ export default function NuevaVentaPage() {
 
     setResultados(
       productos
-        .filter(
-          (p) => p.nombre.toLowerCase().includes(q) || p.fabricante.nombre.toLowerCase().includes(q)
-        )
+        .filter((p) => {
+          const nombreFabricante = p.fabricante.nombre || ''
+          return p.nombre.toLowerCase().includes(q) || nombreFabricante.toLowerCase().includes(q)
+        })
         .slice(0, 10)
     )
   }, [query, productos])
@@ -200,7 +203,18 @@ export default function NuevaVentaPage() {
 
         const parsed = Number.isFinite(descuento) ? descuento : 0
         const max = Number(item.producto.precio_venta ?? 0)
-        const capped = Math.min(Math.max(0, parsed), max)
+        const maxDescuentoPermitido = (max * (profile?.descuento_maximo ?? 0)) / 100
+        const capped = Math.min(Math.max(0, parsed), Math.min(max, maxDescuentoPermitido))
+
+        // Si el usuario intenta aplicar más descuento del permitido, mostramos alerta breve
+        if (parsed > Math.min(max, maxDescuentoPermitido)) {
+          setAttemptedOverDiscount(true)
+          if (overDiscountTimerRef.current) window.clearTimeout(overDiscountTimerRef.current)
+          overDiscountTimerRef.current = window.setTimeout(
+            () => setAttemptedOverDiscount(false),
+            3000
+          )
+        }
 
         const porcentaje = max > 0 ? Number(((capped / max) * 100).toFixed(2)) : null
 
@@ -219,9 +233,20 @@ export default function NuevaVentaPage() {
         if (item.producto.id_producto !== id) return item
 
         const parsedPct = Number.isFinite(porcentaje) ? porcentaje : 0
-        const cappedPct = Math.min(Math.max(0, parsedPct), 100)
+        const userMaxPercent = profile?.descuento_maximo ?? 0
+        const cappedPct = Math.min(Math.max(0, parsedPct), userMaxPercent)
         const max = Number(item.producto.precio_venta ?? 0)
         const computed = Number(((cappedPct / 100) * max).toFixed(2))
+
+        // Detectar intento de descuento por encima del permitido
+        if (parsedPct > userMaxPercent) {
+          setAttemptedOverDiscount(true)
+          if (overDiscountTimerRef.current) window.clearTimeout(overDiscountTimerRef.current)
+          overDiscountTimerRef.current = window.setTimeout(
+            () => setAttemptedOverDiscount(false),
+            3000
+          )
+        }
 
         return {
           ...item,
@@ -462,132 +487,141 @@ export default function NuevaVentaPage() {
 
             {/* ITEMS AGREGADOS */}
             {items.length > 0 && (
-              <div className='overflow-x-auto'>
-                <table className='w-full text-sm border-collapse'>
-                  <thead>
-                    <tr className='text-xs font-semibold text-gray-600 dark:text-gray-300 border-b dark:border-gray-600'>
-                      <th className='text-left py-2 px-2'>Producto</th>
-                      <th className='text-left py-2 px-2'>Cantidad</th>
-                      <th className='text-right py-2 px-2'>Precio</th>
-                      <th className='text-left py-2 px-2'>Descuento</th>
-                      <th className='text-left py-2 px-2'>%</th>
-                      <th className='text-right py-2 px-2'>Subtotal</th>
-                      <th className='text-center py-2 px-2'>Acción</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((item) => (
-                      <tr
-                        key={item.producto.id_producto}
-                        className='bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
-                      >
-                        {/* PRODUCTO */}
-                        <td className='py-2 px-2 text-left'>
-                          <div className='text-sm font-semibold truncate'>
-                            {item.producto.fabricante.nombre}
-                          </div>
-                          <div className='text-xs truncate text-gray-700 dark:text-gray-300'>
-                            {item.producto.nombre}
-                          </div>
-                        </td>
+              <>
+                {attemptedOverDiscount && (profile?.descuento_maximo ?? 0) > 0 && (
+                  <div className='bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded p-3 mb-4'>
+                    <p className='text-sm text-blue-700 dark:text-blue-300'>
+                      ℹ️ Descuento máximo permitido:{' '}
+                      <span className='font-semibold'>{profile?.descuento_maximo}%</span>
+                    </p>
+                  </div>
+                )}
+                <div className='overflow-x-auto'>
+                  <table className='w-full text-sm border-collapse'>
+                    <thead>
+                      <tr className='text-xs font-semibold text-gray-600 dark:text-gray-300 border-b dark:border-gray-600'>
+                        <th className='text-left py-2 px-2'>Producto</th>
+                        <th className='text-left py-2 px-2'>Cantidad</th>
+                        <th className='text-right py-2 px-2'>Precio</th>
+                        <th className='text-left py-2 px-2 text-sm'>Descuento</th>
+                        <th className='text-left py-2 px-2 text-sm'>%</th>
+                        <th className='text-right py-2 px-2'>Subtotal</th>
+                        <th className='text-center py-2 px-2'>Acción</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {items.map((item) => (
+                        <tr
+                          key={item.producto.id_producto}
+                          className='bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                        >
+                          {/* PRODUCTO */}
+                          <td className='py-2 px-2 text-left'>
+                            <div className='text-sm font-semibold truncate'>
+                              {item.producto.fabricante.nombre}
+                            </div>
+                            <div className='text-xs truncate text-gray-700 dark:text-gray-300'>
+                              {item.producto.nombre}
+                            </div>
+                          </td>
 
-                        {/* CANTIDAD */}
-                        <td className='py-2 px-2 text-left'>
-                          <div className='flex items-center gap-1'>
-                            <Minus
-                              className='w-4 h-4 cursor-pointer hover:text-blue-500'
-                              onClick={() =>
-                                updateCantidad(item.producto.id_producto, item.cantidad - 1)
-                              }
-                            />
-                            <input
-                              type='number'
-                              min={1}
-                              max={item.producto.stock_actual}
-                              value={item.cantidad}
-                              onChange={(e) =>
-                                updateCantidad(item.producto.id_producto, Number(e.target.value))
-                              }
-                              className='w-12 text-center border rounded dark:bg-gray-800 py-1'
-                            />
-                            <Plus
-                              className='w-4 h-4 cursor-pointer hover:text-blue-500'
-                              onClick={() =>
-                                updateCantidad(item.producto.id_producto, item.cantidad + 1)
-                              }
-                            />
-                          </div>
-                        </td>
+                          {/* CANTIDAD */}
+                          <td className='py-2 px-2 text-left'>
+                            <div className='flex items-center gap-1'>
+                              <Minus
+                                className='w-4 h-4 cursor-pointer hover:text-blue-500'
+                                onClick={() =>
+                                  updateCantidad(item.producto.id_producto, item.cantidad - 1)
+                                }
+                              />
+                              <input
+                                type='number'
+                                min={1}
+                                max={item.producto.stock_actual}
+                                value={item.cantidad}
+                                onChange={(e) =>
+                                  updateCantidad(item.producto.id_producto, Number(e.target.value))
+                                }
+                                className='w-12 text-center border rounded dark:bg-gray-800 py-1'
+                              />
+                              <Plus
+                                className='w-4 h-4 cursor-pointer hover:text-blue-500'
+                                onClick={() =>
+                                  updateCantidad(item.producto.id_producto, item.cantidad + 1)
+                                }
+                              />
+                            </div>
+                          </td>
 
-                        {/* PRECIO UNITARIO */}
-                        <td className='py-2 px-2 text-right'>
-                          ₡{Number(item.producto.precio_venta).toLocaleString('es-CR')}
-                        </td>
+                          {/* PRECIO UNITARIO */}
+                          <td className='py-2 px-2 text-right'>
+                            ₡{Number(item.producto.precio_venta).toLocaleString('es-CR')}
+                          </td>
 
-                        {/* DESCUENTO monto */}
-                        <td className='py-2 px-2 text-left'>
-                          <input
-                            type='number'
-                            min={0}
-                            max={item.producto.precio_venta}
-                            step='0.01'
-                            value={item.descuento_monto}
-                            onChange={(e) =>
-                              updateDescuento(item.producto.id_producto, Number(e.target.value))
-                            }
-                            disabled={metodoPago === 'tarjeta'}
-                            className='w-20 text-center border rounded dark:bg-gray-800 py-1 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-gray-600'
-                          />
-                        </td>
-
-                        {/* DESCUENTO porcentaje */}
-                        <td className='py-2 px-2 text-left'>
-                          <div className='flex items-center gap-1'>
+                          {/* DESCUENTO monto */}
+                          <td className='py-2 px-4 text-left'>
                             <input
                               type='number'
                               min={0}
-                              max={100}
+                              max={item.producto.precio_venta}
                               step='0.01'
-                              value={item.descuento_porcentaje ?? 0}
+                              value={item.descuento_monto}
                               onChange={(e) =>
-                                updateDescuentoPercent(
-                                  item.producto.id_producto,
-                                  Number(e.target.value)
-                                )
+                                updateDescuento(item.producto.id_producto, Number(e.target.value))
                               }
                               disabled={metodoPago === 'tarjeta'}
-                              className='w-14 text-center border rounded dark:bg-gray-800 py-1 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-gray-600'
-                              title='Descuento %'
+                              className='w-28 text-center border rounded dark:bg-gray-800 py-1 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-gray-600'
                             />
-                            <span className='text-xs'>%</span>
-                          </div>
-                        </td>
+                          </td>
 
-                        {/* SUBTOTAL */}
-                        <td className='py-2 px-2 text-right font-semibold'>
-                          ₡
-                          {(
-                            item.cantidad * item.producto.precio_venta -
-                            item.descuento_monto * item.cantidad
-                          ).toLocaleString('es-CR')}
-                        </td>
+                          {/* DESCUENTO porcentaje */}
+                          <td className='py-2 px-4 text-left'>
+                            <div className='flex items-center gap-1'>
+                              <input
+                                type='number'
+                                min={0}
+                                max={profile?.descuento_maximo ?? 100}
+                                step='0.01'
+                                value={item.descuento_porcentaje ?? 0}
+                                onChange={(e) =>
+                                  updateDescuentoPercent(
+                                    item.producto.id_producto,
+                                    Number(e.target.value)
+                                  )
+                                }
+                                disabled={metodoPago === 'tarjeta'}
+                                className='w-20 text-center border rounded dark:bg-gray-800 py-1 disabled:bg-gray-300 disabled:cursor-not-allowed dark:disabled:bg-gray-600'
+                              />
+                              <span className='text-xs'>%</span>
+                            </div>
+                          </td>
 
-                        {/* ELIMINAR */}
-                        <td className='py-2 px-2 text-center'>
-                          <button
-                            type='button'
-                            onClick={() => setItems(items.filter((i) => i !== item))}
-                            className='inline-flex items-center justify-center w-8 h-8 rounded hover:bg-red-100 dark:hover:bg-red-600'
-                            aria-label='Eliminar producto'
-                          >
-                            <Trash className='w-4 h-4 text-red-500' />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                          {/* SUBTOTAL */}
+                          <td className='py-2 px-2 text-right font-semibold'>
+                            ₡
+                            {(
+                              item.cantidad * item.producto.precio_venta -
+                              item.descuento_monto * item.cantidad
+                            ).toLocaleString('es-CR')}
+                          </td>
+
+                          {/* ELIMINAR */}
+                          <td className='py-2 px-2 text-center'>
+                            <button
+                              type='button'
+                              onClick={() => setItems(items.filter((i) => i !== item))}
+                              className='inline-flex items-center justify-center w-8 h-8 rounded hover:bg-red-100 dark:hover:bg-red-600'
+                              aria-label='Eliminar producto'
+                            >
+                              <Trash className='w-4 h-4 text-red-500' />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
 
             {/* PAGO + TOTAL */}
@@ -611,11 +645,16 @@ export default function NuevaVentaPage() {
                 )}
               </div>
 
-              <div className='text-right'>
-                <div className='text-gray-500'>
-                  Descuento: ₡{totalDescuento.toLocaleString('es-CR')}
+              <div className='text-right space-y-2'>
+                <div className='text-sm text-gray-600 dark:text-gray-400'>
+                  Subtotal: ₡{(total + totalDescuento).toLocaleString('es-CR')}
                 </div>
-                <div className='text-xl font-bold dark:text-white'>
+                {totalDescuento > 0 && (
+                  <div className='text-sm text-green-600 dark:text-green-400'>
+                    Descuento: - ₡{totalDescuento.toLocaleString('es-CR')}
+                  </div>
+                )}
+                <div className='text-xl font-bold dark:text-white border-t pt-2 dark:border-gray-600'>
                   Total: ₡{total.toLocaleString('es-CR')}
                 </div>
               </div>
