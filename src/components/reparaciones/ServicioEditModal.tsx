@@ -44,6 +44,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
   )
 
   const [notaTrabajo, setNotaTrabajo] = useState(servicio.nota_trabajo ?? '')
+  const [descripcionFalla, setDescripcionFalla] = useState(servicio.descripcion_falla ?? '')
   const [mensajes, setMensajes] = useState<MensajeWhatsapp[]>([])
   const { profile } = useAuthStore()
 
@@ -76,6 +77,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
       estado,
       costo_final: costoFinal === '' ? null : Number(costoFinal),
       nota_trabajo: notaTrabajo,
+      descripcion_falla: descripcionFalla,
     }
 
     if (estado === 'Entregado') {
@@ -102,7 +104,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
       `${servicio.equipo?.marcas?.nombre || ''} ` +
       `${servicio.equipo?.modelo || ''}`.trim()
 
-    const problema = servicio.descripcion_falla || 'No especificado'
+    const problema = descripcionFalla || servicio.descripcion_falla || 'No especificado'
     const costoEst = costoEstimado || servicio.costo_estimado || '-'
     const costoFin = costoFinal || servicio.costo_final || '-'
 
@@ -110,6 +112,7 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
       .replace(/{cliente}/g, clienteNombre)
       .replace(/{equipo}/g, equipoInfo)
       .replace(/{problema}/g, problema)
+      .replace(/{descripcion_falla}/g, problema)
       .replace(/{costo_estimado}/g, `₡${costoEst}`)
       .replace(/{costo_final}/g, `₡${costoFin}`)
 
@@ -199,6 +202,18 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
                   </div>
                 )}
               </>
+            }
+          />
+
+          <InfoRow
+            label='Descripción del problema'
+            value={
+              <Textarea
+                value={descripcionFalla}
+                onChange={(e) => setDescripcionFalla(e.target.value)}
+                rows={3}
+                className='w-full'
+              />
             }
           />
 

@@ -222,6 +222,7 @@ export default function ServicioDetallePageWrapper({
       .replace(/{cliente}/g, clienteNombre)
       .replace(/{equipo}/g, equipoInfo)
       .replace(/{problema}/g, problema)
+      .replace(/{descripcion_falla}/g, problema)
       .replace(/{costo_estimado}/g, `₡${costoEst}`)
       .replace(/{costo_final}/g, `₡${costoFin}`)
 

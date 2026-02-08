@@ -48,9 +48,11 @@ export default function ClienteForm({ clienteInicial = null, onClienteChange }: 
     if (field === 'telefono') setTelefono(value)
     if (field === 'correo') setCorreo(value)
 
-    // 🔥 Si había un cliente seleccionado y se edita el nombre → romper selección
-    if (field === 'nombre' && clienteSeleccionado) {
-      setClienteSeleccionado(null)
+    // 🔥 Si se edita el nombre → romper selección y activar búsqueda
+    if (field === 'nombre') {
+      if (clienteSeleccionado) {
+        setClienteSeleccionado(null)
+      }
       setBusquedaActiva(true)
     }
 
