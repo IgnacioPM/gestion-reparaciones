@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState } from 'react'
 import FiltrosServicios from './FiltrosServicios'
+import EstadoServicioModal from './EstadoServicioModal'
 
 interface Servicio {
   id_reparacion: string
@@ -42,6 +43,10 @@ export default function ServiciosTable() {
   const [fechaHasta, setFechaHasta] = useState<string>('')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
+  const [isEstadoModalOpen, setIsEstadoModalOpen] = useState(false)
+  const [selectedServicio, setSelectedServicio] = useState<Servicio | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [estadoError, setEstadoError] = useState<string | null>(null)
 
   const estados = [
     { value: 'todos', label: 'Todos' },
@@ -264,6 +269,52 @@ export default function ServiciosTable() {
     setFechaHasta('')
   }
 
+  const handleEstadoClick = (e: React.MouseEvent, servicio: Servicio) => {
+    e.stopPropagation() // Evitar que se active el onClick de la fila
+    setSelectedServicio(servicio)
+    setIsEstadoModalOpen(true)
+    setEstadoError(null)
+  }
+
+  const handleUpdateEstado = async (nuevoEstado: string) => {
+    if (!selectedServicio) return
+
+    try {
+      setIsSubmitting(true)
+      setEstadoError(null)
+
+      const updateData: any = { estado: nuevoEstado }
+
+      // Si el estado es "Entregado", actualizar la fecha de entrega
+      if (nuevoEstado === 'Entregado') {
+        updateData.fecha_entrega = new Date().toISOString()
+      }
+
+      const { error: updateError } = await supabase
+        .from('servicios')
+        .update(updateData)
+        .eq('id_reparacion', selectedServicio.id_reparacion)
+
+      if (updateError) throw updateError
+
+      // Actualizar el estado local
+      setAllServicios((prev) =>
+        prev.map((s) =>
+          s.id_reparacion === selectedServicio.id_reparacion
+            ? { ...s, estado: nuevoEstado as Servicio['estado'], fecha_entrega: updateData.fecha_entrega ?? s.fecha_entrega }
+            : s
+        )
+      )
+      setIsEstadoModalOpen(false)
+      setSelectedServicio(null)
+    } catch (e: any) {
+      console.error('Error actualizando estado:', e)
+      setEstadoError(e.message || 'Error al actualizar el estado')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   // ---------------------- RENDER ----------------------
   return (
     <div className='w-full'>
@@ -402,7 +453,13 @@ export default function ServiciosTable() {
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap'>
                     <span
-                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getBadgeColor(servicio.estado ?? 'Recibido')}`}
+                      onClick={(e) => servicio.estado !== 'Entregado' && handleEstadoClick(e, servicio)}
+                      className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                        servicio.estado !== 'Entregado' 
+                          ? 'cursor-pointer hover:opacity-80 transition-opacity' 
+                          : 'cursor-not-allowed opacity-75'
+                      } ${getBadgeColor(servicio.estado ?? 'Recibido')}`}
+                      title={servicio.estado !== 'Entregado' ? 'Click para cambiar estado' : 'No se puede cambiar el estado de un servicio entregado'}
                     >
                       {estados.find((e) => e.value === servicio.estado)?.label ?? servicio.estado}
                     </span>
@@ -448,6 +505,21 @@ export default function ServiciosTable() {
           </button>
         </div>
       )}
+
+      {/* Modal de cambio de estado */}
+      <EstadoServicioModal
+        isOpen={isEstadoModalOpen}
+        onClose={() => {
+          setIsEstadoModalOpen(false)
+          setSelectedServicio(null)
+          setEstadoError(null)
+        }}
+        onSave={handleUpdateEstado}
+        isSubmitting={isSubmitting}
+        currentEstado={selectedServicio?.estado || null}
+        numeroServicio={selectedServicio?.numero_servicio || null}
+        error={estadoError}
+      />
     </div>
   )
 }
