@@ -6,9 +6,10 @@ import Navbar from '@/components/ui/Navbar'
 import SectionTitle from '@/components/ui/SectionTitle'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Edit } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import MetodoPagoEditModal from '@/components/ventas/MetodoPagoEditModal'
 
 // Tipos de datos para la página de detalle de venta
 interface VentaDetalleItem {
@@ -55,6 +56,9 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
   const [venta, setVenta] = useState<VentaConDetalles | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [editError, setEditError] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchVenta = async () => {
@@ -153,6 +157,31 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
     fetchVenta()
   }, [params])
 
+  const handleUpdateMetodoPago = async (nuevoMetodo: string) => {
+    if (!venta) return
+
+    try {
+      setIsSubmitting(true)
+      setEditError(null)
+
+      const { error: updateError } = await supabase
+        .from('ventas')
+        .update({ metodo_pago: nuevoMetodo })
+        .eq('id_venta', venta.id_venta)
+
+      if (updateError) throw updateError
+
+      // Actualizar el estado local
+      setVenta({ ...venta, metodo_pago: nuevoMetodo })
+      setIsEditModalOpen(false)
+    } catch (e: any) {
+      console.error('Error actualizando método de pago:', e)
+      setEditError(e.message || 'Error al actualizar el método de pago')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className='min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center'>
@@ -214,7 +243,26 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
 
             <InfoBlock title={<SectionTitle>Venta</SectionTitle>}>
               <InfoRow label='Fecha' value={formatFechaSimple(venta.fecha)} />
-              <InfoRow label='Método de Pago' value={venta.metodo_pago} />
+              <div className='flex items-center gap-2 py-2'>
+                <span className='text-sm font-medium text-gray-600 dark:text-gray-400'>
+                  Método de Pago:
+                </span>
+                <span className='text-sm text-gray-900 dark:text-white'>
+                  {venta.metodo_pago === 'efectivo' && 'Efectivo'}
+                  {venta.metodo_pago === 'tarjeta' && 'Tarjeta'}
+                  {venta.metodo_pago === 'sinpe' && 'SINPE'}
+                  {!venta.metodo_pago && 'No especificado'}
+                </span>
+                {profile?.rol === 'Admin' && (
+                  <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className='text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300'
+                    title='Editar método de pago'
+                  >
+                    <Edit className='h-4 w-4' />
+                  </button>
+                )}
+              </div>
               <InfoRow
                 label='Total Descuento'
                 value={<FormattedAmount amount={venta.total_descuento} />}
@@ -320,6 +368,21 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
             </Link>
           </div>
         </div>
+
+        {/* Modal de edición de método de pago */}
+        {profile?.rol === 'Admin' && (
+          <MetodoPagoEditModal
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false)
+              setEditError(null)
+            }}
+            onSave={handleUpdateMetodoPago}
+            isSubmitting={isSubmitting}
+            currentMetodo={venta.metodo_pago}
+            error={editError}
+          />
+        )}
       </main>
     </div>
   )
