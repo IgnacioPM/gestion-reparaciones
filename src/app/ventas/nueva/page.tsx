@@ -152,7 +152,12 @@ export default function NuevaVentaPage() {
       productos
         .filter((p) => {
           const nombreFabricante = p.fabricante.nombre || ''
-          return p.nombre.toLowerCase().includes(q) || nombreFabricante.toLowerCase().includes(q)
+          const descripcionProducto = p.descripcion || ''
+          return (
+            p.nombre.toLowerCase().includes(q) ||
+            descripcionProducto.toLowerCase().includes(q) ||
+            nombreFabricante.toLowerCase().includes(q)
+          )
         })
         .slice(0, 10)
     )
@@ -445,7 +450,7 @@ export default function NuevaVentaPage() {
                 <div className='flex-grow'>
                   <Input
                     label='Buscar producto'
-                    placeholder='Fabricante, nombre o escanear código'
+                    placeholder='Fabricante, nombre, descripción o escanear código'
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                   />

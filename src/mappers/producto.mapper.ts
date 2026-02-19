@@ -3,6 +3,7 @@ import { ProductoConFabricanteRow } from '@/types/producto_con_fabricante'
 export interface Producto {
   id_producto: string
   nombre: string
+  descripcion: string | null
   codigo_barras: string | null
   precio_venta: number
   costo: number | null
@@ -17,6 +18,7 @@ export function mapProductoConFabricante(row: ProductoConFabricanteRow): Product
   return {
     id_producto: row.id_producto,
     nombre: row.nombre,
+    descripcion: row.descripcion,
     codigo_barras: row.codigo_barras,
     precio_venta: row.precio_venta,
     costo: row.costo,

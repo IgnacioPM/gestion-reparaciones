@@ -196,6 +196,7 @@ export default function ProductosTable() {
 
     return allProductos.filter((p) => {
       const nombreMatches = p.nombre.toLowerCase().includes(q)
+      const descripcionMatches = p.descripcion?.toLowerCase().includes(q) ?? false
       const codigoMatches = p.codigo_barras?.toLowerCase().includes(q) ?? false
 
       const fabricanteNombre =
@@ -208,7 +209,12 @@ export default function ProductosTable() {
       const proveedorMatches = proveedorNombre.toLowerCase().includes(q)
 
       const matchesQuery =
-        q === '' || nombreMatches || codigoMatches || fabricanteMatches || proveedorMatches
+        q === '' ||
+        nombreMatches ||
+        descripcionMatches ||
+        codigoMatches ||
+        fabricanteMatches ||
+        proveedorMatches
 
       const matchesFabricante =
         !selectedFabricante ||
@@ -352,7 +358,7 @@ export default function ProductosTable() {
             ref={searchInputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder='Buscar por producto, código, fabricante o proveedor'
+            placeholder='Buscar por producto, descripción, código, fabricante o proveedor'
             className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800'
           />
         </div>
