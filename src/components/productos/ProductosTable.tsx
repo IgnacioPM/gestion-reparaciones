@@ -230,8 +230,9 @@ export default function ProductosTable() {
   const { totalPrecioVentaFiltrado, totalCostoFiltrado } = useMemo(() => {
     return filteredProductos.reduce(
       (acc, producto) => {
-        acc.totalPrecioVentaFiltrado += producto.precio_venta ?? 0
-        acc.totalCostoFiltrado += producto.costo ?? 0
+        const stock = producto.stock_actual ?? 0
+        acc.totalPrecioVentaFiltrado += (producto.precio_venta ?? 0) * stock
+        acc.totalCostoFiltrado += (producto.costo ?? 0) * stock
         return acc
       },
       { totalPrecioVentaFiltrado: 0, totalCostoFiltrado: 0 }
