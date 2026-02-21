@@ -227,6 +227,17 @@ export default function ProductosTable() {
     })
   }, [allProductos, searchQuery, selectedFabricante, selectedProveedor, fabricantes])
 
+  const { totalPrecioVentaFiltrado, totalCostoFiltrado } = useMemo(() => {
+    return filteredProductos.reduce(
+      (acc, producto) => {
+        acc.totalPrecioVentaFiltrado += producto.precio_venta ?? 0
+        acc.totalCostoFiltrado += producto.costo ?? 0
+        return acc
+      },
+      { totalPrecioVentaFiltrado: 0, totalCostoFiltrado: 0 }
+    )
+  }, [filteredProductos])
+
   // =====================
   // PAGINACIÓN
   // =====================
@@ -411,6 +422,22 @@ export default function ProductosTable() {
       </div>
 
       <div className='overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow'>
+        <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border-b border-gray-200 dark:border-gray-700'>
+          <div className='p-3 bg-gray-100 dark:bg-gray-700 rounded-lg'>
+            <h3 className='text-sm font-medium text-gray-500 dark:text-gray-400'>Total Precio Venta</h3>
+            <p className='mt-1 text-xl font-semibold text-gray-900 dark:text-white'>
+              <FormattedAmount amount={totalPrecioVentaFiltrado} />
+            </p>
+          </div>
+
+          <div className='p-3 bg-gray-100 dark:bg-gray-700 rounded-lg'>
+            <h3 className='text-sm font-medium text-gray-500 dark:text-gray-400'>Total Costo</h3>
+            <p className='mt-1 text-xl font-semibold text-gray-900 dark:text-white'>
+              <FormattedAmount amount={totalCostoFiltrado} />
+            </p>
+          </div>
+        </div>
+
         <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
           <thead className='bg-gray-50 dark:bg-gray-700'>
             <tr>
@@ -418,6 +445,7 @@ export default function ProductosTable() {
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Proveedor</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Producto</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Fabricante</th>
+              <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Costo</th>
               <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Precio</th>
               <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Stock</th>
               <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Acciones</th>
@@ -432,6 +460,9 @@ export default function ProductosTable() {
                 <td className='px-6 py-4'>{p.proveedor?.nombre || '—'}</td>
                 <td className='px-6 py-4'>{p.nombre}</td>
                 <td className='px-6 py-4'>{p.fabricante?.nombre || '—'}</td>
+                <td className='px-6 py-4 text-right'>
+                  {p.costo != null ? <FormattedAmount amount={p.costo} /> : '—'}
+                </td>
                 <td className='px-6 py-4 text-right'>
                   <FormattedAmount amount={p.precio_venta} />
                 </td>
