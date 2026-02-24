@@ -15,4 +15,6 @@ export interface Producto {
   stock_minimo: number | null
   activo: boolean | null
   created_at: string | null
+  id_ubicacion_principal?: string | null
+  id_ubicacion_secundaria?: string | null
 }

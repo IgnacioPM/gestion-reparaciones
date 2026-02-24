@@ -287,6 +287,49 @@ export interface Database {
           descripcion?: string | null
         }
       }
+      ubicaciones_catalogo: {
+        Row: {
+          id_catalogo: string
+          empresa_id: string
+          nombre: string
+          activo: boolean | null
+          created_at: string | null
+        }
+        Insert: {
+          id_catalogo?: string
+          empresa_id: string
+          nombre: string
+          activo?: boolean | null
+          created_at?: string | null
+        }
+        Update: {
+          nombre?: string
+          activo?: boolean | null
+        }
+      }
+      ubicaciones: {
+        Row: {
+          id_ubicacion: string
+          empresa_id: string
+          codigo: string
+          activo: boolean | null
+          created_at: string | null
+          id_catalogo: string
+        }
+        Insert: {
+          id_ubicacion?: string
+          empresa_id: string
+          codigo: string
+          activo?: boolean | null
+          created_at?: string | null
+          id_catalogo: string
+        }
+        Update: {
+          codigo?: string
+          activo?: boolean | null
+          id_catalogo?: string
+        }
+      }
     }
     Views: object
     Functions: object

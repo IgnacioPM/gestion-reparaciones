@@ -12,6 +12,24 @@ export interface Producto {
     id_fabricante?: string
     nombre: string
   }
+  ubicacion_principal?: {
+    id_ubicacion?: string
+    codigo?: string
+    id_catalogo?: string | null
+    catalogo?: {
+      id_catalogo?: string
+      nombre?: string
+    } | null
+  } | null
+  ubicacion_secundaria?: {
+    id_ubicacion?: string
+    codigo?: string
+    id_catalogo?: string | null
+    catalogo?: {
+      id_catalogo?: string
+      nombre?: string
+    } | null
+  } | null
 }
 
 export function mapProductoConFabricante(row: ProductoConFabricanteRow): Producto {
@@ -29,5 +47,37 @@ export function mapProductoConFabricante(row: ProductoConFabricanteRow): Product
           nombre: row.fabricante?.nombre ?? 'Sin fabricante',
         }
       : { nombre: 'Sin fabricante' },
+    ubicacion_principal: row.ubicacion_principal
+      ? {
+          id_ubicacion:
+            (row.ubicacion_principal as any).id_ubicacion || (row.ubicacion_principal as any).id,
+          codigo: row.ubicacion_principal.codigo,
+          id_catalogo: (row.ubicacion_principal as any).id_catalogo || null,
+          catalogo: row.ubicacion_principal_catalogo
+            ? {
+                id_catalogo:
+                  (row.ubicacion_principal_catalogo as any).id_catalogo ||
+                  (row.ubicacion_principal_catalogo as any).id,
+                nombre: row.ubicacion_principal_catalogo.nombre,
+              }
+            : null,
+        }
+      : null,
+    ubicacion_secundaria: row.ubicacion_secundaria
+      ? {
+          id_ubicacion:
+            (row.ubicacion_secundaria as any).id_ubicacion || (row.ubicacion_secundaria as any).id,
+          codigo: row.ubicacion_secundaria.codigo,
+          id_catalogo: (row.ubicacion_secundaria as any).id_catalogo || null,
+          catalogo: row.ubicacion_secundaria_catalogo
+            ? {
+                id_catalogo:
+                  (row.ubicacion_secundaria_catalogo as any).id_catalogo ||
+                  (row.ubicacion_secundaria_catalogo as any).id,
+                nombre: row.ubicacion_secundaria_catalogo.nombre,
+              }
+            : null,
+        }
+      : null,
   }
 }

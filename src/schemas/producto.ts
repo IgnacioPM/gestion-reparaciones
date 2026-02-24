@@ -8,6 +8,20 @@ export const productoSchema = z.object({
     .nullable()
     .transform((v) => (v === '' ? null : v)),
 
+  id_ubicacion_principal: z
+    .string()
+    .uuid('Ubicación inválida')
+    .optional()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
+
+  id_ubicacion_secundaria: z
+    .string()
+    .uuid('Ubicación inválida')
+    .optional()
+    .nullable()
+    .transform((v) => (v === '' ? null : v)),
+
   nombre: z.string().trim().min(2, 'Nombre requerido'),
 
   descripcion: z

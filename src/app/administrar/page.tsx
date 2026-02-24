@@ -10,6 +10,7 @@ import {
   ClipboardList,
   Cpu,
   CreditCard,
+  MapPin,
   MessageSquare,
   Package,
   ShoppingCart,
@@ -60,6 +61,12 @@ const adminActions = [
     description: 'Administra los productos de venta y repuestos.',
     href: '/administrar/productos',
     icon: <Package className='w-8 h-8 text-indigo-500' />,
+  },
+  {
+    title: 'Catálogos de Ubicaciones',
+    description: 'Gestiona catálogos y códigos de ubicaciones.',
+    href: '/administrar/ubicaciones-catalogo',
+    icon: <MapPin className='w-8 h-8 text-pink-500' />,
   },
   {
     title: 'Proveedores',
