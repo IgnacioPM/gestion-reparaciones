@@ -25,6 +25,7 @@ interface Producto {
   nombre: string
   descripcion: string | null
   codigo_barras: string | null
+  id_ubicacion_principal?: string | null
   tipo: 'venta' | 'repuesto' | 'ambos'
   precio_venta: number
   costo: number | null
@@ -39,6 +40,11 @@ interface Producto {
   proveedor?: {
     id_proveedor: string
     nombre: string
+  } | null
+  ubicacion_principal?: {
+    id_ubicacion: string
+    codigo: string | null
+    catalogo_nombre?: string | null
   } | null
 }
 
@@ -107,6 +113,7 @@ export default function ProductosTable() {
         nombre: p.nombre,
         descripcion: p.descripcion ?? null,
         codigo_barras: p.codigo_barras ?? null,
+        id_ubicacion_principal: p.id_ubicacion_principal ?? null,
         tipo: p.tipo,
         precio_venta: Number(p.precio_venta) ?? 0,
         costo: p.costo != null ? Number(p.costo) : null,
@@ -116,7 +123,63 @@ export default function ProductosTable() {
         id_fabricante: p.id_fabricante ?? p.fabricante?.id_fabricante ?? null,
         fabricante: p.fabricante ?? null,
         proveedor: null,
+        ubicacion_principal: null,
       }))
+
+      // obtener ubicaciones principales de productos para mostrar un valor legible en tabla
+      const ubicacionIds = Array.from(
+        new Set(
+          normalizedProductos.map((p) => p.id_ubicacion_principal).filter(Boolean) as string[]
+        )
+      )
+
+      if (ubicacionIds.length > 0) {
+        const { data: ubicacionesData, error: ubicacionesError } = await supabase
+          .from('ubicaciones')
+          .select('id_ubicacion, codigo, id_catalogo')
+          .in('id_ubicacion', ubicacionIds)
+
+        if (!ubicacionesError && ubicacionesData) {
+          const catalogoIds = Array.from(
+            new Set(
+              (ubicacionesData as any[]).map((u) => u.id_catalogo).filter(Boolean) as string[]
+            )
+          )
+
+          const catalogoMap = new Map<string, string>()
+          if (catalogoIds.length > 0) {
+            const { data: catalogosData, error: catalogosError } = await supabase
+              .from('ubicaciones_catalogo')
+              .select('id_catalogo, nombre')
+              .in('id_catalogo', catalogoIds)
+
+            if (!catalogosError && catalogosData) {
+              ;(catalogosData as any[]).forEach((c) => {
+                catalogoMap.set(c.id_catalogo, c.nombre)
+              })
+            }
+          }
+
+          const ubicacionMap = new Map<
+            string,
+            { id_ubicacion: string; codigo: string | null; catalogo_nombre: string | null }
+          >()
+
+          ;(ubicacionesData as any[]).forEach((u) => {
+            ubicacionMap.set(u.id_ubicacion, {
+              id_ubicacion: u.id_ubicacion,
+              codigo: u.codigo ?? null,
+              catalogo_nombre: (u.id_catalogo && catalogoMap.get(u.id_catalogo)) || null,
+            })
+          })
+
+          for (const p of normalizedProductos) {
+            if (p.id_ubicacion_principal) {
+              p.ubicacion_principal = ubicacionMap.get(p.id_ubicacion_principal) ?? null
+            }
+          }
+        }
+      }
 
       // obtener relaciones producto_proveedores para mapear proveedores a productos (evita enviar id_proveedor al insertar productos)
       const productIds = normalizedProductos.map((p) => p.id_producto)
@@ -198,6 +261,13 @@ export default function ProductosTable() {
       const nombreMatches = p.nombre.toLowerCase().includes(q)
       const descripcionMatches = p.descripcion?.toLowerCase().includes(q) ?? false
       const codigoMatches = p.codigo_barras?.toLowerCase().includes(q) ?? false
+      const ubicacionPrincipalTexto = [
+        p.ubicacion_principal?.catalogo_nombre ?? '',
+        p.ubicacion_principal?.codigo ?? '',
+      ]
+        .join(' ')
+        .toLowerCase()
+      const ubicacionMatches = ubicacionPrincipalTexto.includes(q)
 
       const fabricanteNombre =
         p.fabricante?.nombre ||
@@ -213,6 +283,7 @@ export default function ProductosTable() {
         nombreMatches ||
         descripcionMatches ||
         codigoMatches ||
+        ubicacionMatches ||
         fabricanteMatches ||
         proveedorMatches
 
@@ -370,7 +441,7 @@ export default function ProductosTable() {
             ref={searchInputRef}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder='Buscar por producto, descripción, código, fabricante o proveedor'
+            placeholder='Buscar por producto, descripción, código, ubicación, fabricante o proveedor'
             className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800'
           />
         </div>
@@ -425,7 +496,9 @@ export default function ProductosTable() {
       <div className='overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow'>
         <div className='grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 border-b border-gray-200 dark:border-gray-700'>
           <div className='p-3 bg-gray-100 dark:bg-gray-700 rounded-lg'>
-            <h3 className='text-sm font-medium text-gray-500 dark:text-gray-400'>Total Precio Venta</h3>
+            <h3 className='text-sm font-medium text-gray-500 dark:text-gray-400'>
+              Total Precio Venta
+            </h3>
             <p className='mt-1 text-xl font-semibold text-gray-900 dark:text-white'>
               <FormattedAmount amount={totalPrecioVentaFiltrado} />
             </p>
@@ -442,24 +515,23 @@ export default function ProductosTable() {
         <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
           <thead className='bg-gray-50 dark:bg-gray-700'>
             <tr>
-              <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Código</th>
-              <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Proveedor</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Producto</th>
+              <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Proveedor</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Fabricante</th>
               <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Costo</th>
               <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Precio</th>
               <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Stock</th>
+              <th className='px-6 py-3 text-left text-xs font-medium uppercase'>
+                Úbicacion principal
+              </th>
               <th className='px-6 py-3 text-right text-xs font-medium uppercase'>Acciones</th>
             </tr>
           </thead>
           <tbody>
             {paginatedProductos.map((p) => (
               <tr key={p.id_producto}>
-                <td className='px-6 py-4 text-sm text-gray-600 dark:text-gray-400'>
-                  {p.codigo_barras || '—'}
-                </td>
-                <td className='px-6 py-4'>{p.proveedor?.nombre || '—'}</td>
                 <td className='px-6 py-4'>{p.nombre}</td>
+                <td className='px-6 py-4'>{p.proveedor?.nombre || '—'}</td>
                 <td className='px-6 py-4'>{p.fabricante?.nombre || '—'}</td>
                 <td className='px-6 py-4 text-right'>
                   {p.costo != null ? <FormattedAmount amount={p.costo} /> : '—'}
@@ -468,6 +540,11 @@ export default function ProductosTable() {
                   <FormattedAmount amount={p.precio_venta} />
                 </td>
                 <td className='px-6 py-4 text-right'>{p.stock_actual}</td>
+                <td className='px-6 py-4 text-sm text-gray-600 dark:text-gray-400'>
+                  {p.ubicacion_principal
+                    ? `${p.ubicacion_principal.catalogo_nombre || 'Sin catalogo'} / ${p.ubicacion_principal.codigo || 'Sin codigo'}`
+                    : 'N/A'}
+                </td>
                 <td className='px-6 py-4 text-right'>
                   <button onClick={() => handleEditProducto(p)}>
                     <Edit className='w-4 h-4' />

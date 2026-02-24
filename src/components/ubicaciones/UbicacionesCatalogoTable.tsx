@@ -4,11 +4,10 @@ import Button from '@/components/ui/Button'
 import { supabase } from '@/lib/supabaseClient'
 import { useAuthStore } from '@/stores/auth'
 import { UbicacionesCatalogo } from '@/types/ubicaciones_catalogo'
-import { Edit, Plus, Trash2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Edit, Plus, Trash2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import UbicacionesCatalogoEditModal from './UbicacionesCatalogoEditModal'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function UbicacionesCatalogoTable() {
   const { profile } = useAuthStore()
@@ -148,7 +147,10 @@ export default function UbicacionesCatalogoTable() {
             ) : (
               // paginated
               items
-                .slice((currentPage - 1) * itemsPerPage, (currentPage - 1) * itemsPerPage + itemsPerPage)
+                .slice(
+                  (currentPage - 1) * itemsPerPage,
+                  (currentPage - 1) * itemsPerPage + itemsPerPage
+                )
                 .map((item) => (
                   <tr key={item.id_catalogo}>
                     <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white'>
@@ -193,7 +195,9 @@ export default function UbicacionesCatalogoTable() {
           </span>
           <button
             disabled={currentPage === Math.ceil(items.length / itemsPerPage)}
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(items.length / itemsPerPage)))}
+            onClick={() =>
+              setCurrentPage((prev) => Math.min(prev + 1, Math.ceil(items.length / itemsPerPage)))
+            }
             className='p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50'
           >
             <ChevronRight />
