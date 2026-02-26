@@ -358,11 +358,13 @@ export default function VentasTable() {
                 </td>
               </tr>
             ) : (
-              paginatedVentas.map((venta) => (
+              paginatedVentas.map((venta, index) => (
                 <tr
                   key={venta.id_venta}
                   onClick={() => handleViewVenta(venta.id_venta)}
-                  className='hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors'
+                  className={`cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                    index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                  }`}
                 >
                   <td className='px-6 py-4 whitespace-nowrap'>
                     <div className='font-medium text-gray-900 dark:text-white'>

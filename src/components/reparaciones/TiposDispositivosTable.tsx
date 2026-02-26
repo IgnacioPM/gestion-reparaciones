@@ -132,8 +132,15 @@ export default function TiposDispositivosTable() {
                                     ) : tipos.length === 0 ? (
                                         <tr><td colSpan={3} className="text-center p-4">No hay tipos de dispositivo.</td></tr>
                                     ) : (
-                                        tipos.map((tipo) => (
-                                            <tr key={tipo.id_tipo}>
+                                        tipos.map((tipo, index) => (
+                                            <tr
+                                                key={tipo.id_tipo}
+                                                className={
+                                                    index % 2 === 0
+                                                        ? 'bg-white dark:bg-gray-800'
+                                                        : 'bg-gray-50 dark:bg-gray-700'
+                                                }
+                                            >
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{tipo.nombre}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                                                     {tipo.predeterminado && (

@@ -106,14 +106,16 @@ export default function ProveedoresCreditoPage() {
                     </td>
                   </tr>
                 ) : (
-                  filteredProveedores.map((proveedor) => {
+                  filteredProveedores.map((proveedor, index) => {
                     const creditoInicial = proveedor.credito?.credito_inicial || 0
                     const saldoActual = proveedor.credito?.saldo_actual || 0
 
                     return (
                       <tr
                         key={proveedor.id_proveedor}
-                        className='border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer'
+                        className={`border-b dark:border-gray-700 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                          index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                        }`}
                         role='button'
                         tabIndex={0}
                         onClick={() =>

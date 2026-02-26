@@ -231,10 +231,12 @@ export default function EmpleadosTable() {
                 </td>
               </tr>
             ) : (
-              empleados.map((empleado) => (
+              empleados.map((empleado, index) => (
                 <tr
                   key={empleado.id_usuario}
-                  className='hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors'
+                  className={`cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                    index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                  }`}
                   onClick={() => handleViewEmpleado(empleado)}
                 >
                   <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white'>

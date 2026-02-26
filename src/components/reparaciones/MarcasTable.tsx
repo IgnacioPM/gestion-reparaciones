@@ -160,8 +160,15 @@ export default function MarcasTable({ tiposDispositivo }: MarcasTableProps) {
                         ) : marcas.length === 0 ? (
                             <tr><td colSpan={3} className="text-center p-4">No hay marcas.</td></tr>
                         ) : (
-                            marcas.map((marca) => (
-                                <tr key={marca.id_marca}>
+                            marcas.map((marca, index) => (
+                                <tr
+                                    key={marca.id_marca}
+                                    className={
+                                        index % 2 === 0
+                                            ? 'bg-white dark:bg-gray-800'
+                                            : 'bg-gray-50 dark:bg-gray-700'
+                                    }
+                                >
                                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{marca.nombre}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">{marca.tipos_dispositivo.nombre}</td>
                                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium space-x-2">

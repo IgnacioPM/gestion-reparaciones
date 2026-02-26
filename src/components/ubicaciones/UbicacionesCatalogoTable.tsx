@@ -151,8 +151,15 @@ export default function UbicacionesCatalogoTable() {
                   (currentPage - 1) * itemsPerPage,
                   (currentPage - 1) * itemsPerPage + itemsPerPage
                 )
-                .map((item) => (
-                  <tr key={item.id_catalogo}>
+                .map((item, index) => (
+                  <tr
+                    key={item.id_catalogo}
+                    className={
+                      index % 2 === 0
+                        ? 'bg-white dark:bg-gray-800'
+                        : 'bg-gray-50 dark:bg-gray-700'
+                    }
+                  >
                     <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white'>
                       {item.nombre}
                     </td>

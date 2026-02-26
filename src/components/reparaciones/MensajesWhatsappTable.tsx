@@ -134,10 +134,12 @@ export default function MensajesWhatsappTable() {
                 </td>
               </tr>
             ) : (
-              mensajes.map((mensaje) => (
+              mensajes.map((mensaje, index) => (
                 <tr
                   key={mensaje.id}
-                  className='hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors'
+                  className={`cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                    index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                  }`}
                   onClick={() => handleViewMensaje(mensaje)}
                 >
                   <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white'>

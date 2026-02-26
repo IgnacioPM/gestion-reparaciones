@@ -620,7 +620,12 @@ export default function CompraNuevaPage() {
                   </thead>
                   <tbody>
                     {items.map((it, idx) => (
-                      <tr key={idx} className='border-b dark:border-gray-700'>
+                      <tr
+                        key={idx}
+                        className={`border-b dark:border-gray-700 ${
+                          idx % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                        }`}
+                      >
                         <td className='px-4 py-3'>
                           <div className='font-semibold'>
                             {it.producto.fabricante?.nombre} {it.producto.nombre}

@@ -242,11 +242,13 @@ export default function ComprasTable({ compras, loading }: Props) {
                 </td>
               </tr>
             ) : (
-              paginatedCompras.map((compra) => (
+              paginatedCompras.map((compra, index) => (
                 <tr
                   key={compra.id_compra}
                   onClick={() => handleView(compra.id_compra)}
-                  className='hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors'
+                  className={`cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                    index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                  }`}
                 >
                   <td className='px-6 py-4 whitespace-nowrap'>
                     <div className='font-medium text-gray-900 dark:text-white'>

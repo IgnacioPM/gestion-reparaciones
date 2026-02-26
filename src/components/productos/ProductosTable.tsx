@@ -528,8 +528,15 @@ export default function ProductosTable() {
             </tr>
           </thead>
           <tbody>
-            {paginatedProductos.map((p) => (
-              <tr key={p.id_producto}>
+            {paginatedProductos.map((p, index) => (
+              <tr
+                key={p.id_producto}
+                className={
+                  index % 2 === 0
+                    ? 'bg-white dark:bg-gray-800'
+                    : 'bg-gray-50 dark:bg-gray-700'
+                }
+              >
                 <td className='px-6 py-4'>{p.nombre}</td>
                 <td className='px-6 py-4'>{p.proveedor?.nombre || '—'}</td>
                 <td className='px-6 py-4'>{p.fabricante?.nombre || '—'}</td>

@@ -241,7 +241,7 @@ export default function MovimientosProveedorPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {paginatedMovimientos.map((mov) => (
+                      {paginatedMovimientos.map((mov, index) => (
                         <tr
                           key={mov.id_movimiento}
                           tabIndex={mov.tipo === 'cargo' && mov.compra_id ? 0 : undefined}
@@ -264,7 +264,9 @@ export default function MovimientosProveedorPage() {
                               )
                             }
                           }}
-                          className={`border-b dark:border-gray-700 ${mov.tipo === 'cargo' && mov.compra_id ? 'hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer' : ''}`}
+                          className={`border-b dark:border-gray-700 ${
+                            index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                          } ${mov.tipo === 'cargo' && mov.compra_id ? 'hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer' : ''}`}
                         >
                           <td className='px-6 py-4 dark:text-gray-300'>
                             {new Date(mov.created_at || '').toLocaleDateString('es-CR')}

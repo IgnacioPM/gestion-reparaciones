@@ -85,7 +85,12 @@ export default function ReportesTable({ servicios, loading }: ReportesTableProps
             </tr>
           ) : (
             servicios.map((servicio, index) => (
-              <tr key={index} className='hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors'>
+              <tr
+                key={index}
+                className={`transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                  index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                }`}
+              >
                 <td className='px-6 py-4 whitespace-nowrap'>
                   <div className='text-sm text-gray-900 dark:text-white'>
                     {servicio.equipo?.tipos_dispositivo?.nombre || 'N/A'}

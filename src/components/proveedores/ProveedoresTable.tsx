@@ -275,8 +275,15 @@ export default function ProveedoresTable() {
                 </td>
               </tr>
             ) : (
-              paginatedProveedores.map((p) => (
-                <tr key={p.id_proveedor}>
+              paginatedProveedores.map((p, index) => (
+                <tr
+                  key={p.id_proveedor}
+                  className={
+                    index % 2 === 0
+                      ? 'bg-white dark:bg-gray-800'
+                      : 'bg-gray-50 dark:bg-gray-700'
+                  }
+                >
                   <td className='px-6 py-4'>{p.nombre}</td>
                   <td className='px-6 py-4'>{p.telefono || '—'}</td>
                   <td className='px-6 py-4'>{p.email || '—'}</td>

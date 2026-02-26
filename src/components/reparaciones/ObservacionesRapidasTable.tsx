@@ -143,8 +143,15 @@ export default function ObservacionesRapidasTable({ tiposDispositivo = [] }: Pro
                 </td>
               </tr>
             ) : (
-              observaciones.map((obs) => (
-                <tr key={obs.id_observacion}>
+              observaciones.map((obs, index) => (
+                <tr
+                  key={obs.id_observacion}
+                  className={
+                    index % 2 === 0
+                      ? 'bg-white dark:bg-gray-800'
+                      : 'bg-gray-50 dark:bg-gray-700'
+                  }
+                >
                   <td className='px-6 py-4 text-sm'>{obs.texto}</td>
                   <td className='px-6 py-4 text-sm text-gray-500'>
                     {obs.tipos_dispositivo?.nombre ?? 'Todos'}

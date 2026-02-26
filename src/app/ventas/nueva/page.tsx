@@ -515,10 +515,14 @@ export default function NuevaVentaPage() {
                       </tr>
                     </thead>
                     <tbody>
-                      {items.map((item) => (
+                      {items.map((item, index) => (
                         <tr
                           key={item.producto.id_producto}
-                          className='bg-gray-100 dark:bg-gray-700 border-b dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          className={`border-b dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600 ${
+                            index % 2 === 0
+                              ? 'bg-gray-100 dark:bg-gray-700'
+                              : 'bg-white dark:bg-gray-800'
+                          }`}
                         >
                           {/* PRODUCTO */}
                           <td className='py-2 px-2 text-left'>

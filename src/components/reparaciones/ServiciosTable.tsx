@@ -421,10 +421,12 @@ export default function ServiciosTable() {
                 </td>
               </tr>
             ) : (
-              paginatedServicios.map((servicio) => (
+              paginatedServicios.map((servicio, index) => (
                 <tr
                   key={servicio.id_reparacion}
-                  className='hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors'
+                  className={`cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-600 ${
+                    index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                  }`}
                   onClick={() => handleViewServicio(servicio.id_reparacion)}
                 >
                   <td className='px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white'>

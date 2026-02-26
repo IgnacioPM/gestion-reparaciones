@@ -262,7 +262,9 @@ export default function DetalleCompraPage({ params }: { params: Promise<{ id: st
                   {compra.items.map((item, index) => (
                     <tr
                       key={index}
-                      className='bg-white border-b dark:bg-gray-800 dark:border-gray-700'
+                      className={`border-b dark:border-gray-700 ${
+                        index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-700'
+                      }`}
                     >
                       <th
                         scope='row'
