@@ -370,6 +370,16 @@ export default function ServicioDetallePageWrapper({
 
           {/* Botones */}
           <div className='flex justify-end mr-4 mb-4 gap-2'>
+            {servicio.estado === 'Recibido' && servicio.equipo?.cliente?.telefono && (
+              <button
+                onClick={() => handleNotify('recibido')}
+                className='bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded-md transition-colors flex items-center gap-2'
+              >
+                <MessageCircle className='h-5 w-5' />
+                <span>Notificar equipo recibido</span>
+              </button>
+            )}
+
             {servicio.estado === 'En revisión' && servicio.equipo?.cliente?.telefono && (
               <button
                 onClick={() => handleNotify('revision')}
