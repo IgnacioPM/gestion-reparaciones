@@ -7,6 +7,7 @@ import SectionTitle from '@/components/ui/SectionTitle'
 import { supabase } from '@/lib/supabaseClient'
 import { ProductoFormData, productoSchema } from '@/schemas/producto'
 import { useAuthStore } from '@/stores/auth'
+import { generateNextBarcode } from '@/utils/barcode'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
@@ -49,6 +50,7 @@ export default function ProductoEditModal({
   const [modalError, setModalError] = useState<string | null>(null)
   const [selectedCatalogoSec, setSelectedCatalogoSec] = useState<string | null>(null)
   const [codigoUbicacionSec, setCodigoUbicacionSec] = useState<string>('')
+  const [isGeneratingBarcode, setIsGeneratingBarcode] = useState(false)
 
   useEffect(() => setIsClient(true), [])
 
@@ -253,6 +255,40 @@ export default function ProductoEditModal({
 
   if (!isOpen || !isClient) return null
 
+  const handleGenerateBarcode = async () => {
+    if (!profile?.empresa_id) {
+      setModalError('No se encontró la empresa para generar el código de barras')
+      return
+    }
+
+    setIsGeneratingBarcode(true)
+    setModalError(null)
+
+    try {
+      const { data: barcodeRows, error: barcodeError } = await supabase
+        .from('productos')
+        .select('codigo_barras')
+        .eq('empresa_id', profile.empresa_id)
+
+      if (barcodeError) throw barcodeError
+
+      const generated = generateNextBarcode(
+        profile.empresa_id,
+        (barcodeRows ?? []).map((row: any) => row.codigo_barras)
+      )
+
+      setValue('codigo_barras', generated, {
+        shouldDirty: true,
+        shouldValidate: false,
+      })
+    } catch (e: any) {
+      console.error('Error generando código de barras en edición:', e)
+      setModalError(e.message || 'Error al generar código de barras')
+    } finally {
+      setIsGeneratingBarcode(false)
+    }
+  }
+
   return ReactDOM.createPortal(
     <>
       <div className='fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40'>
@@ -415,7 +451,26 @@ export default function ProductoEditModal({
                 </div>
               </div>
 
-              <Input label='Codigo de barras' {...register('codigo_barras')} />
+              <div>
+                <label className='block text-sm font-medium text-gray-700 dark:text-gray-200'>
+                  Codigo de barras
+                </label>
+                <div className='mt-1 flex items-center gap-2'>
+                  <input
+                    {...register('codigo_barras')}
+                    className='block flex-1 min-w-0 rounded-md border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-sm focus:border-blue-500 dark:focus:border-blue-400 focus:ring-blue-500 dark:focus:ring-blue-400 placeholder:text-gray-400 dark:placeholder:text-gray-500'
+                  />
+                  <Button
+                    type='button'
+                    onClick={handleGenerateBarcode}
+                    disabled={isGeneratingBarcode || isSubmitting}
+                    color='secondary'
+                    className='py-1.5 px-3 text-sm whitespace-nowrap disabled:opacity-60'
+                  >
+                    {isGeneratingBarcode ? 'Generando...' : 'Generar código'}
+                  </Button>
+                </div>
+              </div>
 
               <div className='md:col-span-2'>
                 <Input label='Descripcion' {...register('descripcion')} />

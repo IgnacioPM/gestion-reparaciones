@@ -7,6 +7,7 @@ import SectionTitle from '@/components/ui/SectionTitle'
 import { supabase } from '@/lib/supabaseClient'
 import { ProductoFormData, productoSchema } from '@/schemas/producto'
 import { useAuthStore } from '@/stores/auth'
+import { generateNextBarcode } from '@/utils/barcode'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useEffect, useState } from 'react'
 import ReactDOM from 'react-dom'
@@ -146,6 +147,32 @@ export default function ProductoAddModal({
     setModalError(null)
     let id_ubicacion_principal: string | undefined
     let id_ubicacion_secundaria: string | undefined
+    let codigoBarrasFinal = String(data.codigo_barras ?? '').trim()
+
+    if (!codigoBarrasFinal && profile?.empresa_id) {
+      try {
+        const { data: barcodeRows, error: barcodeError } = await supabase
+          .from('productos')
+          .select('codigo_barras')
+          .eq('empresa_id', profile.empresa_id)
+
+        if (barcodeError) throw barcodeError
+
+        codigoBarrasFinal = generateNextBarcode(
+          profile.empresa_id,
+          (barcodeRows ?? []).map((row: any) => row.codigo_barras)
+        )
+
+        setValue('codigo_barras', codigoBarrasFinal, {
+          shouldDirty: true,
+          shouldValidate: false,
+        })
+      } catch (e: any) {
+        console.error('Error generando código de barras:', e)
+        setModalError(e.message || 'Error al generar código de barras')
+        return
+      }
+    }
 
     try {
       if (selectedCatalogo && codigoUbicacion?.trim()) {
@@ -216,7 +243,7 @@ export default function ProductoAddModal({
     const base: any = {
       ...data,
       descripcion: data.descripcion || null,
-      codigo_barras: data.codigo_barras || null,
+      codigo_barras: codigoBarrasFinal || null,
       costo: data.costo ?? null,
       stock_minimo: data.stock_minimo ?? null,
       id_fabricante: data.id_fabricante ?? null,
