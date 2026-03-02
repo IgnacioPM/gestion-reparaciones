@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabaseClient'
 import { ProductoFormData } from '@/schemas/producto'
 import { useAuthStore } from '@/stores/auth'
 import { translateSupabaseError } from '@/utils/supabase-db-errors'
-import { ChevronLeft, ChevronRight, Edit, Plus } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Edit, Plus, Printer } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -66,6 +66,7 @@ export default function ProductosTable() {
   const [showAddModal, setShowAddModal] = useState(false)
   const [editProducto, setEditProducto] = useState<Producto | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [printingProductoId, setPrintingProductoId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   // =====================
@@ -74,6 +75,16 @@ export default function ProductosTable() {
 
   const handleNewProducto = () => setShowAddModal(true)
   const handleEditProducto = (producto: Producto) => setEditProducto(producto)
+  const handlePrintProducto = (idProducto: string) => {
+    if (printingProductoId === idProducto) return
+
+    setPrintingProductoId(idProducto)
+    window.open(`/administrar/productos/${idProducto}/imprimir`, '_blank', 'noopener,noreferrer')
+
+    setTimeout(() => {
+      setPrintingProductoId((current) => (current === idProducto ? null : current))
+    }, 1200)
+  }
   const searchInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleClearFilters = () => {
@@ -515,6 +526,7 @@ export default function ProductosTable() {
         <table className='min-w-full divide-y divide-gray-200 dark:divide-gray-700'>
           <thead className='bg-gray-50 dark:bg-gray-700'>
             <tr>
+              <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Código barras</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Producto</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Proveedor</th>
               <th className='px-6 py-3 text-left text-xs font-medium uppercase'>Fabricante</th>
@@ -537,6 +549,7 @@ export default function ProductosTable() {
                     : 'bg-gray-50 dark:bg-gray-700'
                 }
               >
+                <td className='px-6 py-4 font-mono text-xs'>{p.codigo_barras || '—'}</td>
                 <td className='px-6 py-4'>{p.nombre}</td>
                 <td className='px-6 py-4'>{p.proveedor?.nombre || '—'}</td>
                 <td className='px-6 py-4'>{p.fabricante?.nombre || '—'}</td>
@@ -553,9 +566,24 @@ export default function ProductosTable() {
                     : 'N/A'}
                 </td>
                 <td className='px-6 py-4 text-right'>
-                  <button onClick={() => handleEditProducto(p)}>
-                    <Edit className='w-4 h-4' />
-                  </button>
+                  <div className='flex justify-end items-center gap-2'>
+                    <button
+                      type='button'
+                      onClick={() => handlePrintProducto(p.id_producto)}
+                      disabled={printingProductoId === p.id_producto}
+                      title='Imprimir etiqueta'
+                      className='p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50'
+                    >
+                      <Printer className='w-4 h-4' />
+                    </button>
+                    <button
+                      onClick={() => handleEditProducto(p)}
+                      title='Editar producto'
+                      className='p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600'
+                    >
+                      <Edit className='w-4 h-4' />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
