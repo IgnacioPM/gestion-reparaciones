@@ -1,4 +1,5 @@
 ﻿'use client'
+import { ClienteEditModal } from '@/components/reparaciones/ClienteEditModal'
 import { ServicioEditModal } from '@/components/reparaciones/ServicioEditModal'
 import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { InfoBlock } from '@/components/ui/InfoBlock'
@@ -54,6 +55,8 @@ export default function ServicioDetallePageWrapper({
   const { profile } = useAuthStore()
   const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [isClienteModalOpen, setIsClienteModalOpen] = useState(false)
+  const [isSavingCliente, setIsSavingCliente] = useState(false)
   const [servicio, setServicio] = useState<ServicioConNombres | null>(null)
   const [error, setError] = useState<{ message?: string } | null>(null)
   const [loading, setLoading] = useState(true)
@@ -101,6 +104,7 @@ export default function ServicioDetallePageWrapper({
             modelo,
             serie,
             cliente:cliente_id (
+              id_cliente,
               nombre,
               telefono,
               correo
@@ -173,7 +177,7 @@ export default function ServicioDetallePageWrapper({
         equipo: equipoRaw
           ? {
               ...equipoRaw,
-              cliente: clienteRaw ?? { nombre: '', telefono: '', correo: '' },
+              cliente: clienteRaw ?? { id_cliente: '', nombre: '', telefono: '', correo: '' },
               tipos_dispositivo: equipoRaw.tipo
                 ? { id_tipo: equipoRaw.tipo, nombre: tipoDispositivoMap.get(equipoRaw.tipo)! }
                 : null,
@@ -233,6 +237,49 @@ export default function ServicioDetallePageWrapper({
       : `https://wa.me/506${telefono}?text=${text}`
 
     window.open(link, '_blank')
+  }
+
+  const handleSaveCliente = async (data: { nombre: string; telefono: string; correo: string }) => {
+    const clienteId = servicio?.equipo?.cliente?.id_cliente
+    if (!clienteId) {
+      alert('No se encontró el cliente para este servicio.')
+      return
+    }
+
+    setIsSavingCliente(true)
+    const { error } = await supabase
+      .from('clientes')
+      .update({
+        nombre: data.nombre,
+        telefono: data.telefono || null,
+        correo: data.correo || null,
+      })
+      .eq('id_cliente', clienteId)
+
+    setIsSavingCliente(false)
+
+    if (error) {
+      console.error('Error updating client:', error)
+      alert('Error al actualizar los datos del cliente.')
+      return
+    }
+
+    setServicio((prev) => {
+      if (!prev?.equipo) return prev
+      return {
+        ...prev,
+        equipo: {
+          ...prev.equipo,
+          cliente: {
+            ...prev.equipo.cliente,
+            nombre: data.nombre,
+            telefono: data.telefono || '',
+            correo: data.correo || '',
+          },
+        },
+      }
+    })
+    setIsClienteModalOpen(false)
   }
 
   if (loading)
@@ -320,7 +367,21 @@ export default function ServicioDetallePageWrapper({
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6 p-6'>
             <div className='space-y-6'>
-              <InfoBlock title={<SectionTitle>Cliente</SectionTitle>}>
+              <InfoBlock
+                title={
+                  <div className='flex items-center justify-between mb-2'>
+                    <SectionTitle>Cliente</SectionTitle>
+                    <button
+                      type='button'
+                      onClick={() => setIsClienteModalOpen(true)}
+                      className='flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
+                    >
+                      <Edit className='h-4 w-4' />
+                      <span>Editar cliente</span>
+                    </button>
+                  </div>
+                }
+              >
                 <InfoRow label='Nombre' value={servicio.equipo?.cliente?.nombre} />
                 <InfoRow label='Teléfono' value={servicio.equipo?.cliente?.telefono} />
                 <InfoRow label='Correo' value={servicio.equipo?.cliente?.correo} />
@@ -436,6 +497,13 @@ export default function ServicioDetallePageWrapper({
         onClose={() => setIsModalOpen(false)}
         servicio={servicio}
         onSave={handleSave}
+      />
+      <ClienteEditModal
+        isOpen={isClienteModalOpen}
+        onClose={() => setIsClienteModalOpen(false)}
+        cliente={servicio.equipo?.cliente ?? null}
+        onSave={handleSaveCliente}
+        isSubmitting={isSavingCliente}
       />
     </div>
   )

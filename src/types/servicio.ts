@@ -1,7 +1,8 @@
 export interface Cliente {
+  id_cliente?: string
   nombre?: string
-  telefono?: string
-  correo?: string
+  telefono?: string | null
+  correo?: string | null
 }
 
 export interface EquipoConNombres {
