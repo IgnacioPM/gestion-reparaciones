@@ -47,6 +47,18 @@ function formatFechaSimple(fecha: string) {
   })
 }
 
+function getFechaIngresoMostrada(servicio: ServicioConNombres) {
+  const fechaIngreso = servicio.fecha_ingreso
+  const fechaEntrega = servicio.fecha_entrega
+
+  // Si por algún ajuste de datos ambas fechas son iguales, usar created_at como respaldo.
+  if (fechaIngreso && fechaEntrega && fechaIngreso === fechaEntrega && servicio.created_at) {
+    return servicio.created_at
+  }
+
+  return fechaIngreso
+}
+
 export default function ServicioDetallePageWrapper({
   params,
 }: {
@@ -91,6 +103,7 @@ export default function ServicioDetallePageWrapper({
           id_reparacion,
           numero_servicio,
           fecha_ingreso,
+          created_at,
           descripcion_falla,
           estado,
           costo_estimado,
@@ -167,6 +180,7 @@ export default function ServicioDetallePageWrapper({
         numero_servicio: data.numero_servicio ?? null,
         equipo_id: equipoRaw?.serie ?? '',
         fecha_ingreso: data.fecha_ingreso ?? '',
+        created_at: data.created_at ?? null,
         descripcion_falla: data.descripcion_falla ?? null,
         estado: data.estado ?? 'Recibido',
         costo_estimado: data.costo_estimado ?? null,
@@ -397,7 +411,10 @@ export default function ServicioDetallePageWrapper({
             <div className='space-y-6'>
               <InfoBlock title={<SectionTitle>Servicio</SectionTitle>}>
                 <InfoRow label='Nro. Servicio' value={servicio.numero_servicio} />
-                <InfoRow label='Fecha ingreso' value={formatFechaSimple(servicio.fecha_ingreso)} />
+                <InfoRow
+                  label='Fecha ingreso'
+                  value={formatFechaSimple(getFechaIngresoMostrada(servicio))}
+                />
                 {servicio.fecha_entrega && (
                   <InfoRow
                     label='Fecha entrega'

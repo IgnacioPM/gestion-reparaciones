@@ -27,6 +27,7 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
     numero_servicio,
     equipo_id,
     fecha_ingreso,
+    created_at,
     descripcion_falla,
     observaciones,
     estado,
@@ -75,11 +76,17 @@ export default function ServicioImprimirPage({ params }: { params: Promise<{ id:
         ? await supabase.from('marcas').select('id_marca, nombre').eq('id_marca', marcaId).single()
         : { data: null }
 
+      const fechaIngresoMostrada =
+        data.fecha_ingreso && data.fecha_entrega && data.fecha_ingreso === data.fecha_entrega
+          ? (data.created_at ?? data.fecha_ingreso)
+          : data.fecha_ingreso
+
       const servicioNormalizado: ServicioConNombres = {
         id_reparacion: data.id_reparacion,
         numero_servicio: data.numero_servicio,
         equipo_id: data.equipo_id, // ✅ SOLUCIÓN
-        fecha_ingreso: data.fecha_ingreso,
+        fecha_ingreso: fechaIngresoMostrada,
+        created_at: data.created_at,
         descripcion_falla: data.descripcion_falla,
         observaciones: data.observaciones,
         estado: data.estado,

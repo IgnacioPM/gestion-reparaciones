@@ -58,6 +58,17 @@ export default function ServiciosTable() {
     { value: 'Anulado', label: 'Anulado' },
   ]
 
+  function getFechaMostrada(servicio: Servicio) {
+    if (servicio.estado === 'Entregado' && servicio.fecha_entrega) {
+      const timestampEntrega = Date.parse(servicio.fecha_entrega)
+      if (!Number.isNaN(timestampEntrega)) {
+        return servicio.fecha_entrega
+      }
+    }
+
+    return servicio.fecha_ingreso
+  }
+
   // ---------------------- FETCH ----------------------
   useEffect(() => {
     const fetchServicios = async () => {
@@ -165,10 +176,10 @@ export default function ServiciosTable() {
 
       const matchesEstado = filtroEstado === 'todos' || servicio.estado === filtroEstado
 
-      const fechaIngreso = new Date(servicio.fecha_ingreso)
+      const fechaMostrada = new Date(getFechaMostrada(servicio))
       const matchesFecha =
-        (!fechaDesde || fechaIngreso >= new Date(fechaDesde + 'T00:00:00')) &&
-        (!fechaHasta || fechaIngreso <= new Date(fechaHasta + 'T23:59:59'))
+        (!fechaDesde || fechaMostrada >= new Date(fechaDesde + 'T00:00:00')) &&
+        (!fechaHasta || fechaMostrada <= new Date(fechaHasta + 'T23:59:59'))
 
       return matchesSearch && matchesEstado && matchesFecha
     })
@@ -467,7 +478,7 @@ export default function ServiciosTable() {
                     </span>
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400'>
-                    {formatDate(servicio.fecha_ingreso)}
+                    {formatDate(getFechaMostrada(servicio))}
                   </td>
                   <td className='px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white text-right'>
                     <FormattedAmount amount={servicio.costo_estimado ?? 0} />
