@@ -89,6 +89,7 @@ export default function NuevaVentaPage() {
     costo,
     stock_actual,
     stock_minimo,
+    id_ubicacion_principal,
     activo,
     created_at,
     fabricante:fabricantes (
@@ -113,8 +114,92 @@ export default function NuevaVentaPage() {
       if (productosRes.error) {
         console.error(productosRes.error)
       } else if (productosRes.data) {
-        const productos = productosRes.data.map(mapProductoConFabricante)
-        setProductos(productos)
+        const productosMapeados = productosRes.data.map((d: any) =>
+          mapProductoConFabricante({
+            ...d,
+            fabricante: Array.isArray(d.fabricante) ? (d.fabricante[0] ?? null) : d.fabricante,
+          } as any)
+        )
+
+        const ubicacionIds = Array.from(
+          new Set(
+            (productosRes.data as any[])
+              .map((d) => d.id_ubicacion_principal)
+              .filter(Boolean) as string[]
+          )
+        )
+
+        const ubicacionPorProducto = new Map<string, string>()
+        ;(productosRes.data as any[]).forEach((d) => {
+          if (d.id_producto && d.id_ubicacion_principal) {
+            ubicacionPorProducto.set(d.id_producto, d.id_ubicacion_principal)
+          }
+        })
+
+        const ubicacionDetalleMap = new Map<
+          string,
+          { id_ubicacion: string; codigo: string | null; catalogo_nombre: string | null }
+        >()
+
+        if (ubicacionIds.length > 0) {
+          supabase
+            .from('ubicaciones')
+            .select('id_ubicacion, codigo, id_catalogo')
+            .in('id_ubicacion', ubicacionIds)
+            .then(async ({ data: ubicacionesData, error: ubicacionesError }) => {
+              if (!ubicacionesError && ubicacionesData) {
+                const catalogoIds = Array.from(
+                  new Set((ubicacionesData as any[]).map((u) => u.id_catalogo).filter(Boolean))
+                ) as string[]
+
+                const catalogoMap = new Map<string, string>()
+                if (catalogoIds.length > 0) {
+                  const { data: catalogosData, error: catalogosError } = await supabase
+                    .from('ubicaciones_catalogo')
+                    .select('id_catalogo, nombre')
+                    .in('id_catalogo', catalogoIds)
+
+                  if (!catalogosError && catalogosData) {
+                    ;(catalogosData as any[]).forEach((c) => {
+                      catalogoMap.set(c.id_catalogo, c.nombre)
+                    })
+                  }
+                }
+
+                ;(ubicacionesData as any[]).forEach((u) => {
+                  ubicacionDetalleMap.set(u.id_ubicacion, {
+                    id_ubicacion: u.id_ubicacion,
+                    codigo: u.codigo ?? null,
+                    catalogo_nombre: (u.id_catalogo && catalogoMap.get(u.id_catalogo)) || null,
+                  })
+                })
+
+                setProductos(
+                  productosMapeados.map((p) => {
+                    const ubicacionId = ubicacionPorProducto.get(p.id_producto)
+                    if (!ubicacionId) return p
+                    const ubicacion = ubicacionDetalleMap.get(ubicacionId)
+                    if (!ubicacion) return p
+
+                    return {
+                      ...p,
+                      ubicacion_principal: {
+                        id_ubicacion: ubicacion.id_ubicacion,
+                        codigo: ubicacion.codigo ?? undefined,
+                        catalogo: ubicacion.catalogo_nombre
+                          ? { nombre: ubicacion.catalogo_nombre }
+                          : undefined,
+                      },
+                    }
+                  })
+                )
+              } else {
+                setProductos(productosMapeados)
+              }
+            })
+        } else {
+          setProductos(productosMapeados)
+        }
       }
 
       if (fabricantesRes.error) {
@@ -153,10 +238,14 @@ export default function NuevaVentaPage() {
         .filter((p) => {
           const nombreFabricante = p.fabricante.nombre || ''
           const descripcionProducto = p.descripcion || ''
+          const codigoUbicacion = p.ubicacion_principal?.codigo || ''
+          const catalogoUbicacion = p.ubicacion_principal?.catalogo?.nombre || ''
           return (
             p.nombre.toLowerCase().includes(q) ||
             descripcionProducto.toLowerCase().includes(q) ||
-            nombreFabricante.toLowerCase().includes(q)
+            nombreFabricante.toLowerCase().includes(q) ||
+            codigoUbicacion.toLowerCase().includes(q) ||
+            catalogoUbicacion.toLowerCase().includes(q)
           )
         })
         .slice(0, 10)
@@ -463,9 +552,10 @@ export default function NuevaVentaPage() {
               {resultados.length > 0 && (
                 <div className='absolute z-10 mt-1 w-full bg-white dark:bg-gray-700 border rounded shadow'>
                   {/* HEADER VISUAL RESULTADOS */}
-                  <div className='px-3 py-2 border-b bg-gray-50 dark:bg-gray-800 grid grid-cols-4 gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300'>
+                  <div className='px-3 py-2 border-b bg-gray-50 dark:bg-gray-800 grid grid-cols-5 gap-2 text-xs font-semibold text-gray-600 dark:text-gray-300'>
                     <span>Fabricante</span>
                     <span>Producto</span>
+                    <span>Ubicación</span>
                     <span>Stock</span>
                     <span className='text-right'>Precio</span>
                   </div>
@@ -476,10 +566,15 @@ export default function NuevaVentaPage() {
                       <div
                         key={p.id_producto}
                         onClick={() => addProducto(p)}
-                        className='px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 grid grid-cols-4 gap-2 text-sm'
+                        className='px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 grid grid-cols-5 gap-2 text-sm'
                       >
                         <span className='font-semibold'>{p.fabricante.nombre}</span>
                         <span>{p.nombre}</span>
+                        <span className='truncate'>
+                          {p.ubicacion_principal
+                            ? `${p.ubicacion_principal.catalogo?.nombre || 'Sin catalogo'} / ${p.ubicacion_principal.codigo || 'Sin codigo'}`
+                            : 'N/A'}
+                        </span>
                         <span>Stock: {p.stock_actual}</span>
                         <span className='text-right'>
                           ₡{p.precio_venta.toLocaleString('es-CR')}
