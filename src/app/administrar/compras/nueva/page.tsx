@@ -169,6 +169,7 @@ export default function CompraNuevaPage() {
     costo,
     stock_actual,
     stock_minimo,
+    id_ubicacion_principal,
     activo,
     created_at,
     fabricante:fabricantes (
@@ -181,16 +182,87 @@ export default function CompraNuevaPage() {
           .eq('activo', true)
           .order('nombre')
 
-        if (!error && data)
-          setProductos(
-            data.map((d: any) =>
-              mapProductoConFabricante({
-                ...d,
-                fabricante: Array.isArray(d.fabricante) ? (d.fabricante[0] ?? null) : d.fabricante,
-              } as any)
+        if (!error && data) {
+          const productosMapeados = data.map((d: any) =>
+            mapProductoConFabricante({
+              ...d,
+              fabricante: Array.isArray(d.fabricante) ? (d.fabricante[0] ?? null) : d.fabricante,
+            } as any)
+          )
+
+          const ubicacionIds = Array.from(
+            new Set(
+              (data as any[]).map((d) => d.id_ubicacion_principal).filter(Boolean) as string[]
             )
           )
-        else setProductos([])
+
+          const ubicacionPorProducto = new Map<string, string>()
+          ;(data as any[]).forEach((d) => {
+            if (d.id_producto && d.id_ubicacion_principal) {
+              ubicacionPorProducto.set(d.id_producto, d.id_ubicacion_principal)
+            }
+          })
+
+          if (ubicacionIds.length > 0) {
+            const { data: ubicacionesData, error: ubicacionesError } = await supabase
+              .from('ubicaciones')
+              .select('id_ubicacion, codigo, id_catalogo')
+              .in('id_ubicacion', ubicacionIds)
+
+            const ubicacionDetalleMap = new Map<
+              string,
+              { id_ubicacion: string; codigo: string | null; catalogo_nombre: string | null }
+            >()
+
+            if (!ubicacionesError && ubicacionesData) {
+              const catalogoIds = Array.from(
+                new Set((ubicacionesData as any[]).map((u) => u.id_catalogo).filter(Boolean))
+              ) as string[]
+
+              const catalogoMap = new Map<string, string>()
+              if (catalogoIds.length > 0) {
+                const { data: catalogosData, error: catalogosError } = await supabase
+                  .from('ubicaciones_catalogo')
+                  .select('id_catalogo, nombre')
+                  .in('id_catalogo', catalogoIds)
+                if (!catalogosError && catalogosData) {
+                  ;(catalogosData as any[]).forEach((c) => {
+                    catalogoMap.set(c.id_catalogo, c.nombre)
+                  })
+                }
+              }
+
+              ;(ubicacionesData as any[]).forEach((u) => {
+                ubicacionDetalleMap.set(u.id_ubicacion, {
+                  id_ubicacion: u.id_ubicacion,
+                  codigo: u.codigo ?? null,
+                  catalogo_nombre: (u.id_catalogo && catalogoMap.get(u.id_catalogo)) || null,
+                })
+              })
+            }
+
+            setProductos(
+              productosMapeados.map((p) => {
+                const ubicacionId = ubicacionPorProducto.get(p.id_producto)
+                if (!ubicacionId) return p
+                const ubicacion = ubicacionDetalleMap.get(ubicacionId)
+                if (!ubicacion) return p
+                return {
+                  ...p,
+                  ubicacion_principal: {
+                    id_ubicacion: ubicacion.id_ubicacion,
+                    codigo: ubicacion.codigo ?? undefined,
+                    catalogo: ubicacion.catalogo_nombre
+                      ? { nombre: ubicacion.catalogo_nombre }
+                      : undefined,
+                  },
+                }
+              })
+            )
+          } else {
+            setProductos(productosMapeados)
+          }
+        } else setProductos([])
       } catch (e) {
         setProductos([])
       }
@@ -567,6 +639,16 @@ export default function CompraNuevaPage() {
                             </div>
                             <div className='text-xs text-gray-600 dark:text-gray-300 flex items-center gap-2'>
                               <span>{p.fabricante?.nombre || ''}</span>
+                              {p.ubicacion_principal && (
+                                <>
+                                  <span>•</span>
+                                  <span>
+                                    {p.ubicacion_principal.catalogo?.nombre
+                                      ? `${p.ubicacion_principal.catalogo.nombre} / ${p.ubicacion_principal.codigo || 'Sin código'}`
+                                      : p.ubicacion_principal.codigo || 'Sin código'}
+                                  </span>
+                                </>
+                              )}
                               <span>•</span>
                               <span className='flex items-center gap-2'>
                                 <span>Stock: {p.stock_actual ?? 0}</span>
