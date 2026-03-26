@@ -20,13 +20,13 @@
     width: 100%;
     margin: 0; /* Sin margen lateral */
     padding: 0; /* Sin padding lateral */
-    font-family: 'Courier New', Courier, monospace;
+    font-family: Consolas, 'Lucida Console', 'Courier New', monospace;
     font-size: 14px; /* Tamaño base */
-    line-height: 1.0;
+    line-height: 1.2;
     color: #000;
     text-align: left;
     word-wrap: break-word;
-    font-weight: bold;
+    font-weight: 400;
   }
 
   /* Nombre de la empresa: 2px más grande que base */
@@ -42,11 +42,120 @@
     margin-top: 3px;
     margin-bottom: 3px;
     text-transform: uppercase;
+    font-weight: 400;
   }
 
   .receipt-box p {
     margin: 1px 0;
     text-align: left;
+    font-weight: 400;
+  }
+
+  .receipt-box.etiqueta-print {
+    font-size: 13px;
+    line-height: 1.12;
+    padding: 8px 6px;
+  }
+
+  .receipt-box.etiqueta-print h1,
+  .receipt-box.etiqueta-print h2,
+  .receipt-box.etiqueta-print strong,
+  .receipt-box.etiqueta-print b {
+    font-weight: 400;
+  }
+
+  .receipt-box.etiqueta-print p,
+  .receipt-box.etiqueta-print h2 {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .receipt-box.etiqueta-print p {
+    margin: 0;
+  }
+
+  .receipt-box.etiqueta-print h2 {
+    margin-top: 2px;
+    margin-bottom: 1px;
+  }
+
+  .receipt-box.factura-print {
+    font-size: 14px;
+    line-height: 1.12;
+    padding: 10px 8px;
+  }
+
+  .receipt-box.factura-print h1,
+  .receipt-box.factura-print h2,
+  .receipt-box.factura-print strong,
+  .receipt-box.factura-print b {
+    font-weight: 400;
+  }
+
+  .receipt-box.factura-print p,
+  .receipt-box.factura-print h2 {
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .receipt-box.factura-print p {
+    margin: 0;
+  }
+
+  .receipt-box.factura-print h2 {
+    margin-top: 2px;
+    margin-bottom: 1px;
+  }
+
+  .receipt-box.factura-print .totals {
+    margin-top: 2px;
+  }
+
+  .receipt-box.factura-print .footer {
+    margin-top: 3px;
+    padding-top: 3px;
+  }
+
+  .receipt-box.venta-print {
+    font-size: 14px;
+    line-height: 1.12;
+    padding: 10px 8px;
+  }
+
+  .receipt-box.venta-print p {
+    margin: 0;
+    padding-left: 2px;
+    padding-right: 2px;
+  }
+
+  .receipt-box.venta-print h2 {
+    margin-top: 2px;
+    margin-bottom: 1px;
+    padding-left: 2px;
+    padding-right: 2px;
+    font-weight: 400;
+  }
+
+  .receipt-box.venta-print h1,
+  .receipt-box.venta-print strong,
+  .receipt-box.venta-print b {
+    font-weight: 400;
+  }
+
+  .receipt-box.venta-print .totals {
+    margin-top: 2px;
+  }
+
+  .receipt-box.venta-print .footer {
+    margin-top: 3px;
+    padding-top: 3px;
+  }
+
+  .receipt-box.product-label-print {
+    font-size: 13px;
+    line-height: 1.1;
+    padding: 7px 6px;
+    font-weight: 400;
   }
 
   .receipt-box .header,

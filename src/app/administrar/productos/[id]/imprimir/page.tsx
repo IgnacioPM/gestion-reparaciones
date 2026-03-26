@@ -191,7 +191,7 @@ export default function ProductoEtiquetaImprimirPage({ params }: { params: Promi
 
   return (
     <div className='printable-area'>
-      <div className='receipt-box' style={{ fontWeight: 700 }}>
+      <div className='receipt-box product-label-print'>
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: '2px', marginBottom: '6px' }}>
           {barcodeDataUrl ? (
             <img
@@ -214,12 +214,12 @@ export default function ProductoEtiquetaImprimirPage({ params }: { params: Promi
           style={{
             textAlign: 'center',
             fontSize: '14px',
-            marginTop: '4px',
-            marginBottom: '4px',
-            letterSpacing: '0.5px',
+            marginTop: '2px',
+            marginBottom: '2px',
+            letterSpacing: '0.2px',
           }}
         >
-          <span style={{ fontSize: '16px', letterSpacing: '1px' }}>{marcaCorta}</span>
+          <span style={{ fontSize: '15px', letterSpacing: '0.4px' }}>{marcaCorta}</span>
           <span> - </span>
           <span>{producto.nombre}</span>
         </p>
@@ -228,9 +228,9 @@ export default function ProductoEtiquetaImprimirPage({ params }: { params: Promi
           style={{
             textAlign: 'center',
             fontSize: '15px',
-            marginTop: '5px',
-            marginBottom: '5px',
-            letterSpacing: '0.5px',
+            marginTop: '3px',
+            marginBottom: '3px',
+            letterSpacing: '0.2px',
           }}
         >
           <span>{ubicacionTexto}</span>

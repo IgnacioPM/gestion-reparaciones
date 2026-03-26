@@ -25,9 +25,10 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
   tipo_impresion,
 }) => {
   const esEtiqueta = tipo_impresion === 'etiqueta'
+  const receiptClassName = esEtiqueta ? 'receipt-box etiqueta-print' : 'receipt-box factura-print'
 
   return (
-    <div className='receipt-box'>
+    <div className={receiptClassName}>
       {!esEtiqueta && (
         <div className='header'>
           <h1>{profile?.empresa?.nombre ?? 'Control de Reparaciones'}</h1>
@@ -42,7 +43,7 @@ export const ServicioPrintable: React.FC<ServicioPrintableProps> = ({
       )}
 
       <p>Fecha: {formatFechaSimple(servicio.fecha_ingreso)}</p>
-      <p>Nro. Servicio: {servicio.numero_servicio ?? '--'}</p>
+      {!esEtiqueta && <p>Nro. Servicio: {servicio.numero_servicio ?? '--'}</p>}
 
       <h2>----- Cliente -----</h2>
       <p>Nombre: {servicio.equipo?.cliente?.nombre ?? ''}</p>

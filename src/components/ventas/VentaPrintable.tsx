@@ -56,7 +56,7 @@ const ReceiptRow: React.FC<{ left: string; right: string }> = ({ left, right }) 
 
 export const VentaPrintable: React.FC<VentaPrintableProps> = ({ venta, profile }) => {
   return (
-    <div className='receipt-box'>
+    <div className='receipt-box venta-print'>
       <div className='header'>
         <h1>{profile?.empresa?.nombre ?? 'Control de Ventas'}</h1>
       </div>
