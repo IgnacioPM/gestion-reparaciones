@@ -160,6 +160,16 @@ export default function MovimientosProveedorPage() {
             Movimientos de {proveedor?.nombre || 'Proveedor'}
           </h1>
           <div className='flex gap-2'>
+            <Button
+              onClick={() =>
+                router.push(
+                  `/administrar/compras/nueva?proveedorId=${encodeURIComponent(proveedorId)}&from=movimientos&prov=${encodeURIComponent(proveedorId)}`
+                )
+              }
+              className='flex items-center gap-2'
+            >
+              <Plus className='h-5 w-5' /> Registrar Compra
+            </Button>
             <Button onClick={() => setIsAbonoModalOpen(true)} className='flex items-center gap-2'>
               <Plus className='h-5 w-5' /> Registrar Abono
             </Button>

@@ -14,7 +14,7 @@ import { Proveedor } from '@/schemas/proveedor'
 import { useAuthStore } from '@/stores/auth'
 import { ArrowLeft, Minus, Plus, Trash } from 'lucide-react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
 
@@ -28,6 +28,10 @@ type Item = {
 
 export default function CompraNuevaPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const fromMovimientos = searchParams.get('from') === 'movimientos'
+  const provFromQuery =
+    searchParams.get('prov') || searchParams.get('proveedorId') || searchParams.get('id_proveedor')
   const [proveedores, setProveedores] = useState<Proveedor[]>([])
   const [proveedorId, setProveedorId] = useState<string | null>(null)
 
@@ -87,11 +91,15 @@ export default function CompraNuevaPage() {
 
       // update proveedor relation if provided
       if (data.id_proveedor) {
-        // upsert product-proveedor relation (simple approach: insert if not exists)
-        const { error: relErr } = await supabase.from('producto_proveedores').upsert({
-          id_producto: prodData.id_producto,
-          id_proveedor: data.id_proveedor,
-        })
+        const { error: relErr } = await supabase.from('producto_proveedores').upsert(
+          {
+            id_producto: prodData.id_producto,
+            id_proveedor: data.id_proveedor,
+          },
+          {
+            onConflict: 'id_producto,id_proveedor',
+          }
+        )
         if (relErr) throw relErr
       }
 
@@ -147,6 +155,24 @@ export default function CompraNuevaPage() {
     }
     loadProveedores()
   }, [profile?.empresa_id])
+
+  useEffect(() => {
+    const proveedorDesdeUrl =
+      searchParams.get('proveedorId') ||
+      searchParams.get('proveedor_id') ||
+      searchParams.get('id_proveedor') ||
+      searchParams.get('prov')
+
+    if (!proveedorDesdeUrl || proveedores.length === 0) return
+
+    const proveedorExiste = proveedores.some(
+      (p: any) => (p.id_proveedor || p.id) === proveedorDesdeUrl
+    )
+
+    if (!proveedorExiste) return
+
+    setProveedorId((prev) => (prev ? prev : proveedorDesdeUrl))
+  }, [searchParams, proveedores])
 
   // Load productos for empresa into cache (used for client-side search)
   // Load productos mapeados (same approach as ventas)
@@ -550,7 +576,14 @@ export default function CompraNuevaPage() {
       }
 
       // redirect to compra detail
-      if (compraId) router.push(`/administrar/compras/${compraId}`)
+      if (compraId) {
+        if (fromMovimientos && (provFromQuery || proveedorId)) {
+          const prov = encodeURIComponent((provFromQuery || proveedorId) as string)
+          router.push(`/administrar/compras/${compraId}?from=movimientos&prov=${prov}`)
+        } else {
+          router.push(`/administrar/compras/${compraId}`)
+        }
+      }
 
       setItems([])
       setProveedorId(null)
