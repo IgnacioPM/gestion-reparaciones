@@ -383,6 +383,13 @@ export default function NuevaVentaPage() {
 
     try {
       let clienteId = cliente.id_cliente
+      const nombreCliente = cliente.nombre.trim()
+      const telefonoCliente = cliente.telefono?.trim() || null
+      const correoCliente = cliente.correo?.trim() || null
+
+      if (!nombreCliente) {
+        throw new Error('El nombre del cliente es requerido')
+      }
 
       // Si el cliente tiene id 'nuevo', es nuevo y hay que crearlo
       if (clienteId === 'nuevo') {
@@ -390,9 +397,9 @@ export default function NuevaVentaPage() {
           .from('clientes')
           .insert({
             empresa_id: profile?.empresa_id,
-            nombre: cliente.nombre,
-            telefono: cliente.telefono || null,
-            correo: cliente.correo || null,
+            nombre: nombreCliente,
+            telefono: telefonoCliente,
+            correo: correoCliente,
           })
           .select('id_cliente')
           .single()

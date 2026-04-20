@@ -242,6 +242,7 @@ export default function ServiciosTable() {
   }
 
   const handleNewServicio = () => router.push('/servicios/nuevo')
+  const handleNewVenta = () => router.push('/ventas/nueva')
   const handleViewServicio = (id: string | undefined) => {
     if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) {
       console.error('ID de servicio no válido:', id)
@@ -332,13 +333,22 @@ export default function ServiciosTable() {
       {/* Header */}
       <div className='flex flex-col sm:flex-row justify-end sm:justify-between items-start sm:items-center mb-6 gap-4'>
         <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>Servicios</h1>
-        <button
-          onClick={handleNewServicio}
-          className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors ml-auto'
-        >
-          <Plus className='w-5 h-5' />
-          <span>Nuevo Servicio</span>
-        </button>
+        <div className='flex items-center gap-2 ml-auto'>
+          <button
+            onClick={handleNewVenta}
+            className='flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors'
+          >
+            <Plus className='w-5 h-5' />
+            <span>Registrar Venta</span>
+          </button>
+          <button
+            onClick={handleNewServicio}
+            className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors'
+          >
+            <Plus className='w-5 h-5' />
+            <span>Nuevo Servicio</span>
+          </button>
+        </div>
       </div>
 
       {/* Filtros */}

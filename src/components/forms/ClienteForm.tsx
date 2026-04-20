@@ -56,11 +56,11 @@ export default function ClienteForm({ clienteInicial = null, onClienteChange }: 
       setBusquedaActiva(true)
     }
 
-    const nombreFinal = field === 'nombre' ? value.trim() : nombre.trim()
-    const telefonoFinal = field === 'telefono' ? value.trim() : telefono.trim()
-    const correoFinal = field === 'correo' ? value.trim() : correo.trim()
+    const nombreFinal = field === 'nombre' ? value : nombre
+    const telefonoFinal = field === 'telefono' ? value : telefono
+    const correoFinal = field === 'correo' ? value : correo
 
-    if (!nombreFinal) {
+    if (!nombreFinal.trim()) {
       onClienteChange(null)
       return
     }
