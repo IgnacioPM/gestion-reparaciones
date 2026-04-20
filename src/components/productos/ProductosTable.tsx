@@ -459,6 +459,7 @@ export default function ProductosTable() {
           </label>
           <input
             ref={searchInputRef}
+            autoFocus
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder='Buscar por producto, descripción, código, ubicación, fabricante o proveedor'

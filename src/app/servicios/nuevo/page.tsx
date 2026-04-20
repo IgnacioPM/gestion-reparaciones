@@ -323,7 +323,7 @@ export default function NuevoServicioPage() {
             <h2 className='text-lg font-medium text-gray-900 dark:text-white mb-4'>
               Información del Cliente
             </h2>
-            <ClienteForm onClienteChange={handleClienteChange} />
+            <ClienteForm onClienteChange={handleClienteChange} autoFocusNombre />
           </div>
 
           <hr className='my-8 border-gray-200 dark:border-gray-700' />

@@ -14,9 +14,14 @@ export interface Cliente {
 interface ClienteFormProps {
   clienteInicial?: Cliente | null
   onClienteChange: (cliente: Cliente | null) => void
+  autoFocusNombre?: boolean
 }
 
-export default function ClienteForm({ clienteInicial = null, onClienteChange }: ClienteFormProps) {
+export default function ClienteForm({
+  clienteInicial = null,
+  onClienteChange,
+  autoFocusNombre = false,
+}: ClienteFormProps) {
   const [nombre, setNombre] = useState('')
   const [telefono, setTelefono] = useState('')
   const [correo, setCorreo] = useState('')
@@ -115,6 +120,7 @@ export default function ClienteForm({ clienteInicial = null, onClienteChange }: 
         <Input
           label='Nombre del cliente'
           type='text'
+          autoFocus={autoFocusNombre}
           value={nombre}
           onChange={(e) => handleInputChange('nombre', e.target.value)}
         />

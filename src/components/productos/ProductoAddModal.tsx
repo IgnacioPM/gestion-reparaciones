@@ -274,7 +274,12 @@ export default function ProductoAddModal({
               onSubmit={handleSubmit(handleCreate)}
               className='grid grid-cols-1 md:grid-cols-2 gap-4'
             >
-              <Input label='Nombre' {...register('nombre')} error={errors.nombre?.message} />
+              <Input
+                label='Nombre'
+                autoFocus
+                {...register('nombre')}
+                error={errors.nombre?.message}
+              />
 
               <div>
                 <label className='text-sm font-medium'>Tipo</label>

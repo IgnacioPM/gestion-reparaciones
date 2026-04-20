@@ -547,6 +547,7 @@ export default function NuevaVentaPage() {
                   <Input
                     label='Buscar producto'
                     placeholder='Fabricante, nombre, descripción o escanear código'
+                    autoFocus
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                   />
