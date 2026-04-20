@@ -29,7 +29,7 @@ interface Producto {
   tipo: 'venta' | 'repuesto' | 'ambos'
   precio_venta: number
   costo: number | null
-  stock_actual: number
+  stock_actual: number | null
   stock_minimo: number | null
   activo: boolean | null
   id_fabricante: string | null
@@ -59,6 +59,7 @@ export default function ProductosTable() {
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedFabricante, setSelectedFabricante] = useState<string>('')
   const [selectedProveedor, setSelectedProveedor] = useState<string>('')
+  const [onlyLowStock, setOnlyLowStock] = useState(false)
 
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -91,6 +92,7 @@ export default function ProductosTable() {
     setSearchQuery('')
     setSelectedFabricante('')
     setSelectedProveedor('')
+    setOnlyLowStock(false)
     setCurrentPage(1)
     // focus en buscador
     setTimeout(() => searchInputRef.current?.focus(), 0)
@@ -128,7 +130,7 @@ export default function ProductosTable() {
         tipo: p.tipo,
         precio_venta: Number(p.precio_venta) ?? 0,
         costo: p.costo != null ? Number(p.costo) : null,
-        stock_actual: Number(p.stock_actual) ?? 0,
+        stock_actual: p.stock_actual != null ? Number(p.stock_actual) : null,
         stock_minimo: p.stock_minimo != null ? Number(p.stock_minimo) : null,
         activo: p.activo != null ? Boolean(p.activo) : null,
         id_fabricante: p.id_fabricante ?? p.fabricante?.id_fabricante ?? null,
@@ -259,7 +261,7 @@ export default function ProductosTable() {
 
   useEffect(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedFabricante, selectedProveedor])
+  }, [searchQuery, selectedFabricante, selectedProveedor, onlyLowStock])
 
   // =====================
   // FILTROS
@@ -305,9 +307,16 @@ export default function ProductosTable() {
 
       const matchesProveedor = !selectedProveedor || p.proveedor?.id_proveedor === selectedProveedor
 
-      return matchesQuery && matchesFabricante && matchesProveedor
+      const isLowStock =
+        p.stock_actual != null &&
+        p.stock_minimo != null &&
+        p.stock_minimo > 0 &&
+        p.stock_actual < p.stock_minimo
+      const matchesLowStock = !onlyLowStock || isLowStock
+
+      return matchesQuery && matchesFabricante && matchesProveedor && matchesLowStock
     })
-  }, [allProductos, searchQuery, selectedFabricante, selectedProveedor, fabricantes])
+  }, [allProductos, searchQuery, selectedFabricante, selectedProveedor, onlyLowStock, fabricantes])
 
   const { totalPrecioVentaFiltrado, totalCostoFiltrado } = useMemo(() => {
     return filteredProductos.reduce(
@@ -443,7 +452,7 @@ export default function ProductosTable() {
         </button>
       </div>
 
-      <div className='mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 items-end'>
+      <div className='mb-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4 items-end'>
         <div className='lg:col-span-2'>
           <label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'>
             Buscar
@@ -490,6 +499,20 @@ export default function ProductosTable() {
                 {f.nombre}
               </option>
             ))}
+          </select>
+        </div>
+
+        <div>
+          <label className='block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1'>
+            Stock
+          </label>
+          <select
+            value={onlyLowStock ? 'low' : ''}
+            onChange={(e) => setOnlyLowStock(e.target.value === 'low')}
+            className='w-full mt-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md dark:bg-gray-800'
+          >
+            <option value=''>Todos</option>
+            <option value='low'>Bajo stock</option>
           </select>
         </div>
 
@@ -559,7 +582,7 @@ export default function ProductosTable() {
                 <td className='px-6 py-4 text-right'>
                   <FormattedAmount amount={p.precio_venta} />
                 </td>
-                <td className='px-6 py-4 text-right'>{p.stock_actual}</td>
+                <td className='px-6 py-4 text-right'>{p.stock_actual ?? '—'}</td>
                 <td className='px-6 py-4 text-sm text-gray-600 dark:text-gray-400'>
                   {p.ubicacion_principal
                     ? `${p.ubicacion_principal.catalogo_nombre || 'Sin catalogo'} / ${p.ubicacion_principal.codigo || 'Sin codigo'}`
