@@ -14,6 +14,17 @@ import ReactDOM from 'react-dom'
 import { Controller, useForm } from 'react-hook-form'
 import MarcaVentaAddModal from './FabricanteAddModal'
 
+const IMPUESTO_COMPRA = 0.13
+
+function roundCurrency(value: number) {
+  return Math.round(value * 100) / 100
+}
+
+function formatCurrencyInput(value: number | null | undefined) {
+  if (value == null || Number.isNaN(value)) return ''
+  return roundCurrency(value).toFixed(2)
+}
+
 interface Fabricante {
   id_fabricante: string
   nombre: string
@@ -58,6 +69,8 @@ export default function ProductoAddModal({
   const [selectedCatalogoSec, setSelectedCatalogoSec] = useState<string | null>(null)
   const [codigoUbicacionSec, setCodigoUbicacionSec] = useState<string>('')
   const [modalError, setModalError] = useState<string | null>(null)
+  const [aplicaImpuestoCompra, setAplicaImpuestoCompra] = useState(false)
+  const [precioSinImpuesto, setPrecioSinImpuesto] = useState('')
 
   const {
     register,
@@ -66,6 +79,7 @@ export default function ProductoAddModal({
     reset,
     setValue,
     control,
+    watch,
   } = useForm<ProductoFormData>({
     resolver: zodResolver(productoSchema),
     shouldUnregister: true,
@@ -107,7 +121,11 @@ export default function ProductoAddModal({
     setSelectedCatalogoSec(null)
     setCodigoUbicacionSec('')
     setModalError(null)
+    setAplicaImpuestoCompra(false)
+    setPrecioSinImpuesto('')
   }, [isOpen, reset, initialProveedorId])
+
+  const costoActual = watch('costo')
 
   useEffect(() => {
     setFabricantes(fabricantesIniciales)
@@ -420,21 +438,98 @@ export default function ProductoAddModal({
                 </div>
               </div>
 
-              <Input
-                label='Precio venta'
-                type='number'
-                step='0.01'
-                {...register('precio_venta', { valueAsNumber: true })}
-              />
+              <div className='md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-4 items-start'>
+                <div className='space-y-3'>
+                  <label className='inline-flex items-center gap-2 text-sm font-medium min-h-[24px]'>
+                    <input
+                      type='checkbox'
+                      checked={aplicaImpuestoCompra}
+                      onChange={(e) => {
+                        const checked = e.target.checked
+                        setAplicaImpuestoCompra(checked)
 
-              <Input
-                label='Costo'
-                type='number'
-                step='0.01'
-                {...register('costo', {
-                  setValueAs: (v) => (v === '' ? undefined : Number(v)),
-                })}
-              />
+                        if (!checked) {
+                          setPrecioSinImpuesto('')
+                        }
+                      }}
+                    />
+                    <span>Aplicar 13% de impuesto</span>
+                  </label>
+
+                  <Input
+                    label='Precio venta'
+                    type='number'
+                    step='0.01'
+                    {...register('precio_venta', { valueAsNumber: true })}
+                  />
+                </div>
+
+                <div className='space-y-3'>
+                  <div className='min-h-[24px]'>
+                    {aplicaImpuestoCompra ? (
+                      <div>
+                        <Input
+                          label='Precio sin impuesto'
+                          type='number'
+                          step='0.01'
+                          value={precioSinImpuesto}
+                          onChange={(e) => {
+                            const nextValue = e.target.value
+                            setPrecioSinImpuesto(nextValue)
+
+                            if (nextValue === '') {
+                              setValue('costo', undefined, {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              })
+                              return
+                            }
+
+                            const parsedValue = Number(nextValue)
+                            setValue(
+                              'costo',
+                              Number.isNaN(parsedValue)
+                                ? undefined
+                                : roundCurrency(parsedValue * (1 + IMPUESTO_COMPRA)),
+                              {
+                                shouldDirty: true,
+                                shouldValidate: true,
+                              }
+                            )
+                          }}
+                        />
+                        <p className='mt-1 text-xs text-gray-500'>
+                          El costo se calcula automáticamente con el 13% incluido.
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <Controller
+                    name='costo'
+                    control={control}
+                    render={({ field }) => (
+                      <Input
+                        label='Costo'
+                        type='number'
+                        step='0.01'
+                        value={
+                          aplicaImpuestoCompra
+                            ? formatCurrencyInput(costoActual)
+                            : field.value ?? ''
+                        }
+                        readOnly={aplicaImpuestoCompra}
+                        onChange={(e) => {
+                          if (aplicaImpuestoCompra) return
+
+                          const nextValue = e.target.value
+                          field.onChange(nextValue === '' ? undefined : Number(nextValue))
+                        }}
+                      />
+                    )}
+                  />
+                </div>
+              </div>
 
               <Input
                 label='Stock actual'
