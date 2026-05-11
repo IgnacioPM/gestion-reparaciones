@@ -10,6 +10,7 @@ import { ArrowLeft, Edit } from 'lucide-react'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import MetodoPagoEditModal from '@/components/ventas/MetodoPagoEditModal'
+import ConfirmModal from '@/components/ui/ConfirmModal'
 
 // Tipos de datos para la página de detalle de venta
 interface VentaDetalleItem {
@@ -30,6 +31,7 @@ interface VentaConDetalles {
   id_venta: number
   fecha: string
   total: number
+  estado: string
   metodo_pago: string
   total_descuento: number
   cliente: {
@@ -51,12 +53,26 @@ function formatFechaSimple(fecha: string) {
   })
 }
 
+function getEstadoBadgeClass(estado: string | null) {
+  switch ((estado || '').toUpperCase()) {
+    case 'COMPLETADA':
+      return 'bg-green-100 text-green-800'
+    case 'ANULADA':
+      return 'bg-red-100 text-red-800'
+    case 'PENDIENTE':
+      return 'bg-yellow-100 text-yellow-800'
+    default:
+      return 'bg-gray-100 text-gray-800'
+  }
+}
+
 export default function VentaDetallePage({ params }: { params: Promise<{ id: string }> }) {
   const { profile } = useAuthStore()
   const [venta, setVenta] = useState<VentaConDetalles | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [isAnularModalOpen, setIsAnularModalOpen] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [editError, setEditError] = useState<string | null>(null)
 
@@ -76,6 +92,7 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
             `
             id_venta,
             created_at,
+            estado,
             total,
             metodo_pago,
             total_descuento,
@@ -118,6 +135,7 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
         const ventaProcesada: VentaConDetalles = {
           id_venta: ventaData.id_venta,
           fecha: ventaData.created_at,
+          estado: ventaData.estado,
           total: ventaData.total,
           metodo_pago: ventaData.metodo_pago,
           total_descuento: ventaData.total_descuento,
@@ -182,6 +200,29 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
     }
   }
 
+  const handleAnularVenta = async () => {
+    if (!venta) return
+
+    try {
+      setIsSubmitting(true)
+
+      const { data: rpcData, error: rpcError } = await supabase.rpc('anular_venta', {
+        p_venta_id: venta.id_venta,
+      })
+
+      if (rpcError) throw rpcError
+
+      setVenta({ ...venta, estado: 'ANULADA' })
+      setIsAnularModalOpen(false)
+      // opcional: mostrar notificación más bonita luego
+    } catch (e: any) {
+      console.error('Error anulando venta:', e)
+      alert('Error al anular la venta: ' + (e.message || e.toString()))
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
   if (loading) {
     return (
       <div className='min-h-screen bg-gray-100 dark:bg-gray-900 flex items-center justify-center'>
@@ -230,8 +271,15 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
 
         {/* Detalles */}
         <div className='bg-white dark:bg-gray-800 shadow rounded-lg overflow-hidden'>
-          <div className='p-6 border-b border-gray-200 dark:border-gray-700'>
+          <div className='p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center'>
             <h1 className='text-2xl font-bold text-gray-900 dark:text-white'>Detalle de Venta</h1>
+            <span
+              className={`px-3 py-1 rounded text-sm font-medium border ${getEstadoBadgeClass(
+                venta.estado ?? null
+              )} border-opacity-40 shadow-sm select-none`}
+            >
+              {venta.estado ?? ''}
+            </span>
           </div>
 
           <div className='grid grid-cols-1 md:grid-cols-2 gap-6 p-6'>
@@ -358,16 +406,31 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
           </div>
 
           {/* Acciones */}
-          <div className='p-6 flex justify-end'>
-            <Link
-              href={`/ventas/${venta.id_venta}/imprimir`}
-              target='_blank'
-              rel='noopener noreferrer'
-            >
-              <button className='bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors'>
-                Imprimir Factura
-              </button>
-            </Link>
+          <div className='p-6 flex justify-between items-center'>
+            <div>
+              {profile?.rol === 'Admin' && venta.estado !== 'ANULADA' && (
+                <button
+                  onClick={() => setIsAnularModalOpen(true)}
+                  disabled={isSubmitting}
+                  className='bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md transition-colors'
+                  title='Anular venta'
+                >
+                  Anular Venta
+                </button>
+              )}
+            </div>
+
+            <div>
+              <Link
+                href={`/ventas/${venta.id_venta}/imprimir`}
+                target='_blank'
+                rel='noopener noreferrer'
+              >
+                <button className='bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded-md transition-colors'>
+                  Imprimir Factura
+                </button>
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -383,6 +446,20 @@ export default function VentaDetallePage({ params }: { params: Promise<{ id: str
             isSubmitting={isSubmitting}
             currentMetodo={venta.metodo_pago}
             error={editError}
+          />
+        )}
+
+        {/* Modal de confirmación para anular venta */}
+        {profile?.rol === 'Admin' && (
+          <ConfirmModal
+            isOpen={isAnularModalOpen}
+            title='Anular Venta'
+            description='¿Está seguro que desea anular esta venta? Se marcará como ANULADA y no podrá revertirse desde la interfaz.'
+            confirmLabel='Anular'
+            cancelLabel='Cancelar'
+            isSubmitting={isSubmitting}
+            onClose={() => setIsAnularModalOpen(false)}
+            onConfirm={handleAnularVenta}
           />
         )}
       </main>
