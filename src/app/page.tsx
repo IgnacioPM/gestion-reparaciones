@@ -3,12 +3,33 @@
 import ServiciosTable from '@/components/reparaciones/ServiciosTable'
 import VentasTable from '@/components/ventas/VentasTable'
 import Navbar from '@/components/ui/Navbar'
-import { useState } from 'react'
+import { useSearchParams } from 'next/navigation'
+import { useEffect, useState } from 'react'
 
 type Tab = 'servicios' | 'ventas' | 'general'
 
 export default function HomePage() {
-  const [activeTab, setActiveTab] = useState<Tab>('servicios')
+  const searchParams = useSearchParams()
+  const initialTab = (searchParams?.get('tab') as Tab) ?? 'servicios'
+  const [activeTab, setActiveTab] = useState<Tab>(
+    initialTab === 'servicios' || initialTab === 'ventas' || initialTab === 'general'
+      ? initialTab
+      : 'servicios'
+  )
+  const searchQuery = searchParams?.get('search') ?? ''
+  const filtroEstado = searchParams?.get('estado') ?? 'todos'
+  const fechaDesde = searchParams?.get('desde') ?? ''
+  const fechaHasta = searchParams?.get('hasta') ?? ''
+  const currentPage = Number(searchParams?.get('page') ?? '1') || 1
+
+  useEffect(() => {
+    const nextTab = (searchParams?.get('tab') as Tab) ?? 'servicios'
+    setActiveTab(
+      nextTab === 'servicios' || nextTab === 'ventas' || nextTab === 'general'
+        ? nextTab
+        : 'servicios'
+    )
+  }, [searchParams?.toString()])
 
   return (
     <div className='min-h-screen bg-gray-100 dark:bg-gray-900 transition-colors'>
@@ -35,7 +56,15 @@ export default function HomePage() {
           </div>
 
           {/* Content */}
-          {activeTab === 'servicios' && <ServiciosTable />}
+          {activeTab === 'servicios' && (
+            <ServiciosTable
+              initialSearchQuery={searchQuery}
+              initialFiltroEstado={filtroEstado}
+              initialFechaDesde={fechaDesde}
+              initialFechaHasta={fechaHasta}
+              initialPage={currentPage}
+            />
+          )}
           {activeTab === 'ventas' && <VentasTable />}
 
           {activeTab === 'general' && (

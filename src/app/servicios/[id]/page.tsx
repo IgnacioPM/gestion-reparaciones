@@ -59,6 +59,27 @@ function getFechaIngresoMostrada(servicio: ServicioConNombres) {
   return fechaIngreso
 }
 
+function toInputDatetimeValue(fecha: string) {
+  const date = new Date(fecha)
+  const timezoneOffsetMs = date.getTimezoneOffset() * 60000
+  return new Date(date.getTime() - timezoneOffsetMs).toISOString().slice(0, 16)
+}
+
+function getLocalDatetimeNow() {
+  const now = new Date()
+  const timezoneOffsetMs = now.getTimezoneOffset() * 60000
+  return new Date(now.getTime() - timezoneOffsetMs).toISOString().slice(0, 16)
+}
+
+function parseLocalDatetime(fechaLocal: string) {
+  const [datePart, timePart] = fechaLocal.split('T')
+  if (!datePart || !timePart) return null
+
+  const [year, month, day] = datePart.split('-').map(Number)
+  const [hour, minute] = timePart.split(':').map(Number)
+  return new Date(year, month - 1, day, hour, minute)
+}
+
 export default function ServicioDetallePageWrapper({
   params,
 }: {
@@ -68,12 +89,20 @@ export default function ServicioDetallePageWrapper({
   const router = useRouter()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isClienteModalOpen, setIsClienteModalOpen] = useState(false)
+  const [isFechaEntregaEditorOpen, setIsFechaEntregaEditorOpen] = useState(false)
+  const [fechaEntregaDraft, setFechaEntregaDraft] = useState('')
   const [isSavingCliente, setIsSavingCliente] = useState(false)
   const [servicio, setServicio] = useState<ServicioConNombres | null>(null)
   const [error, setError] = useState<{ message?: string } | null>(null)
   const [loading, setLoading] = useState(true)
   const [id, setId] = useState<string>('')
   const [mensajes, setMensajes] = useState<MensajeWhatsapp[]>([])
+
+  const handleGoBack = () => {
+    if (typeof window === 'undefined') return
+    const { origin, search } = window.location
+    window.location.href = `${origin}/${search}`
+  }
 
   // Cargar mensajes de WhatsApp
   useEffect(() => {
@@ -220,6 +249,39 @@ export default function ServicioDetallePageWrapper({
     }
   }
 
+  const openFechaEntregaEditor = () => {
+    setFechaEntregaDraft(
+      servicio?.fecha_entrega ? toInputDatetimeValue(servicio.fecha_entrega) : getLocalDatetimeNow()
+    )
+    setIsFechaEntregaEditorOpen(true)
+  }
+
+  const handleSaveFechaEntrega = async () => {
+    if (!id || !fechaEntregaDraft) return
+
+    const parsedDate = parseLocalDatetime(fechaEntregaDraft)
+    if (!parsedDate || Number.isNaN(parsedDate.getTime())) {
+      alert('Fecha inválida.')
+      return
+    }
+
+    const fechaEntregaIso = parsedDate.toISOString()
+    const { error } = await supabase
+      .from('servicios')
+      .update({ fecha_entrega: fechaEntregaIso })
+      .eq('id_reparacion', id)
+
+    if (error) {
+      console.error('Error updating delivery date:', error)
+      alert('Error al actualizar la fecha de entrega.')
+      return
+    }
+
+    setServicio((prev) => (prev ? { ...prev, fecha_entrega: fechaEntregaIso } : prev))
+    setIsFechaEntregaEditorOpen(false)
+    router.refresh()
+  }
+
   const handleNotify = (tipo: 'recibido' | 'revision' | 'listo' | 'entregado') => {
     if (!servicio) return
     const mensaje = mensajes.find((m) => m.tipo === tipo)
@@ -342,13 +404,14 @@ export default function ServicioDetallePageWrapper({
         {/* Encabezado */}
         <div className='flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4'>
           <div className='flex w-full'>
-            <Link
-              href='/'
+            <button
+              type='button'
+              onClick={handleGoBack}
               className='flex items-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white'
             >
               <ArrowLeft className='h-5 w-5 mr-2' />
               <span>Ir al inicio</span>
-            </Link>
+            </button>
 
             {servicio.estado !== 'Entregado' && (
               <button
@@ -415,11 +478,58 @@ export default function ServicioDetallePageWrapper({
                   label='Fecha ingreso'
                   value={formatFechaSimple(getFechaIngresoMostrada(servicio))}
                 />
-                {servicio.fecha_entrega && (
-                  <InfoRow
-                    label='Fecha entrega'
-                    value={formatFechaSimple(servicio.fecha_entrega)}
-                  />
+                <InfoRow
+                  label='Fecha entrega'
+                  value={servicio.fecha_entrega ? formatFechaSimple(servicio.fecha_entrega) : 'No establecida'}
+                />
+                {profile?.rol === 'Admin' && (
+                  <>
+                    <div className='mt-2'>
+                      <button
+                        type='button'
+                        onClick={openFechaEntregaEditor}
+                        className='text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300'
+                      >
+                        {servicio.fecha_entrega ? 'Cambiar fecha de entrega' : 'Agregar fecha de entrega'}
+                      </button>
+                    </div>
+                    {isFechaEntregaEditorOpen && (
+                      <div className='mt-4 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/40'>
+                        <div className='flex items-center justify-between gap-2'>
+                          <span className='font-semibold text-gray-800 dark:text-gray-100'>Nueva fecha de entrega</span>
+                          <button
+                            type='button'
+                            onClick={() => setIsFechaEntregaEditorOpen(false)}
+                            className='text-sm text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                        <input
+                          type='datetime-local'
+                          value={fechaEntregaDraft}
+                          onChange={(e) => setFechaEntregaDraft(e.target.value)}
+                          className='mt-3 w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100'
+                        />
+                        <div className='mt-3 flex gap-2'>
+                          <button
+                            type='button'
+                            onClick={handleSaveFechaEntrega}
+                            className='bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors'
+                          >
+                            Guardar fecha de entrega
+                          </button>
+                          <button
+                            type='button'
+                            onClick={() => setIsFechaEntregaEditorOpen(false)}
+                            className='bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded-md transition-colors dark:bg-gray-700 dark:text-gray-100 dark:hover:bg-gray-600'
+                          >
+                            Cerrar
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
                 {servicio.descripcion_falla && (
                   <InfoRow label='Falla' value={servicio.descripcion_falla} />

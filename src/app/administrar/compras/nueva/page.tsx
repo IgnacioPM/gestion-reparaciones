@@ -1,4 +1,4 @@
-'use client'
++'use client'
 
 import ProductoAddModal from '@/components/productos/ProductoAddModal'
 import ProductoEditModal from '@/components/productos/ProductoEditModal'

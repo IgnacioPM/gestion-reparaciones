@@ -3,8 +3,8 @@
 import { FormattedAmount } from '@/components/ui/FormattedAmount'
 import { supabase } from '@/lib/supabaseClient'
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useEffect, useMemo, useState } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import FiltrosServicios from './FiltrosServicios'
 import EstadoServicioModal from './EstadoServicioModal'
 
@@ -33,17 +33,87 @@ interface Servicio {
   }
 }
 
-export default function ServiciosTable() {
+interface ServiciosTableProps {
+  initialSearchQuery?: string
+  initialFiltroEstado?: string
+  initialFechaDesde?: string
+  initialFechaHasta?: string
+  initialPage?: number
+}
+
+export default function ServiciosTable({
+  initialSearchQuery = '',
+  initialFiltroEstado = 'todos',
+  initialFechaDesde = '',
+  initialFechaHasta = '',
+  initialPage = 1,
+}: ServiciosTableProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const getQueryParam = (key: string, fallback: string) => {
+    const param = searchParams?.get(key)
+    if (param !== null && param !== undefined) return param
+    if (typeof window !== 'undefined') {
+      return new URLSearchParams(window.location.search).get(key) ?? fallback
+    }
+    return fallback
+  }
+
+  const urlSearchQuery = getQueryParam('search', initialSearchQuery)
+  const urlFiltroEstado = getQueryParam('estado', initialFiltroEstado)
+  const urlFechaDesde = getQueryParam('desde', initialFechaDesde)
+  const urlFechaHasta = getQueryParam('hasta', initialFechaHasta)
+  const urlPage = Number(getQueryParam('page', String(initialPage))) || 1
+
   const [allServicios, setAllServicios] = useState<Servicio[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filtroEstado, setFiltroEstado] = useState<string>('todos')
-  const [fechaDesde, setFechaDesde] = useState<string>('')
-  const [fechaHasta, setFechaHasta] = useState<string>('')
-  const [currentPage, setCurrentPage] = useState(1)
+  const [searchQuery, setSearchQuery] = useState(urlSearchQuery)
+  const [filtroEstado, setFiltroEstado] = useState<string>(urlFiltroEstado)
+  const [fechaDesde, setFechaDesde] = useState<string>(urlFechaDesde)
+  const [fechaHasta, setFechaHasta] = useState<string>(urlFechaHasta)
+  const currentPage = urlPage
   const itemsPerPage = 10
   const [isEstadoModalOpen, setIsEstadoModalOpen] = useState(false)
+
+  const updatePageParam = (page: number) => {
+    if (typeof window === 'undefined') return
+    const params = new URLSearchParams(window.location.search)
+    if (page > 1) params.set('page', String(page))
+    else params.delete('page')
+    router.replace(`${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`)
+  }
+
+  const handlePageChange = (page: number) => {
+    updatePageParam(page)
+  }
+
+  const handleSearchQueryChange = (value: string) => {
+    setSearchQuery(value)
+    updatePageParam(1)
+  }
+
+  const handleFiltroEstadoChange = (value: string) => {
+    setFiltroEstado(value)
+    updatePageParam(1)
+  }
+
+  const handleFechaDesdeChange = (value: string) => {
+    setFechaDesde(value)
+    updatePageParam(1)
+  }
+
+  const handleFechaHastaChange = (value: string) => {
+    setFechaHasta(value)
+    updatePageParam(1)
+  }
+
+  useEffect(() => {
+    setSearchQuery(urlSearchQuery)
+    setFiltroEstado(urlFiltroEstado)
+    setFechaDesde(urlFechaDesde)
+    setFechaHasta(urlFechaHasta)
+  }, [urlSearchQuery, urlFiltroEstado, urlFechaDesde, urlFechaHasta])
+
   const [selectedServicio, setSelectedServicio] = useState<Servicio | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [estadoError, setEstadoError] = useState<string | null>(null)
@@ -185,11 +255,6 @@ export default function ServiciosTable() {
     })
   }, [allServicios, searchQuery, filtroEstado, fechaDesde, fechaHasta])
 
-  // Reset página cuando cambian filtros
-  useEffect(() => {
-    setCurrentPage(1)
-  }, [searchQuery, filtroEstado, fechaDesde, fechaHasta])
-
   // ---------------------- PAGINACIÓN ----------------------
   const paginatedServicios = useMemo(() => {
     const from = (currentPage - 1) * itemsPerPage
@@ -248,7 +313,17 @@ export default function ServiciosTable() {
       console.error('ID de servicio no válido:', id)
       return
     }
-    router.push(`/servicios/${id}`)
+
+    const params = new URLSearchParams()
+    if (searchQuery.trim()) params.set('search', searchQuery.trim())
+    if (filtroEstado && filtroEstado !== 'todos') params.set('estado', filtroEstado)
+    if (fechaDesde) params.set('desde', fechaDesde)
+    if (fechaHasta) params.set('hasta', fechaHasta)
+    if (currentPage > 1) params.set('page', String(currentPage))
+    params.set('tab', 'servicios')
+
+    const query = params.toString()
+    router.push(`/servicios/${id}${query ? `?${query}` : ''}`)
   }
 
   const setDateFilter = (filterType: 'day' | 'week' | 'month') => {
@@ -272,6 +347,7 @@ export default function ServiciosTable() {
 
     setFechaDesde(fromDate.toISOString().split('T')[0])
     setFechaHasta(toDate.toISOString().split('T')[0])
+    updatePageParam(1)
   }
 
   const handleClearFilters = () => {
@@ -279,6 +355,7 @@ export default function ServiciosTable() {
     setFiltroEstado('todos')
     setFechaDesde('')
     setFechaHasta('')
+    updatePageParam(1)
   }
 
   const handleEstadoClick = (e: React.MouseEvent, servicio: Servicio) => {
@@ -354,13 +431,13 @@ export default function ServiciosTable() {
       {/* Filtros */}
       <FiltrosServicios
         searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
+        setSearchQuery={handleSearchQueryChange}
         filtroEstado={filtroEstado}
-        setFiltroEstado={setFiltroEstado}
+        setFiltroEstado={handleFiltroEstadoChange}
         fechaDesde={fechaDesde}
-        setFechaDesde={setFechaDesde}
+        setFechaDesde={handleFechaDesdeChange}
         fechaHasta={fechaHasta}
-        setFechaHasta={setFechaHasta}
+        setFechaHasta={handleFechaHastaChange}
         setDateFilter={setDateFilter}
         estados={estados}
         onClearFilters={handleClearFilters}
@@ -511,7 +588,7 @@ export default function ServiciosTable() {
         <div className='flex justify-end items-center gap-2 mt-4'>
           <button
             disabled={currentPage === 1}
-            onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+            onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
             className='p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50'
           >
             <ChevronLeft />
@@ -521,7 +598,7 @@ export default function ServiciosTable() {
           </span>
           <button
             disabled={currentPage === totalPages}
-            onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+            onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
             className='p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50'
           >
             <ChevronRight />
