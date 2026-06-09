@@ -75,36 +75,66 @@ export default function ServiciosTable({
   const itemsPerPage = 10
   const [isEstadoModalOpen, setIsEstadoModalOpen] = useState(false)
 
-  const updatePageParam = (page: number) => {
+  const updateUrlParams = (updates: {
+    search?: string
+    estado?: string
+    desde?: string
+    hasta?: string
+    page?: number
+  }) => {
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
-    if (page > 1) params.set('page', String(page))
-    else params.delete('page')
+
+    if (updates.search !== undefined) {
+      if (updates.search.trim()) params.set('search', updates.search.trim())
+      else params.delete('search')
+    }
+
+    if (updates.estado !== undefined) {
+      if (updates.estado && updates.estado !== 'todos') params.set('estado', updates.estado)
+      else params.delete('estado')
+    }
+
+    if (updates.desde !== undefined) {
+      if (updates.desde) params.set('desde', updates.desde)
+      else params.delete('desde')
+    }
+
+    if (updates.hasta !== undefined) {
+      if (updates.hasta) params.set('hasta', updates.hasta)
+      else params.delete('hasta')
+    }
+
+    if (updates.page !== undefined) {
+      if (updates.page > 1) params.set('page', String(updates.page))
+      else params.delete('page')
+    }
+
     router.replace(`${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`)
   }
 
   const handlePageChange = (page: number) => {
-    updatePageParam(page)
+    updateUrlParams({ page })
   }
 
   const handleSearchQueryChange = (value: string) => {
     setSearchQuery(value)
-    updatePageParam(1)
+    updateUrlParams({ search: value, page: 1 })
   }
 
   const handleFiltroEstadoChange = (value: string) => {
     setFiltroEstado(value)
-    updatePageParam(1)
+    updateUrlParams({ estado: value, page: 1 })
   }
 
   const handleFechaDesdeChange = (value: string) => {
     setFechaDesde(value)
-    updatePageParam(1)
+    updateUrlParams({ desde: value, page: 1 })
   }
 
   const handleFechaHastaChange = (value: string) => {
     setFechaHasta(value)
-    updatePageParam(1)
+    updateUrlParams({ hasta: value, page: 1 })
   }
 
   useEffect(() => {
@@ -345,9 +375,11 @@ export default function ServiciosTable({
       toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0)
     }
 
-    setFechaDesde(fromDate.toISOString().split('T')[0])
-    setFechaHasta(toDate.toISOString().split('T')[0])
-    updatePageParam(1)
+    const newDesde = fromDate.toISOString().split('T')[0]
+    const newHasta = toDate.toISOString().split('T')[0]
+    setFechaDesde(newDesde)
+    setFechaHasta(newHasta)
+    updateUrlParams({ desde: newDesde, hasta: newHasta, page: 1 })
   }
 
   const handleClearFilters = () => {
@@ -355,7 +387,7 @@ export default function ServiciosTable({
     setFiltroEstado('todos')
     setFechaDesde('')
     setFechaHasta('')
-    updatePageParam(1)
+    updateUrlParams({ search: '', estado: 'todos', desde: '', hasta: '', page: 1 })
   }
 
   const handleEstadoClick = (e: React.MouseEvent, servicio: Servicio) => {
