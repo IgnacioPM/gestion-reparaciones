@@ -89,6 +89,7 @@ export default function MarcaAddModal({
           <Input
             label="Nombre"
             type="text"
+            autoFocus
             {...register('nombre')}
             error={errors.nombre?.message}
           />
