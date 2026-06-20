@@ -397,7 +397,7 @@ export default function ServiciosTable({
     setEstadoError(null)
   }
 
-  const handleUpdateEstado = async (nuevoEstado: string) => {
+  const handleUpdateEstado = async (nuevoEstado: string, costoFinal?: number) => {
     if (!selectedServicio) return
 
     try {
@@ -406,9 +406,12 @@ export default function ServiciosTable({
 
       const updateData: any = { estado: nuevoEstado }
 
-      // Si el estado es "Entregado", actualizar la fecha de entrega
+      // Si el estado es "Entregado", actualizar fecha y costo final
       if (nuevoEstado === 'Entregado') {
         updateData.fecha_entrega = new Date().toISOString()
+        if (costoFinal !== undefined) {
+          updateData.costo_final = costoFinal
+        }
       }
 
       const { error: updateError } = await supabase
@@ -422,7 +425,12 @@ export default function ServiciosTable({
       setAllServicios((prev) =>
         prev.map((s) =>
           s.id_reparacion === selectedServicio.id_reparacion
-            ? { ...s, estado: nuevoEstado as Servicio['estado'], fecha_entrega: updateData.fecha_entrega ?? s.fecha_entrega }
+            ? { 
+                ...s, 
+                estado: nuevoEstado as Servicio['estado'],
+                fecha_entrega: nuevoEstado === 'Entregado' ? updateData.fecha_entrega : s.fecha_entrega,
+                costo_final: costoFinal !== undefined ? costoFinal : s.costo_final
+              }
             : s
         )
       )
@@ -651,6 +659,7 @@ export default function ServiciosTable({
         currentEstado={selectedServicio?.estado || null}
         numeroServicio={selectedServicio?.numero_servicio || null}
         error={estadoError}
+        costoEstimado={selectedServicio?.costo_estimado}
       />
     </div>
   )
