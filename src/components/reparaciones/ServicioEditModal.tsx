@@ -73,17 +73,28 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
   }
 
   const handleSave = () => {
+    // Validar que solo admin puede cambiar estado de "Entregado"
+    if (servicio.estado === 'Entregado' && estado !== 'Entregado' && profile?.rol !== 'Admin') {
+      alert('Solo administradores pueden cambiar el estado de servicios entregados.')
+      return
+    }
+
+    // Si no es admin y el servicio está entregado, mantener el estado como Entregado
+    const estadoFinal = servicio.estado === 'Entregado' && profile?.rol !== 'Admin' 
+      ? servicio.estado 
+      : estado
+
     const data: Partial<ServicioConNombres> = {
-      estado,
+      estado: estadoFinal,
       costo_final: costoFinal === '' ? null : Number(costoFinal),
       nota_trabajo: notaTrabajo,
       descripcion_falla: descripcionFalla,
     }
 
-    if (estado === 'Entregado') {
+    if (estadoFinal === 'Entregado') {
       const crDate = dayjs().tz('America/Costa_Rica')
       data.fecha_entrega = crDate.toISOString()
-    } else if (estado === 'En revisión') {
+    } else if (estadoFinal === 'En revisión') {
       data.costo_estimado = costoEstimado === '' ? null : Number(costoEstimado)
     }
 
@@ -143,22 +154,49 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
         <SectionTitle className='mb-4'>Editar Servicio</SectionTitle>
 
         <InfoBlock title={null} className='space-y-4'>
-          <InfoRow
-            label='Estado'
-            value={
-              <Select
-                value={estado ?? ''}
-                onChange={(e) => setEstado(e.target.value as ServicioConNombres['estado'])}
-                className='w-full'
-              >
-                {estados.map((e) => (
-                  <option key={e} value={e}>
-                    {e}
-                  </option>
-                ))}
-              </Select>
-            }
-          />
+          {servicio.estado === 'Entregado' && profile?.rol !== 'Admin' && (
+            <div className='bg-yellow-100 border border-yellow-400 text-yellow-800 px-4 py-3 rounded'>
+              <p className='font-semibold'>No se puede modificar</p>
+              <p className='text-sm mt-1'>
+                Los servicios con estado "Entregado" no pueden cambiar de estado.
+              </p>
+            </div>
+          )}
+
+          {servicio.estado === 'Entregado' && profile?.rol === 'Admin' && (
+            <div className='bg-orange-100 border border-orange-400 text-orange-800 px-4 py-3 rounded'>
+              <p className='font-semibold'>⚠️ Acción restringida a administrador</p>
+              <p className='text-sm mt-1'>
+                Solo administradores pueden cambiar el estado de servicios entregados.
+              </p>
+            </div>
+          )}
+
+          {(servicio.estado !== 'Entregado' || profile?.rol === 'Admin') && (
+            <InfoRow
+              label='Estado'
+              value={
+                <Select
+                  value={estado ?? ''}
+                  onChange={(e) => setEstado(e.target.value as ServicioConNombres['estado'])}
+                  className='w-full'
+                >
+                  {estados.map((e) => (
+                    <option key={e} value={e}>
+                      {e}
+                    </option>
+                  ))}
+                </Select>
+              }
+            />
+          )}
+
+          {servicio.estado === 'Entregado' && profile?.rol !== 'Admin' && (
+            <InfoRow
+              label='Estado'
+              value={<span className='text-gray-700 dark:text-gray-300'>{servicio.estado}</span>}
+            />
+          )}
 
           {estado === 'En revisión' && (
             <InfoRow

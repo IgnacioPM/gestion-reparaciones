@@ -413,7 +413,7 @@ export default function ServicioDetallePageWrapper({
               <span>Ir al inicio</span>
             </button>
 
-            {servicio.estado !== 'Entregado' && (
+            {(servicio.estado !== 'Entregado' || profile?.rol === 'Admin') && (
               <button
                 className='flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-md transition-colors ml-auto'
                 onClick={() => setIsModalOpen(true)}
