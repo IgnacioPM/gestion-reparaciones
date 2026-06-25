@@ -44,6 +44,7 @@ export default function Reportes() {
       { value: 'En revisión', label: 'En revisión' },
       { value: 'En reparacion', label: 'En reparación' },
       { value: 'Listo', label: 'Listo' },
+      { value: 'Garantía', label: 'Garantía' },
       { value: 'Entregado', label: 'Entregado' },
       { value: 'Anulado', label: 'Anulado' },
     ],

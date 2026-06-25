@@ -24,7 +24,7 @@ interface ServicioEditModalProps {
   onSave: (data: Partial<ServicioConNombres>) => void
 }
 
-const estados = ['Recibido', 'En revisión', 'En reparacion', 'Listo', 'Entregado', 'Anulado']
+const estados = ['Recibido', 'En revisión', 'En reparacion', 'Listo', 'Garantía', 'Entregado', 'Anulado']
 
 export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: ServicioEditModalProps) {
   const [estado, setEstado] = useState<ServicioConNombres['estado']>(servicio.estado || 'Recibido')
@@ -86,16 +86,23 @@ export function ServicioEditModal({ isOpen, onClose, servicio, onSave }: Servici
 
     const data: Partial<ServicioConNombres> = {
       estado: estadoFinal,
-      costo_final: costoFinal === '' ? null : Number(costoFinal),
-      nota_trabajo: notaTrabajo,
-      descripcion_falla: descripcionFalla,
+      nota_trabajo: notaTrabajo || null,
+      descripcion_falla: descripcionFalla || null,
+    }
+
+    // Solo incluir costo_final si tiene valor
+    if (costoFinal !== '') {
+      data.costo_final = Number(costoFinal)
     }
 
     if (estadoFinal === 'Entregado') {
       const crDate = dayjs().tz('America/Costa_Rica')
       data.fecha_entrega = crDate.toISOString()
     } else if (estadoFinal === 'En revisión') {
-      data.costo_estimado = costoEstimado === '' ? null : Number(costoEstimado)
+      // Solo incluir costo_estimado si tiene valor
+      if (costoEstimado !== '') {
+        data.costo_estimado = Number(costoEstimado)
+      }
     }
 
     onSave(data)

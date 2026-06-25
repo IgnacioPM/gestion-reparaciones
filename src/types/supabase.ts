@@ -41,7 +41,7 @@ export interface Database {
           equipo_id: string
           fecha_ingreso: string
           descripcion_falla: string | null
-          estado: 'Recibido' | 'En reparacion' | 'Listo' | 'Entregado' | null
+          estado: 'Recibido' | 'En revisión' | 'En reparacion' | 'Listo' | 'Garantía' | 'Entregado' | 'Anulado' | null
           costo_estimado: number | null
           nota_trabajo: string | null
           fecha_entrega: string | null
@@ -52,7 +52,7 @@ export interface Database {
           equipo_id: string
           fecha_ingreso?: string
           descripcion_falla?: string | null
-          estado?: 'Recibido' | 'En reparacion' | 'Listo' | 'Entregado' | null
+          estado?: 'Recibido' | 'En revisión' | 'En reparacion' | 'Listo' | 'Garantía' | 'Entregado' | 'Anulado' | null
           costo_estimado?: number | null
           nota_trabajo?: string | null
           fecha_entrega?: string | null
@@ -62,7 +62,7 @@ export interface Database {
           equipo_id?: string
           fecha_ingreso?: string
           descripcion_falla?: string | null
-          estado?: 'Recibido' | 'En reparacion' | 'Listo' | 'Entregado' | null
+          estado?: 'Recibido' | 'En revisión' | 'En reparacion' | 'Listo' | 'Garantía' | 'Entregado' | 'Anulado' | null
           costo_estimado?: number | null
           nota_trabajo?: string | null
           fecha_entrega?: string | null

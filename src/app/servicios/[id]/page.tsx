@@ -27,6 +27,8 @@ function getBadgeColor(estado: string | null) {
       return 'bg-blue-100 text-blue-800'
     case 'Listo':
       return 'bg-green-100 text-green-800'
+    case 'Garantía':
+      return 'bg-purple-100 text-purple-800'
     case 'Entregado':
       return 'bg-gray-100 text-gray-800'
     case 'Anulado':
@@ -239,13 +241,25 @@ export default function ServicioDetallePageWrapper({
 
   const handleSave = async (data: Partial<ServicioConNombres>) => {
     if (!id) return
-    const { error } = await supabase.from('servicios').update(data).eq('id_reparacion', id)
-    if (error) {
-      console.error('Error updating service:', error)
-      alert('Error al actualizar el servicio.')
-    } else {
-      router.refresh()
-      setIsModalOpen(false)
+    try {
+      const { error } = await supabase.from('servicios').update(data).eq('id_reparacion', id)
+      if (error) {
+        console.error('Error updating service:', error)
+        const errorMsg = error.message || 'Error desconocido'
+        
+        // Si el error es sobre el estado 'Garantía', informar al usuario
+        if (errorMsg.includes('estado') || errorMsg.includes('Garantía')) {
+          alert('El estado "Garantía" necesita ser agregado a la base de datos. Contacta al administrador.')
+        } else {
+          alert(`Error al actualizar el servicio: ${errorMsg}`)
+        }
+      } else {
+        router.refresh()
+        setIsModalOpen(false)
+      }
+    } catch (e: any) {
+      console.error('Exception updating service:', e)
+      alert(`Error al actualizar el servicio: ${e.message || 'Error desconocido'}`)
     }
   }
 

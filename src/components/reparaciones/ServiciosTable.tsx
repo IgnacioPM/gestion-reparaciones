@@ -14,7 +14,7 @@ interface Servicio {
   equipo_id: string
   fecha_ingreso: string
   descripcion_falla: string | null
-  estado: 'Recibido' | 'En revisión' | 'En reparacion' | 'Listo' | 'Entregado' | 'Anulado' | null
+  estado: 'Recibido' | 'En revisión' | 'En reparacion' | 'Listo' | 'Garantía' | 'Entregado' | 'Anulado' | null
   costo_estimado: number | null
   nota_trabajo: string | null
   fecha_entrega: string | null
@@ -154,6 +154,7 @@ export default function ServiciosTable({
     { value: 'En revisión', label: 'En revisión' },
     { value: 'En reparacion', label: 'En reparación' },
     { value: 'Listo', label: 'Listo' },
+    { value: 'Garantía', label: 'Garantía' },
     { value: 'Entregado', label: 'Entregado' },
     { value: 'Anulado', label: 'Anulado' },
   ]
@@ -318,6 +319,8 @@ export default function ServiciosTable({
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300'
       case 'Listo':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+      case 'Garantía':
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300'
       case 'Entregado':
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
       case 'Anulado':
