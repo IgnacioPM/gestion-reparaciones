@@ -106,8 +106,10 @@ export default function ServiciosTable({
     }
 
     if (updates.page !== undefined) {
-      if (updates.page > 1) params.set('page', String(updates.page))
-      else params.delete('page')
+      // Always set the page parameter explicitly so clearing filters
+      // reliably navigates to page 1 instead of falling back to the
+      // component's initial prop value.
+      params.set('page', String(updates.page))
     }
 
     router.replace(`${window.location.pathname}${params.toString() ? `?${params.toString()}` : ''}`)
