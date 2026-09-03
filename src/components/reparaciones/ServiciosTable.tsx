@@ -630,6 +630,7 @@ export default function ServiciosTable({
       {totalPages > 1 && (
         <div className='flex justify-end items-center gap-2 mt-4'>
           <button
+            type='button'
             disabled={currentPage === 1}
             onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
             className='p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50'
@@ -640,6 +641,7 @@ export default function ServiciosTable({
             {currentPage} / {totalPages}
           </span>
           <button
+            type='button'
             disabled={currentPage === totalPages}
             onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
             className='p-2 rounded-md hover:bg-gray-200 dark:hover:bg-gray-700 disabled:opacity-50'
